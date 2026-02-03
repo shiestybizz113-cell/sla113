@@ -428,6 +428,7 @@ async def health_check():
             "blueprint_engine",
             "persona_engine",
             "anime_character_engine",
+            "pipeline_composer_engine",
             "canon_enforcer",
             "drift_monitor",
             "error_handler"
