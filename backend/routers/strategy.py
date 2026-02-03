@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List
 import asyncio
@@ -7,6 +8,7 @@ from services.router import RoutingEngine, RoutingDecision
 from services.strategy_engine import StrategyEngine
 from services.canon_enforcer import CanonEnforcer
 from services.drift_monitor import DriftMonitor
+from services.error_handler import ErrorHandler, PipelineStage
 
 router = APIRouter(tags=["strategy"])
 
