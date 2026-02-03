@@ -50,6 +50,7 @@ A comprehensive playbook and working implementation for a multi-model AI system 
 | 2026-01-03 | Strategy Engine service | ✅ Done |
 | 2026-01-03 | Plan Builder Engine service | ✅ Done |
 | 2026-01-03 | Analysis Engine service | ✅ Done |
+| 2026-01-03 | Opportunity Mapper Engine | ✅ Done |
 | 2026-01-03 | Canon Enforcer service | ✅ Done |
 | 2026-01-03 | Drift Monitor service | ✅ Done |
 | 2026-01-03 | Error Handler service | ✅ Done |
@@ -68,11 +69,13 @@ A comprehensive playbook and working implementation for a multi-model AI system 
 | `/api/plan` | POST | Plan generation |
 | `/api/analyze` | POST | Deep structured analysis |
 | `/api/analyze/competitive` | POST | Competitive analysis |
-| `/api/analyze/strategy` | POST | Analyze a strategy |
+| `/api/opportunities` | POST | Map opportunities |
+| `/api/opportunities/market` | POST | Market opportunities |
+| `/api/opportunities/quick-wins` | POST | Quick win opportunities |
 | `/api/route` | POST | Get routing decision |
 | `/api/drift-report` | GET | Get drift metrics |
 
-## Pipeline Engines (8 Total)
+## Pipeline Engines (9 Total)
 | Engine | Purpose | Default Model |
 |--------|---------|---------------|
 | Hybrid Intelligence Core | Master orchestrator | - |
@@ -80,6 +83,7 @@ A comprehensive playbook and working implementation for a multi-model AI system 
 | Strategy Engine | High-level strategy generation | Claude |
 | Plan Builder Engine | Tactical execution planning | GPT-5.2 |
 | Analysis Engine | Deep SWOT analysis | Claude |
+| Opportunity Mapper Engine | Identify high-leverage opportunities | Claude |
 | Canon Enforcer | Output normalization | - |
 | Drift Monitor | Behavioral tracking | - |
 | Error Handler | Structured errors | - |
