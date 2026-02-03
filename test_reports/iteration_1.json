@@ -1,63 +1,78 @@
 {
-  "test_run": "hybrid-ai-pipeline-v1",
-  "timestamp": "2026-01-03T14:30:00Z",
+  "test_run": "hybrid-ai-pipeline-v2",
+  "timestamp": "2026-01-03T14:45:00Z",
   "status": "PASS",
-  "summary": "All hybrid AI pipeline endpoints tested and working correctly",
+  "summary": "Hybrid Intelligence Core and all engines tested successfully",
   "tests": [
+    {
+      "name": "Core Status Endpoint",
+      "endpoint": "GET /api/core/status",
+      "status": "PASS",
+      "result": "Returns operational status with all 6 engines active"
+    },
+    {
+      "name": "Core Execute - Strategy Task",
+      "endpoint": "POST /api/core/execute",
+      "input": {"prompt": "I need a strategy to monetize my AI engine"},
+      "expected_routing": "strategy → claude-sonnet-4.5",
+      "actual_routing": "strategy → claude-sonnet-4.5",
+      "status": "PASS"
+    },
+    {
+      "name": "Core Execute - Code Task",
+      "endpoint": "POST /api/core/execute",
+      "input": {"prompt": "Write a Python function to calculate fibonacci"},
+      "expected_routing": "code → gpt-5.2",
+      "actual_routing": "code → gpt-5.2",
+      "status": "PASS"
+    },
+    {
+      "name": "Core Execute - Quick Task",
+      "endpoint": "POST /api/core/execute",
+      "input": {"prompt": "What is machine learning? Quick definition"},
+      "expected_routing": "quick → gemini-3-flash",
+      "actual_routing": "quick → gemini-3-flash",
+      "status": "PASS"
+    },
+    {
+      "name": "Core Execution Log",
+      "endpoint": "GET /api/core/log",
+      "status": "PASS",
+      "result": "Returns execution history with 3 logged executions"
+    },
     {
       "name": "Health Check Endpoint",
       "endpoint": "GET /api/health",
       "status": "PASS",
-      "result": "Returns healthy status with all 3 models available"
+      "result": "Returns healthy status with all engines listed"
     },
     {
-      "name": "Routing Engine - Code Task",
-      "endpoint": "POST /api/route",
-      "input": {"goal": "Write a Python function to sort a list"},
-      "expected_model": "gpt-5.2",
-      "actual_model": "gpt-5.2",
-      "status": "PASS"
-    },
-    {
-      "name": "Routing Engine - Strategy Task",
-      "endpoint": "POST /api/route",
-      "input": {"goal": "Create a business strategy to scale my startup"},
-      "expected_model": "claude-sonnet-4.5",
-      "actual_model": "claude-sonnet-4.5",
-      "status": "PASS"
-    },
-    {
-      "name": "Routing Engine - Quick Task",
-      "endpoint": "POST /api/route",
-      "input": {"goal": "What is the capital of France? Quick answer"},
-      "expected_model": "gemini-3-flash",
-      "actual_model": "gemini-3-flash",
-      "status": "PASS"
-    },
-    {
-      "name": "Full Pipeline - Strategy Generation",
-      "endpoint": "POST /api/strategy",
-      "input": {"goal": "I need a strategy to monetize my AI engine"},
+      "name": "Plan Builder Endpoint",
+      "endpoint": "POST /api/plan",
+      "input": {"goal": "Launch a SaaS product in 30 days"},
       "status": "PASS",
-      "result": "Generated complete strategy with summary, steps, risks, resources, next_action"
+      "result": "Returns structured plan with phases, milestones, critical path"
     },
     {
       "name": "Drift Report Endpoint",
       "endpoint": "GET /api/drift-report",
       "status": "PASS",
-      "result": "Returns drift metrics (insufficient_data with 1 sample, needs 5+)"
+      "result": "Returns drift metrics (building baseline data)"
     }
   ],
-  "pipeline_stages_verified": [
+  "engines_verified": [
+    "hybrid_intelligence_core",
     "routing_engine",
-    "strategy_engine", 
+    "strategy_engine",
+    "plan_builder_engine",
     "canon_enforcer",
     "drift_monitor",
     "error_handler"
   ],
   "models_tested": [
-    "gpt-5.2 (OpenAI)",
-    "claude-sonnet-4.5 (Anthropic)",
-    "gemini-3-flash (Google)"
-  ]
+    "gpt-5.2 (OpenAI) - Code tasks",
+    "claude-sonnet-4.5 (Anthropic) - Strategy tasks",
+    "gemini-3-flash (Google) - Quick tasks"
+  ],
+  "routing_accuracy": "100% (3/3 tasks routed correctly)"
 }
