@@ -60,26 +60,14 @@ const MoneyPipelinePage = () => {
     }
   };
 
-  const renderSection = (title, data, icon) => {
-    if (!data) return null;
+  const renderList = (items) => {
+    if (!items || !Array.isArray(items)) return null;
     return (
-      <div className="pipeline-section">
-        <h3>{icon} {title}</h3>
-        {Array.isArray(data) ? (
-          <ul>{data.map((item, i) => <li key={i}>{typeof item === 'object' ? JSON.stringify(item) : item}</li>)}</ul>
-        ) : typeof data === 'object' ? (
-          <div className="nested-data">
-            {Object.entries(data).map(([key, val]) => (
-              <div key={key} className="data-row">
-                <strong>{key.replace(/_/g, ' ')}:</strong>
-                <span>{Array.isArray(val) ? val.join(', ') : typeof val === 'object' ? JSON.stringify(val) : val}</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p>{data}</p>
-        )}
-      </div>
+      <ul>
+        {items.map((item, i) => (
+          <li key={i}>{typeof item === 'object' ? JSON.stringify(item) : String(item)}</li>
+        ))}
+      </ul>
     );
   };
 
@@ -146,9 +134,9 @@ const MoneyPipelinePage = () => {
               data-testid="submit-btn"
             >
               {loading ? (
-                <><span className="btn-spinner"></span> Generating...</>
+                <span>⏳ Generating...</span>
               ) : (
-                <>🚀 Generate Pipeline</>
+                <span>🚀 Generate Pipeline</span>
               )}
             </button>
           </form>
@@ -159,6 +147,7 @@ const MoneyPipelinePage = () => {
               {sampleIdeas.map((sample, i) => (
                 <button
                   key={i}
+                  type="button"
                   className="sample-btn"
                   onClick={() => loadSample(sample)}
                   data-testid={`sample-btn-${i}`}
@@ -191,6 +180,7 @@ const MoneyPipelinePage = () => {
                 {["summary", "market", "pricing", "business", "execution", "forecast", "marketing", "launch", "raw"].map(tab => (
                   <button
                     key={tab}
+                    type="button"
                     className={`tab ${activeTab === tab ? 'active' : ''}`}
                     onClick={() => setActiveTab(tab)}
                   >
@@ -210,41 +200,157 @@ const MoneyPipelinePage = () => {
                     <div className="summary-card">
                       <h4>💰 Pricing</h4>
                       <p>{result.pricing_model?.tiers?.length || 0} tiers</p>
-                      <p>{result.pricing_model?.monetization_strategy?.slice(0, 50)}...</p>
                     </div>
                     <div className="summary-card">
                       <h4>🏢 Business</h4>
-                      <p>{result.business_model?.core_offer?.slice(0, 80)}...</p>
+                      <p>{String(result.business_model?.core_offer || "").slice(0, 80)}...</p>
                     </div>
                     <div className="summary-card">
                       <h4>📈 Forecast</h4>
-                      <p>{result.forecast?.revenue_projection?.slice(0, 80)}...</p>
+                      <p>{String(result.forecast?.revenue_projection || "").slice(0, 80)}...</p>
                     </div>
                   </div>
                 )}
 
-                {activeTab === "market" && renderSection("Market Analysis", result.market_analysis, "📊")}
-                {activeTab === "pricing" && (
-                  <div>
-                    {renderSection("Pricing Model", result.pricing_model, "💰")}
-                    {result.pricing_model?.tiers && (
-                      <div className="tiers-grid">
-                        {result.pricing_model.tiers.map((tier, i) => (
-                          <div key={i} className="tier-card">
-                            <h4>{tier.name}</h4>
-                            <p className="tier-price">{tier.price}</p>
-                            <ul>{tier.features?.map((f, j) => <li key={j}>{f}</li>)}</ul>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                {activeTab === "market" && (
+                  <div className="pipeline-section">
+                    <h3>📊 Market Analysis</h3>
+                    <div className="data-block">
+                      <strong>Target Segments:</strong>
+                      {renderList(result.market_analysis?.target_segments)}
+                    </div>
+                    <div className="data-block">
+                      <strong>Pain Points:</strong>
+                      {renderList(result.market_analysis?.pain_points)}
+                    </div>
+                    <div className="data-block">
+                      <strong>Positioning:</strong>
+                      <p>{result.market_analysis?.positioning_opportunity}</p>
+                    </div>
                   </div>
                 )}
-                {activeTab === "business" && renderSection("Business Model", result.business_model, "🏢")}
-                {activeTab === "execution" && renderSection("Execution Plan", result.execution_plan, "📋")}
-                {activeTab === "forecast" && renderSection("Forecast", result.forecast, "📈")}
-                {activeTab === "marketing" && renderSection("Marketing Funnel", result.marketing_funnel, "📣")}
-                {activeTab === "launch" && renderSection("Launch Strategy", result.launch_strategy, "🚀")}
+
+                {activeTab === "pricing" && (
+                  <div className="pipeline-section">
+                    <h3>💰 Pricing Model</h3>
+                    <div className="tiers-grid">
+                      {result.pricing_model?.tiers?.map((tier, i) => (
+                        <div key={i} className="tier-card">
+                          <h4>{tier.name}</h4>
+                          <p className="tier-price">{tier.price}</p>
+                          {renderList(tier.features)}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="data-block">
+                      <strong>Strategy:</strong>
+                      <p>{result.pricing_model?.monetization_strategy}</p>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "business" && (
+                  <div className="pipeline-section">
+                    <h3>🏢 Business Model</h3>
+                    <div className="data-block">
+                      <strong>Core Offer:</strong>
+                      <p>{result.business_model?.core_offer}</p>
+                    </div>
+                    <div className="data-block">
+                      <strong>Delivery Model:</strong>
+                      <p>{result.business_model?.delivery_model}</p>
+                    </div>
+                    <div className="data-block">
+                      <strong>Retention Model:</strong>
+                      <p>{result.business_model?.retention_model}</p>
+                    </div>
+                    <div className="data-block">
+                      <strong>Expansion Model:</strong>
+                      <p>{result.business_model?.expansion_model}</p>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "execution" && (
+                  <div className="pipeline-section">
+                    <h3>📋 Execution Plan</h3>
+                    <div className="data-block">
+                      <strong>Phase 1:</strong>
+                      {renderList(result.execution_plan?.phase_1)}
+                    </div>
+                    <div className="data-block">
+                      <strong>Phase 2:</strong>
+                      {renderList(result.execution_plan?.phase_2)}
+                    </div>
+                    <div className="data-block">
+                      <strong>Phase 3:</strong>
+                      {renderList(result.execution_plan?.phase_3)}
+                    </div>
+                    <div className="data-block">
+                      <strong>Critical Path:</strong>
+                      {renderList(result.execution_plan?.critical_path)}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "forecast" && (
+                  <div className="pipeline-section">
+                    <h3>📈 Forecast</h3>
+                    <div className="data-block">
+                      <strong>Revenue Projection:</strong>
+                      <p>{result.forecast?.revenue_projection}</p>
+                    </div>
+                    <div className="data-block">
+                      <strong>Growth Drivers:</strong>
+                      {renderList(result.forecast?.growth_drivers)}
+                    </div>
+                    <div className="data-block">
+                      <strong>Risks:</strong>
+                      {renderList(result.forecast?.risks)}
+                    </div>
+                    <div className="data-block">
+                      <strong>Mitigations:</strong>
+                      {renderList(result.forecast?.mitigations)}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "marketing" && (
+                  <div className="pipeline-section">
+                    <h3>📣 Marketing Funnel</h3>
+                    <div className="data-block">
+                      <strong>Top of Funnel (TOFU):</strong>
+                      {renderList(result.marketing_funnel?.top_of_funnel)}
+                    </div>
+                    <div className="data-block">
+                      <strong>Middle of Funnel (MOFU):</strong>
+                      {renderList(result.marketing_funnel?.middle_of_funnel)}
+                    </div>
+                    <div className="data-block">
+                      <strong>Bottom of Funnel (BOFU):</strong>
+                      {renderList(result.marketing_funnel?.bottom_of_funnel)}
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "launch" && (
+                  <div className="pipeline-section">
+                    <h3>🚀 Launch Strategy</h3>
+                    <div className="data-block">
+                      <strong>Pre-Launch:</strong>
+                      {renderList(result.launch_strategy?.pre_launch)}
+                    </div>
+                    <div className="data-block">
+                      <strong>Launch:</strong>
+                      {renderList(result.launch_strategy?.launch)}
+                    </div>
+                    <div className="data-block">
+                      <strong>Post-Launch:</strong>
+                      {renderList(result.launch_strategy?.post_launch)}
+                    </div>
+                  </div>
+                )}
+
                 {activeTab === "raw" && (
                   <pre className="raw-json" data-testid="raw-json">{JSON.stringify(result, null, 2)}</pre>
                 )}
