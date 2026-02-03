@@ -15,6 +15,7 @@ from services.opportunity_mapper import OpportunityMapperEngine
 from services.evaluator_engine import EvaluatorEngine
 from services.pricing_engine import PricingEngine
 from services.blueprint_engine import BlueprintEngine
+from services.persona_engine import PersonaEngine
 from services.hybrid_core import get_core, TaskType
 
 router = APIRouter(tags=["strategy"])
