@@ -49,8 +49,17 @@ A comprehensive backend system featuring 19 specialized AI engines orchestrated 
 | Page | Route | Features |
 |------|-------|----------|
 | **Home** | `/` | Health status, engine count, model status, Quick Actions, Engine preview |
-| **Engines Dashboard** | `/engines` | Table of all 19 engines with endpoint paths, descriptions, Test buttons |
+| **Engines Dashboard** | `/engines` | Table of all 19 engines with Method, Endpoint, Description, Test buttons. Click Test opens modal with editable payload and displays JSON response |
 | **Money Pipeline** | `/money-pipeline` | Full form (idea, target revenue, industry, context), sample ideas, tabbed results view |
+
+## Engine Test Modal Features
+- Shows endpoint info (Method + Path)
+- Description of engine purpose
+- Editable JSON payload for POST requests
+- "Run Test" button with loading state
+- Success badge on completion
+- Full JSON response display
+- Supports all 17 testable engines (2 internal engines excluded)
 
 ## Engine Inventory (19 Total)
 
