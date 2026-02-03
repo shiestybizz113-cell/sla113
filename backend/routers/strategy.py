@@ -144,6 +144,65 @@ async def health_check():
         "stages": [
             "routing_engine",
             "strategy_engine",
+            "plan_builder_engine",
+            "canon_enforcer",
+            "drift_monitor",
+            "error_handler"
+        ]
+    }
+
+@router.post("/plan", response_model=PlanResponse)
+async def build_execution_plan(payload: PlanRequest):
+    """Convert a goal or strategy into an actionable execution plan."""
+    try:
+        plan = await PlanBuilderEngine.build_plan_async(
+            goal=payload.goal,
+            strategy=payload.strategy,
+            context=payload.context,
+            model=payload.model
+        )
+        
+        # Apply canon enforcement
+        cleaned_plan = CanonEnforcer.normalize(plan)
+        
+        return PlanResponse(**cleaned_plan)
+    except Exception as e:
+        error_response = ErrorHandler.handle(e, PipelineStage.STRATEGY)
+        return JSONResponse(
+            status_code=500,
+            content=error_response.model_dump()
+        )
+
+@router.post("/strategy-to-plan", response_model=PlanResponse)
+async def convert_strategy_to_plan(payload: StrategyRequest):
+    """Generate strategy and immediately convert to execution plan."""
+    try:
+        # 1. Generate strategy
+        routing_decision = RoutingEngine.route(payload.goal, payload.force_model)
+        raw_strategy = await StrategyEngine.generate_async(
+            model=routing_decision.model,
+            goal=payload.goal,
+            context=payload.context,
+            tone=payload.tone
+        )
+        cleaned_strategy = CanonEnforcer.normalize(raw_strategy)
+        
+        # 2. Convert to plan
+        plan = await PlanBuilderEngine.convert_strategy_to_plan_async(cleaned_strategy)
+        cleaned_plan = CanonEnforcer.normalize(plan)
+        
+        # 3. Monitor drift
+        DriftMonitor.check(cleaned_plan, routing_decision.model)
+        
+        return PlanResponse(**cleaned_plan)
+    except Exception as e:
+        error_response = ErrorHandler.handle(e, PipelineStage.STRATEGY)
+        return JSONResponse(
+            status_code=500,
+            content=error_response.model_dump()
+        )
+            "routing_engine",
+            "strategy_engine",
             "canon_enforcer",
             "drift_monitor"
         ]
