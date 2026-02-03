@@ -71,6 +71,16 @@ A comprehensive backend system featuring 19 specialized AI engines orchestrated 
 - **Execution Timeline**: Vertical timeline showing each step's input/output
 - **Real-time Progress**: Shows "Executing Step X/Y" during execution
 
+## Execution History Features
+- **Auto-logging Middleware**: All engine POST calls automatically logged
+- **Stats Dashboard**: Total executions, success rate, avg duration, error count
+- **Searchable Table**: Search across engine names, endpoints, inputs
+- **Filters**: By engine, status (success/error), source (api/pipeline)
+- **Expandable Details**: Click to view full input/output JSON for each call
+- **Pagination**: Navigate through large log sets
+- **Clear History**: Delete all logs with confirmation
+- **Persistent Storage**: Logs saved to `/app/backend/execution_logs.json`
+
 ## Engine Inventory (19 Total)
 
 ### Business & Strategy Engines
