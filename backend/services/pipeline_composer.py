@@ -138,6 +138,24 @@ class PipelineComposerEngine:
             {"engine": "blueprint_engine", "input": "system_requirements", "output_key": "architecture"},
             {"engine": "plan_builder_engine", "input": "implementation", "output_key": "build_plan"},
             {"engine": "evaluator_engine", "input": "architecture", "output_key": "architecture_review"}
+        ],
+        "idea_to_money": [
+            {"engine": "money_pipeline_engine", "input": "idea", "output_key": "money_pipeline"},
+            {"engine": "persona_engine", "input": "money_pipeline.market_analysis.target_segments", "output_key": "personas"},
+            {"engine": "blueprint_engine", "input": "money_pipeline.product_blueprint", "output_key": "tech_architecture"},
+            {"engine": "evaluator_engine", "input": "money_pipeline", "output_key": "viability_assessment"}
+        ],
+        "anime_full_concept": [
+            {"engine": "anime_lore_engine", "input": "world_concept", "output_key": "lore"},
+            {"engine": "anime_story_engine", "input": "lore", "output_key": "story"},
+            {"engine": "anime_character_engine", "input": "story.premise", "output_key": "protagonist"},
+            {"engine": "anime_character_engine", "input": "story.premise, role=antagonist", "output_key": "antagonist"},
+            {"engine": "art_direction_engine", "input": "story, lore", "output_key": "art_direction"}
+        ],
+        "saas_monetization": [
+            {"engine": "money_pipeline_engine", "input": "saas_idea", "output_key": "full_pipeline"},
+            {"engine": "blueprint_engine", "input": "full_pipeline.product_blueprint", "output_key": "architecture"},
+            {"engine": "plan_builder_engine", "input": "full_pipeline.execution_plan", "output_key": "detailed_plan"}
         ]
     }
     
