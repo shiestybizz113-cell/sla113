@@ -48,9 +48,10 @@ A comprehensive backend system featuring 19 specialized AI engines orchestrated 
 
 | Page | Route | Features |
 |------|-------|----------|
-| **Home** | `/` | Health status, engine count, model status, Quick Actions, Engine preview |
-| **Engines Dashboard** | `/engines` | Table of all 19 engines with Method, Endpoint, Description, Test buttons. Click Test opens modal with editable payload and displays JSON response |
+| **Home** | `/` | Health status, engine count, model status, Quick Actions (4 cards), Engine preview |
+| **Engines Dashboard** | `/engines` | Table of all 19 engines with Method, Endpoint, Description, Test buttons with modal |
 | **Money Pipeline** | `/money-pipeline` | Full form (idea, target revenue, industry, context), sample ideas, tabbed results view |
+| **Pipeline Composer** | `/pipeline-composer` | Chain engines, reorder steps, execute pipeline, timeline results, save/load presets |
 
 ## Engine Test Modal Features
 - Shows endpoint info (Method + Path)
@@ -60,6 +61,14 @@ A comprehensive backend system featuring 19 specialized AI engines orchestrated 
 - Success badge on completion
 - Full JSON response display
 - Supports all 17 testable engines (2 internal engines excluded)
+
+## Pipeline Composer Features
+- **Engine Selection**: Click any of 13 engines to add to pipeline
+- **Step Management**: Reorder with ↑↓ buttons, remove with × button
+- **5 Preset Pipelines**: Full Business Plan, Startup Validation, Idea to Money, Anime Full Concept, Product Launch
+- **Save/Load Custom Pipelines**: Persist to localStorage
+- **Execution Timeline**: Vertical timeline showing each step's input/output
+- **Real-time Progress**: Shows "Executing Step X/Y" during execution
 
 ## Engine Inventory (19 Total)
 
