@@ -137,6 +137,7 @@ async def health_check():
             "anime_lore_engine",
             "anime_story_engine",
             "art_direction_engine",
+            "money_pipeline_engine",
             "pipeline_composer_engine",
             "canon_enforcer",
             "drift_monitor",
