@@ -29,9 +29,41 @@ app = FastAPI(
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
-# Import and include strategy router
-from routers.strategy import router as strategy_router
+# Import and include all engine routers
+from routers.engines import (
+    core_router,
+    strategy_router,
+    drift_router,
+    plan_router,
+    analysis_router,
+    opportunity_router,
+    evaluator_router,
+    pricing_router,
+    blueprint_router,
+    persona_router,
+    pipeline_router,
+    anime_character_router,
+    anime_lore_router,
+    anime_story_router,
+    art_direction_router,
+)
+
+# Include all engine routers
+api_router.include_router(core_router)
 api_router.include_router(strategy_router)
+api_router.include_router(drift_router)
+api_router.include_router(plan_router)
+api_router.include_router(analysis_router)
+api_router.include_router(opportunity_router)
+api_router.include_router(evaluator_router)
+api_router.include_router(pricing_router)
+api_router.include_router(blueprint_router)
+api_router.include_router(persona_router)
+api_router.include_router(pipeline_router)
+api_router.include_router(anime_character_router)
+api_router.include_router(anime_lore_router)
+api_router.include_router(anime_story_router)
+api_router.include_router(art_direction_router)
 
 
 # Define Models
