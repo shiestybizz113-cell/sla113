@@ -567,6 +567,100 @@ async def get_evaluation_presets():
     """Get available evaluation criteria presets."""
     return EvaluatorEngine.get_available_presets()
 
+# ============================================
+# PRICING ENGINE ENDPOINTS
+# ============================================
+
+@router.post("/pricing", response_model=PricingResponse)
+async def generate_pricing(payload: PricingRequest):
+    """Generate pricing structure for a product or service."""
+    try:
+        raw_pricing = await PricingEngine.generate_pricing_async(
+            product=payload.product,
+            description=payload.description,
+            target_market=payload.target_market,
+            competitors=payload.competitors,
+            pricing_model=payload.pricing_model,
+            constraints=payload.constraints,
+            model=payload.model
+        )
+        
+        cleaned_pricing = CanonEnforcer.normalize(raw_pricing)
+        DriftMonitor.check(cleaned_pricing, payload.model or "claude-sonnet-4.5")
+        
+        return PricingResponse(**cleaned_pricing)
+    except Exception as e:
+        error_response = ErrorHandler.handle(e, PipelineStage.STRATEGY)
+        return JSONResponse(
+            status_code=500,
+            content=error_response.model_dump()
+        )
+
+@router.post("/pricing/saas", response_model=PricingResponse)
+async def generate_saas_pricing(payload: SaaSPricingRequest):
+    """Generate SaaS-specific pricing structure."""
+    try:
+        raw_pricing = await PricingEngine.saas_pricing_async(
+            product=payload.product,
+            features=payload.features,
+            target_arr=payload.target_arr
+        )
+        
+        cleaned_pricing = CanonEnforcer.normalize(raw_pricing)
+        DriftMonitor.check(cleaned_pricing, "claude-sonnet-4.5")
+        
+        return PricingResponse(**cleaned_pricing)
+    except Exception as e:
+        error_response = ErrorHandler.handle(e, PipelineStage.STRATEGY)
+        return JSONResponse(
+            status_code=500,
+            content=error_response.model_dump()
+        )
+
+@router.post("/pricing/api", response_model=PricingResponse)
+async def generate_api_pricing(payload: APIPricingRequest):
+    """Generate API-specific pricing structure."""
+    try:
+        raw_pricing = await PricingEngine.api_pricing_async(
+            api_name=payload.api_name,
+            use_cases=payload.use_cases,
+            competitors=payload.competitors
+        )
+        
+        cleaned_pricing = CanonEnforcer.normalize(raw_pricing)
+        DriftMonitor.check(cleaned_pricing, "claude-sonnet-4.5")
+        
+        return PricingResponse(**cleaned_pricing)
+    except Exception as e:
+        error_response = ErrorHandler.handle(e, PipelineStage.STRATEGY)
+        return JSONResponse(
+            status_code=500,
+            content=error_response.model_dump()
+        )
+
+@router.post("/pricing/from-strategy", response_model=PricingResponse)
+async def pricing_from_strategy(strategy: StrategyResponse):
+    """Generate pricing from a strategy output."""
+    try:
+        strategy_dict = strategy.model_dump()
+        raw_pricing = await PricingEngine.price_from_strategy_async(strategy_dict)
+        
+        cleaned_pricing = CanonEnforcer.normalize(raw_pricing)
+        DriftMonitor.check(cleaned_pricing, "claude-sonnet-4.5")
+        
+        return PricingResponse(**cleaned_pricing)
+    except Exception as e:
+        error_response = ErrorHandler.handle(e, PipelineStage.STRATEGY)
+        return JSONResponse(
+            status_code=500,
+            content=error_response.model_dump()
+        )
+
+@router.get("/pricing/models")
+async def get_pricing_models():
+    """Get available pricing model templates."""
+    return PricingEngine.get_pricing_models()
+
 @router.post("/plan", response_model=PlanResponse)
 async def build_execution_plan(payload: PlanRequest):
     """Convert a goal or strategy into an actionable execution plan."""
