@@ -18,6 +18,7 @@ from services.blueprint_engine import BlueprintEngine
 from services.persona_engine import PersonaEngine
 from services.anime_character_engine import AnimeCharacterEngine
 from services.pipeline_composer import PipelineComposerEngine
+from services.art_direction_engine import ArtDirectionEngine
 from services.hybrid_core import get_core, TaskType
 
 router = APIRouter(tags=["strategy"])
