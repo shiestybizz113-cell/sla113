@@ -41,11 +41,14 @@ class DriftReportResponse(BaseModel):
 @router.post("/strategy", response_model=StrategyResponse)
 async def generate_strategy(payload: StrategyRequest):
     """Generate an actionable strategy using the hybrid AI pipeline."""
+    current_stage = None
     try:
         # 1. ROUTING ENGINE
+        current_stage = PipelineStage.ROUTING
         routing_decision = RoutingEngine.route(payload.goal, payload.force_model)
         
         # 2. STRATEGY ENGINE
+        current_stage = PipelineStage.STRATEGY
         raw_output = await StrategyEngine.generate_async(
             model=routing_decision.model,
             goal=payload.goal,
@@ -54,16 +57,22 @@ async def generate_strategy(payload: StrategyRequest):
         )
         
         # 3. CANON ENFORCER
+        current_stage = PipelineStage.CANON
         cleaned_output = CanonEnforcer.normalize(raw_output)
         
         # 4. DRIFT MONITOR
+        current_stage = PipelineStage.DRIFT
         DriftMonitor.check(cleaned_output, routing_decision.model)
         
         # 5. RETURN FINAL JSON
         return StrategyResponse(**cleaned_output)
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        error_response = ErrorHandler.handle(e, current_stage)
+        return JSONResponse(
+            status_code=500,
+            content=error_response.model_dump()
+        )
 
 @router.post("/route", response_model=RoutingResponse)
 async def route_request(payload: StrategyRequest):
