@@ -202,6 +202,7 @@ async def health_check():
             "strategy_engine",
             "plan_builder_engine",
             "analysis_engine",
+            "opportunity_mapper_engine",
             "canon_enforcer",
             "drift_monitor",
             "error_handler"
