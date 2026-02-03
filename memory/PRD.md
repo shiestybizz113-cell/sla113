@@ -80,7 +80,7 @@ A comprehensive playbook and working implementation for a multi-model AI system 
 | `/api/route` | POST | Get routing decision |
 | `/api/drift-report` | GET | Get drift metrics |
 
-## Pipeline Engines (11 Total)
+## Pipeline Engines (12 Total)
 | Engine | Purpose | Default Model |
 |--------|---------|---------------|
 | Hybrid Intelligence Core | Master orchestrator | - |
@@ -91,6 +91,7 @@ A comprehensive playbook and working implementation for a multi-model AI system 
 | Opportunity Mapper Engine | Identify high-leverage opportunities | Claude |
 | Evaluator Engine | Score and evaluate with criteria | Claude |
 | Pricing Engine | Generate pricing structures | Claude |
+| Blueprint Engine | System architecture blueprints | GPT-5.2 |
 | Canon Enforcer | Output normalization | - |
 | Drift Monitor | Behavioral tracking | - |
 | Error Handler | Structured errors | - |
