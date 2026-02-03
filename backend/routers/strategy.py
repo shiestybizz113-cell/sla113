@@ -39,6 +39,30 @@ class DriftReportResponse(BaseModel):
     max_deviation: Optional[float] = None
     message: Optional[str] = None
 
+class PlanRequest(BaseModel):
+    goal: str
+    strategy: Optional[dict] = None
+    context: Optional[str] = None
+    model: Optional[str] = None
+
+class TaskModel(BaseModel):
+    task: str
+    steps: List[str]
+    owner: str
+    dependencies: List[str]
+
+class PhaseModel(BaseModel):
+    name: str
+    duration: str
+    tasks: List[TaskModel]
+
+class PlanResponse(BaseModel):
+    objective: str
+    phases: List[PhaseModel]
+    milestones: List[str]
+    critical_path: List[str]
+    first_24_hours: List[str]
+
 @router.post("/strategy", response_model=StrategyResponse)
 async def generate_strategy(payload: StrategyRequest):
     """Generate an actionable strategy using the hybrid AI pipeline."""
