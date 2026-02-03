@@ -201,9 +201,3 @@ async def convert_strategy_to_plan(payload: StrategyRequest):
             status_code=500,
             content=error_response.model_dump()
         )
-            "routing_engine",
-            "strategy_engine",
-            "canon_enforcer",
-            "drift_monitor"
-        ]
-    }
