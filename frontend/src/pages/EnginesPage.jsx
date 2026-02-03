@@ -4,43 +4,226 @@ import axios from "axios";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-const ENGINE_DATA = {
-  hybrid_intelligence_core: { path: "/api/core/execute", desc: "Master orchestrator - unified execution endpoint" },
-  routing_engine: { path: "/api/route", desc: "Task classification and model selection" },
-  strategy_engine: { path: "/api/strategy", desc: "Generate high-level actionable strategies" },
-  plan_builder_engine: { path: "/api/plan", desc: "Convert goals into execution plans" },
-  analysis_engine: { path: "/api/analyze", desc: "Deep SWOT and structured analysis" },
-  opportunity_mapper_engine: { path: "/api/opportunities", desc: "Identify high-leverage opportunities" },
-  evaluator_engine: { path: "/api/evaluate", desc: "Score and evaluate with criteria" },
-  pricing_engine: { path: "/api/pricing", desc: "Generate pricing structures and tiers" },
-  blueprint_engine: { path: "/api/blueprint", desc: "System architecture blueprints" },
-  persona_engine: { path: "/api/persona", desc: "User/customer persona generation" },
-  anime_character_engine: { path: "/api/anime/character", desc: "Original anime character creation" },
-  anime_lore_engine: { path: "/api/anime/lore", desc: "World-building and mythology" },
-  anime_story_engine: { path: "/api/anime/story", desc: "Narrative structure and story arcs" },
-  art_direction_engine: { path: "/api/art-direction", desc: "Visual direction for creative projects" },
-  money_pipeline_engine: { path: "/api/money-pipeline", desc: "Transform ideas into monetizable systems" },
-  pipeline_composer_engine: { path: "/api/pipeline/compose", desc: "Multi-engine workflow orchestration" },
-  canon_enforcer: { path: "-", desc: "Output normalization (internal)" },
-  drift_monitor: { path: "/api/drift-report", desc: "Model behavioral tracking" },
-  error_handler: { path: "-", desc: "Structured error responses (internal)" }
+const ENGINE_CONFIG = {
+  hybrid_intelligence_core: {
+    path: "/core/execute",
+    method: "POST",
+    desc: "Master orchestrator - unified execution endpoint",
+    payload: { prompt: "Create a strategy for launching a mobile app", task_type: "strategy" }
+  },
+  routing_engine: {
+    path: "/route",
+    method: "POST",
+    desc: "Task classification and model selection",
+    payload: { goal: "Analyze the competitive landscape for AI startups" }
+  },
+  strategy_engine: {
+    path: "/strategy",
+    method: "POST",
+    desc: "Generate high-level actionable strategies",
+    payload: { goal: "Launch a B2B SaaS product in 90 days", context: "Early-stage startup with $50K budget", tone: "direct" }
+  },
+  plan_builder_engine: {
+    path: "/plan",
+    method: "POST",
+    desc: "Convert goals into execution plans",
+    payload: { goal: "Build an MVP for a fitness tracking app", context: "2 developers, 6 week timeline" }
+  },
+  analysis_engine: {
+    path: "/analyze",
+    method: "POST",
+    desc: "Deep SWOT and structured analysis",
+    payload: { subject: "Remote work software market in 2025", focus_area: "competitive dynamics" }
+  },
+  opportunity_mapper_engine: {
+    path: "/opportunities",
+    method: "POST",
+    desc: "Identify high-leverage opportunities",
+    payload: { situation: "E-commerce store with declining traffic", goals: ["Increase revenue by 30%", "Expand to new markets"] }
+  },
+  evaluator_engine: {
+    path: "/evaluate",
+    method: "POST",
+    desc: "Score and evaluate with criteria",
+    payload: { subject: "New Product Idea", content: "AI-powered personal finance assistant that automatically categorizes expenses and suggests savings", criteria_preset: "idea" }
+  },
+  pricing_engine: {
+    path: "/pricing",
+    method: "POST",
+    desc: "Generate pricing structures and tiers",
+    payload: { product: "Cloud-based project management tool", target_market: "Small to medium businesses", pricing_model: "subscription" }
+  },
+  blueprint_engine: {
+    path: "/blueprint",
+    method: "POST",
+    desc: "System architecture blueprints",
+    payload: { system_description: "Real-time chat application with video calling", requirements: ["Handle 10K concurrent users", "End-to-end encryption", "Mobile and web support"] }
+  },
+  persona_engine: {
+    path: "/persona",
+    method: "POST",
+    desc: "User/customer persona generation",
+    payload: { audience: "Startup founders aged 25-40 in tech industry", product: "Business analytics dashboard", industry: "SaaS" }
+  },
+  anime_character_engine: {
+    path: "/anime/character",
+    method: "POST",
+    desc: "Original anime character creation",
+    payload: { concept: "A genius inventor who builds mechanical companions", role: "protagonist", genre: "steampunk", abilities_type: "technical" }
+  },
+  anime_lore_engine: {
+    path: "/anime/lore",
+    method: "POST",
+    desc: "World-building and mythology",
+    payload: { world_concept: "A world where music has magical properties", genre: "fantasy", themes: ["creativity", "harmony", "rebellion"] }
+  },
+  anime_story_engine: {
+    path: "/anime/story",
+    method: "POST",
+    desc: "Narrative structure and story arcs",
+    payload: { concept: "A young musician discovers their songs can heal or destroy", genre: "fantasy", episode_count: 12 }
+  },
+  art_direction_engine: {
+    path: "/art-direction",
+    method: "POST",
+    desc: "Visual direction for creative projects",
+    payload: { project: "Cyberpunk anime series", genre: "sci-fi", mood: "dark and neon", target_audience: "Young adults 18-30" }
+  },
+  money_pipeline_engine: {
+    path: "/money-pipeline",
+    method: "POST",
+    desc: "Transform ideas into monetizable systems",
+    payload: { idea: "AI-powered language learning app with personalized lessons", target_revenue: "$1M ARR", industry: "EdTech" }
+  },
+  pipeline_composer_engine: {
+    path: "/pipeline/compose",
+    method: "POST",
+    desc: "Multi-engine workflow orchestration",
+    payload: { request: "Create a full business plan for a food delivery startup", preferred_engines: ["strategy_engine", "pricing_engine", "persona_engine"] }
+  },
+  canon_enforcer: {
+    path: null,
+    method: null,
+    desc: "Output normalization (internal)",
+    payload: null
+  },
+  drift_monitor: {
+    path: "/drift-report",
+    method: "GET",
+    desc: "Model behavioral tracking",
+    payload: null
+  },
+  error_handler: {
+    path: null,
+    method: null,
+    desc: "Structured error responses (internal)",
+    payload: null
+  }
 };
 
-const TEST_PAYLOADS = {
-  strategy_engine: { goal: "Launch a SaaS product in 90 days", model: "gemini-3-flash" },
-  analysis_engine: { subject: "Remote work software market", model: "gemini-3-flash" },
-  pricing_engine: { product: "AI Writing Assistant", model: "gemini-3-flash" },
-  persona_engine: { audience: "Startup founders aged 25-40", model: "gemini-3-flash" },
-  blueprint_engine: { system_description: "E-commerce platform with payments", model: "gemini-3-flash" },
-  anime_character_engine: { concept: "Time-traveling samurai", genre: "shonen", model: "gemini-3-flash" },
-  money_pipeline_engine: { idea: "AI tutoring platform", model: "gemini-3-flash" }
+const TestModal = ({ engine, config, onClose }) => {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [payload, setPayload] = useState(JSON.stringify(config.payload, null, 2));
+
+  const runTest = async () => {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      let response;
+      const url = `${API}${config.path}`;
+      
+      if (config.method === "GET") {
+        response = await axios.get(url, { timeout: 120000 });
+      } else {
+        const parsedPayload = JSON.parse(payload);
+        // Add model override for faster testing
+        if (!parsedPayload.model) {
+          parsedPayload.model = "gemini-3-flash";
+        }
+        response = await axios.post(url, parsedPayload, { timeout: 120000 });
+      }
+      
+      setResult(response.data);
+    } catch (e) {
+      setError(e.response?.data?.detail || e.message || "Request failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatEngineName = (name) => {
+    return name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose} data-testid="test-modal">
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{formatEngineName(engine)}</h2>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        
+        <div className="modal-body">
+          <div className="modal-info">
+            <p><strong>Endpoint:</strong> <code>{config.method} {config.path}</code></p>
+            <p><strong>Description:</strong> {config.desc}</p>
+          </div>
+
+          {config.method === "POST" && (
+            <div className="payload-section">
+              <label>Request Payload:</label>
+              <textarea
+                value={payload}
+                onChange={(e) => setPayload(e.target.value)}
+                className="payload-editor"
+                rows={8}
+                data-testid="payload-editor"
+              />
+            </div>
+          )}
+
+          <button
+            className="run-test-btn"
+            onClick={runTest}
+            disabled={loading}
+            data-testid="run-test-btn"
+          >
+            {loading ? (
+              <><span className="btn-spinner"></span> Running...</>
+            ) : (
+              <><span>▶</span> Run Test</>
+            )}
+          </button>
+
+          {error && (
+            <div className="modal-error" data-testid="modal-error">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+
+          {result && (
+            <div className="modal-result" data-testid="modal-result">
+              <div className="result-header">
+                <strong>Response:</strong>
+                <span className="success-badge">✓ Success</span>
+              </div>
+              <pre className="result-json">{JSON.stringify(result, null, 2)}</pre>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const EnginesPage = () => {
   const [engines, setEngines] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [testingEngine, setTestingEngine] = useState(null);
-  const [testResults, setTestResults] = useState({});
+  const [selectedEngine, setSelectedEngine] = useState(null);
 
   useEffect(() => {
     fetchEngines();
@@ -54,24 +237,6 @@ const EnginesPage = () => {
       console.error(e);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const testEngine = async (engineName) => {
-    const payload = TEST_PAYLOADS[engineName];
-    if (!payload) return;
-
-    const engineInfo = ENGINE_DATA[engineName];
-    if (!engineInfo || engineInfo.path === "-") return;
-
-    setTestingEngine(engineName);
-    try {
-      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}${engineInfo.path}`, payload, { timeout: 120000 });
-      setTestResults(prev => ({ ...prev, [engineName]: { success: true, data: res.data } }));
-    } catch (e) {
-      setTestResults(prev => ({ ...prev, [engineName]: { success: false, error: e.message } }));
-    } finally {
-      setTestingEngine(null);
     }
   };
 
@@ -98,6 +263,11 @@ const EnginesPage = () => {
 
   const formatName = (name) => name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
+  const canTest = (engine) => {
+    const config = ENGINE_CONFIG[engine];
+    return config && config.path !== null;
+  };
+
   if (loading) {
     return <div className="page-container"><div className="loading-box"><div className="spinner"></div></div></div>;
   }
@@ -107,7 +277,7 @@ const EnginesPage = () => {
       <header className="page-header">
         <Link to="/" className="back-link">← Home</Link>
         <h1>📋 Engine Dashboard</h1>
-        <p className="subtitle">{engines.length} AI engines available</p>
+        <p className="subtitle">{engines.length} AI engines available • Click "Test" to try any engine</p>
       </header>
 
       <div className="engines-table-container">
@@ -115,6 +285,7 @@ const EnginesPage = () => {
           <thead>
             <tr>
               <th>Engine</th>
+              <th>Method</th>
               <th>Endpoint</th>
               <th>Description</th>
               <th>Action</th>
@@ -122,9 +293,8 @@ const EnginesPage = () => {
           </thead>
           <tbody>
             {engines.map((engine) => {
-              const info = ENGINE_DATA[engine] || { path: "-", desc: "No description" };
-              const canTest = TEST_PAYLOADS[engine] && info.path !== "-";
-              const result = testResults[engine];
+              const config = ENGINE_CONFIG[engine] || { path: "-", method: "-", desc: "No description" };
+              const testable = canTest(engine);
               
               return (
                 <tr key={engine} data-testid={`engine-row-${engine}`}>
@@ -132,23 +302,27 @@ const EnginesPage = () => {
                     <span className="engine-icon">{getIcon(engine)}</span>
                     <span>{formatName(engine)}</span>
                   </td>
-                  <td className="endpoint-cell">
-                    <code>{info.path}</code>
+                  <td className="method-cell">
+                    {config.method ? (
+                      <span className={`method-badge ${config.method?.toLowerCase()}`}>
+                        {config.method}
+                      </span>
+                    ) : (
+                      <span className="method-badge internal">-</span>
+                    )}
                   </td>
-                  <td className="desc-cell">{info.desc}</td>
+                  <td className="endpoint-cell">
+                    <code>{config.path || "internal"}</code>
+                  </td>
+                  <td className="desc-cell">{config.desc}</td>
                   <td className="action-cell">
-                    {engine === 'money_pipeline_engine' ? (
-                      <Link to="/money-pipeline" className="btn-small btn-primary">
-                        Open →
-                      </Link>
-                    ) : canTest ? (
+                    {testable ? (
                       <button
-                        className={`btn-small ${result?.success ? 'btn-success' : result?.success === false ? 'btn-error' : 'btn-secondary'}`}
-                        onClick={() => testEngine(engine)}
-                        disabled={testingEngine === engine}
+                        className="btn-small btn-test"
+                        onClick={() => setSelectedEngine(engine)}
                         data-testid={`test-btn-${engine}`}
                       >
-                        {testingEngine === engine ? '...' : result?.success ? '✓' : result?.success === false ? '✗' : 'Test'}
+                        Test
                       </button>
                     ) : (
                       <span className="internal-badge">Internal</span>
@@ -161,22 +335,21 @@ const EnginesPage = () => {
         </table>
       </div>
 
-      {Object.keys(testResults).length > 0 && (
-        <section className="test-results-section">
-          <h2>Test Results</h2>
-          <div className="results-grid">
-            {Object.entries(testResults).map(([engine, result]) => (
-              <div key={engine} className={`result-card ${result.success ? 'success' : 'error'}`}>
-                <h4>{getIcon(engine)} {formatName(engine)}</h4>
-                {result.success ? (
-                  <pre className="result-json">{JSON.stringify(result.data, null, 2).slice(0, 500)}...</pre>
-                ) : (
-                  <p className="error-text">{result.error}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
+      <div className="engines-legend">
+        <h4>Legend</h4>
+        <div className="legend-items">
+          <span><span className="method-badge post">POST</span> Requires input payload</span>
+          <span><span className="method-badge get">GET</span> No input required</span>
+          <span><span className="method-badge internal">-</span> Internal engine (not directly callable)</span>
+        </div>
+      </div>
+
+      {selectedEngine && ENGINE_CONFIG[selectedEngine] && (
+        <TestModal
+          engine={selectedEngine}
+          config={ENGINE_CONFIG[selectedEngine]}
+          onClose={() => setSelectedEngine(null)}
+        />
       )}
     </div>
   );
