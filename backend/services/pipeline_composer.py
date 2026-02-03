@@ -88,6 +88,26 @@ class PipelineComposerEngine:
             "purpose": "Original anime character creation",
             "input": "concept, role, genre, abilities_type",
             "output": "name, role, appearance, personality, abilities, motivations, backstory, arc"
+        },
+        "anime_lore_engine": {
+            "purpose": "World-building, mythology, factions, history for anime/fantasy",
+            "input": "world_concept, genre, themes, influences",
+            "output": "world_name, setting, core_mythology, factions, locations, power_system, history, mysteries"
+        },
+        "anime_story_engine": {
+            "purpose": "Narrative structure, story arcs, plot points, episode breakdowns",
+            "input": "concept, genre, episode_count, characters, lore",
+            "output": "title, logline, premise, themes, story_arcs, key_plot_points, climax, resolution, hooks"
+        },
+        "art_direction_engine": {
+            "purpose": "Complete art direction for creative projects",
+            "input": "project, genre, mood, target_audience, medium",
+            "output": "visual_style, color_palette, character_style, environment_style, camera_direction, texture_rules"
+        },
+        "money_pipeline_engine": {
+            "purpose": "Transform any idea into complete monetizable system",
+            "input": "idea, context, industry, target_revenue, constraints",
+            "output": "market_analysis, opportunity_map, pricing_model, business_model, product_blueprint, execution_plan, forecast, marketing_funnel, launch_strategy"
         }
     }
     
