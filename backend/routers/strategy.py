@@ -1020,6 +1020,106 @@ async def get_persona_templates():
     """Get available persona templates."""
     return PersonaEngine.get_persona_templates()
 
+# ============================================
+# ANIME CHARACTER ENGINE ENDPOINTS
+# ============================================
+
+@router.post("/anime/character", response_model=AnimeCharacterResponse)
+async def generate_anime_character(payload: AnimeCharacterRequest):
+    """Generate an original anime character."""
+    try:
+        raw_character = await AnimeCharacterEngine.generate_character_async(
+            concept=payload.concept,
+            role=payload.role,
+            genre=payload.genre,
+            abilities_type=payload.abilities_type,
+            context=payload.context,
+            model=payload.model
+        )
+        
+        cleaned_character = CanonEnforcer.normalize(raw_character)
+        DriftMonitor.check(cleaned_character, payload.model or "claude-sonnet-4.5")
+        
+        return AnimeCharacterResponse(**cleaned_character)
+    except Exception as e:
+        error_response = ErrorHandler.handle(e, PipelineStage.STRATEGY)
+        return JSONResponse(
+            status_code=500,
+            content=error_response.model_dump()
+        )
+
+@router.post("/anime/protagonist", response_model=AnimeCharacterResponse)
+async def generate_protagonist(payload: ProtagonistRequest):
+    """Generate an anime protagonist character."""
+    try:
+        raw_character = await AnimeCharacterEngine.generate_protagonist_async(
+            concept=payload.concept,
+            genre=payload.genre,
+            abilities_type=payload.abilities_type
+        )
+        
+        cleaned_character = CanonEnforcer.normalize(raw_character)
+        DriftMonitor.check(cleaned_character, "claude-sonnet-4.5")
+        
+        return AnimeCharacterResponse(**cleaned_character)
+    except Exception as e:
+        error_response = ErrorHandler.handle(e, PipelineStage.STRATEGY)
+        return JSONResponse(
+            status_code=500,
+            content=error_response.model_dump()
+        )
+
+@router.post("/anime/antagonist", response_model=AnimeCharacterResponse)
+async def generate_antagonist(payload: AntagonistRequest):
+    """Generate an anime antagonist/villain character."""
+    try:
+        raw_character = await AnimeCharacterEngine.generate_antagonist_async(
+            concept=payload.concept,
+            genre=payload.genre,
+            protagonist=payload.protagonist
+        )
+        
+        cleaned_character = CanonEnforcer.normalize(raw_character)
+        DriftMonitor.check(cleaned_character, "claude-sonnet-4.5")
+        
+        return AnimeCharacterResponse(**cleaned_character)
+    except Exception as e:
+        error_response = ErrorHandler.handle(e, PipelineStage.STRATEGY)
+        return JSONResponse(
+            status_code=500,
+            content=error_response.model_dump()
+        )
+
+@router.post("/anime/cast")
+async def generate_cast(payload: CastRequest):
+    """Generate a full cast of anime characters for a story."""
+    try:
+        characters = await AnimeCharacterEngine.generate_cast_async(
+            story_concept=payload.story_concept,
+            genre=payload.genre,
+            cast_size=payload.cast_size or 5
+        )
+        
+        cleaned_characters = [CanonEnforcer.normalize(c) for c in characters]
+        
+        return {"cast": cleaned_characters, "count": len(cleaned_characters)}
+    except Exception as e:
+        error_response = ErrorHandler.handle(e, PipelineStage.STRATEGY)
+        return JSONResponse(
+            status_code=500,
+            content=error_response.model_dump()
+        )
+
+@router.get("/anime/archetypes")
+async def get_character_archetypes():
+    """Get available character archetypes."""
+    return AnimeCharacterEngine.get_archetypes()
+
+@router.get("/anime/genres")
+async def get_anime_genres():
+    """Get available anime genres."""
+    return AnimeCharacterEngine.get_genres()
+
 @router.post("/plan", response_model=PlanResponse)
 async def build_execution_plan(payload: PlanRequest):
     """Convert a goal or strategy into an actionable execution plan."""
