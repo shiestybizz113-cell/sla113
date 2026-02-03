@@ -237,6 +237,46 @@ class BlueprintResponse(BaseModel):
     constraints: List[str]
     risks: List[str]
 
+class PersonaRequest(BaseModel):
+    audience: str
+    context: Optional[str] = None
+    product: Optional[str] = None
+    industry: Optional[str] = None
+    model: Optional[str] = None
+
+class BuyerPersonaRequest(BaseModel):
+    role: str
+    company_size: Optional[str] = None
+    industry: Optional[str] = None
+    budget_range: Optional[str] = None
+
+class UserPersonaRequest(BaseModel):
+    user_type: str
+    use_case: Optional[str] = None
+    experience_level: Optional[str] = None
+
+class ICPPersonaRequest(BaseModel):
+    product: str
+    ideal_customer: str
+    market: Optional[str] = None
+
+class MultiplePersonasRequest(BaseModel):
+    audiences: List[str]
+    context: Optional[str] = None
+    product: Optional[str] = None
+
+class PersonaResponse(BaseModel):
+    name: str
+    role: str
+    background: str
+    goals: List[str]
+    pains: List[str]
+    triggers: List[str]
+    buying_criteria: List[str]
+    objections: List[str]
+    preferred_channels: List[str]
+    preferred_messaging: List[str]
+
 @router.post("/strategy", response_model=StrategyResponse)
 async def generate_strategy(payload: StrategyRequest):
     """Generate an actionable strategy using the hybrid AI pipeline."""
