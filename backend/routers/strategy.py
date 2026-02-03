@@ -278,6 +278,45 @@ class PersonaResponse(BaseModel):
     preferred_channels: List[str]
     preferred_messaging: List[str]
 
+class AnimeCharacterRequest(BaseModel):
+    concept: str
+    role: Optional[str] = None
+    genre: Optional[str] = None
+    abilities_type: Optional[str] = None
+    context: Optional[str] = None
+    model: Optional[str] = None
+
+class ProtagonistRequest(BaseModel):
+    concept: str
+    genre: Optional[str] = None
+    abilities_type: Optional[str] = None
+
+class AntagonistRequest(BaseModel):
+    concept: str
+    genre: Optional[str] = None
+    protagonist: Optional[str] = None
+
+class CastRequest(BaseModel):
+    story_concept: str
+    genre: Optional[str] = None
+    cast_size: Optional[int] = 5
+
+class CharacterRelationshipsModel(BaseModel):
+    allies: List[str]
+    rivals: List[str]
+    enemies: List[str]
+
+class AnimeCharacterResponse(BaseModel):
+    name: str
+    role: str
+    appearance: str
+    personality: List[str]
+    abilities: List[str]
+    motivations: List[str]
+    backstory: str
+    relationships: CharacterRelationshipsModel
+    arc: str
+
 @router.post("/strategy", response_model=StrategyResponse)
 async def generate_strategy(payload: StrategyRequest):
     """Generate an actionable strategy using the hybrid AI pipeline."""
