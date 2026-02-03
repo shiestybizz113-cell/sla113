@@ -339,6 +339,75 @@ class PipelineComposeResponse(BaseModel):
     pipeline: List[Dict[str, Any]]
     final_output_structure: Dict[str, Any]
 
+class ArtDirectionRequest(BaseModel):
+    project: str
+    genre: Optional[str] = None
+    mood: Optional[str] = None
+    target_audience: Optional[str] = None
+    medium: Optional[str] = None
+    constraints: Optional[List[str]] = None
+    model: Optional[str] = None
+
+class AnimeArtRequest(BaseModel):
+    project: str
+    sub_style: Optional[str] = None
+    era: Optional[str] = None
+
+class GameArtRequest(BaseModel):
+    project: str
+    game_genre: str
+    platform: Optional[str] = None
+
+class BrandArtRequest(BaseModel):
+    brand_name: str
+    industry: str
+    personality: List[str]
+
+class VisualStyleModel(BaseModel):
+    genre: str
+    influences: List[str]
+    description: str
+
+class ColorPaletteModel(BaseModel):
+    primary: List[str]
+    secondary: List[str]
+    accents: List[str]
+    mood_notes: str
+
+class CharacterStyleModel(BaseModel):
+    proportions: str
+    linework: str
+    shading: str
+    expression_rules: List[str]
+    silhouette_rules: List[str]
+
+class EnvironmentStyleModel(BaseModel):
+    lighting: str
+    atmosphere: str
+    detail_level: str
+    composition_rules: List[str]
+
+class CameraDirectionModel(BaseModel):
+    framing: List[str]
+    angles: List[str]
+    motion_rules: List[str]
+
+class TextureRulesModel(BaseModel):
+    materials: List[str]
+    surface_treatment: str
+    consistency_requirements: List[str]
+
+class ArtDirectionResponse(BaseModel):
+    project_name: str
+    visual_style: VisualStyleModel
+    color_palette: ColorPaletteModel
+    character_style: CharacterStyleModel
+    environment_style: EnvironmentStyleModel
+    camera_direction: CameraDirectionModel
+    texture_rules: TextureRulesModel
+    production_constraints: List[str]
+    do_not_use: List[str]
+
 @router.post("/strategy", response_model=StrategyResponse)
 async def generate_strategy(payload: StrategyRequest):
     """Generate an actionable strategy using the hybrid AI pipeline."""
