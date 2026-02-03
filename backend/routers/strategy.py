@@ -119,6 +119,41 @@ class OpportunityResponse(BaseModel):
     top_3_opportunities: List[str]
     recommended_next_move: str
 
+class EvaluationRequest(BaseModel):
+    subject: str
+    content: str
+    criteria: Optional[List[Dict[str, Any]]] = None
+    criteria_preset: Optional[str] = None  # strategy, idea, plan, offer
+    context: Optional[str] = None
+    model: Optional[str] = None
+
+class IdeaEvaluationRequest(BaseModel):
+    idea: str
+    context: Optional[str] = None
+
+class OfferEvaluationRequest(BaseModel):
+    offer: str
+    target_audience: Optional[str] = None
+
+class CompareRequest(BaseModel):
+    options: List[Dict[str, str]]  # [{"name": "...", "content": "..."}]
+    criteria_preset: Optional[str] = None
+
+class CriterionModel(BaseModel):
+    name: str
+    score: int
+    weight: float
+    rationale: str
+
+class EvaluationResponse(BaseModel):
+    subject: str
+    criteria: List[CriterionModel]
+    weighted_score: float
+    strengths: List[str]
+    weaknesses: List[str]
+    improvement_suggestions: List[str]
+    go_no_go: str
+
 @router.post("/strategy", response_model=StrategyResponse)
 async def generate_strategy(payload: StrategyRequest):
     """Generate an actionable strategy using the hybrid AI pipeline."""
