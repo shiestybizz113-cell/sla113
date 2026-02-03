@@ -10,7 +10,7 @@ from typing import List
 import uuid
 from datetime import datetime, timezone
 
-
+# Load environment variables first
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -20,10 +20,18 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # Create the main app without a prefix
-app = FastAPI()
+app = FastAPI(
+    title="Hybrid AI Stack",
+    description="Multi-model AI pipeline with GPT-5.2, Claude Sonnet 4.5, and Gemini 3 Flash",
+    version="1.0.0"
+)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# Import and include strategy router
+from routers.strategy import router as strategy_router
+api_router.include_router(strategy_router)
 
 
 # Define Models
