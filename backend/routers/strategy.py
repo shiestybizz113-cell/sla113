@@ -202,3 +202,102 @@ async def convert_strategy_to_plan(payload: StrategyRequest):
             status_code=500,
             content=error_response.model_dump()
         )
+
+# ============================================
+# HYBRID INTELLIGENCE CORE ENDPOINTS
+# ============================================
+
+class CoreRequest(BaseModel):
+    """Unified request for Hybrid Intelligence Core."""
+    prompt: str
+    task_type: Optional[str] = None  # strategy, plan, analysis, code, quick
+    context: Optional[str] = None
+    force_model: Optional[str] = None
+
+class CoreResponse(BaseModel):
+    """Unified response from Hybrid Intelligence Core."""
+    success: bool
+    data: Optional[Dict[str, Any]] = None
+    error: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+@router.post("/core/execute", response_model=CoreResponse)
+async def core_execute(payload: CoreRequest):
+    """
+    Execute via Hybrid Intelligence Core.
+    
+    The Core automatically:
+    1. Classifies the task type
+    2. Routes to optimal model
+    3. Executes appropriate engine
+    4. Enforces canon rules
+    5. Monitors drift
+    6. Handles errors
+    """
+    core = get_core()
+    
+    # Parse task type if provided
+    task_type = None
+    if payload.task_type:
+        try:
+            task_type = TaskType(payload.task_type)
+        except ValueError:
+            pass
+    
+    result = await core.execute(
+        prompt=payload.prompt,
+        task_type=task_type,
+        context=payload.context,
+        force_model=payload.force_model
+    )
+    
+    if result.success:
+        return CoreResponse(
+            success=True,
+            data=result.data,
+            metadata=result.metadata
+        )
+    else:
+        return JSONResponse(
+            status_code=500,
+            content=result.error
+        )
+
+@router.post("/core/strategy-to-plan", response_model=CoreResponse)
+async def core_strategy_to_plan(payload: CoreRequest):
+    """Execute full strategy → plan pipeline via Core."""
+    core = get_core()
+    
+    result = await core.execute_strategy_to_plan(
+        goal=payload.prompt,
+        context=payload.context,
+        force_model=payload.force_model
+    )
+    
+    if result.success:
+        return CoreResponse(
+            success=True,
+            data=result.data,
+            metadata=result.metadata
+        )
+    else:
+        return JSONResponse(
+            status_code=500,
+            content=result.error
+        )
+
+@router.get("/core/status")
+async def core_status():
+    """Get Hybrid Intelligence Core system status."""
+    core = get_core()
+    return core.get_system_status()
+
+@router.get("/core/log")
+async def core_execution_log(limit: int = 50):
+    """Get recent execution log from the Core."""
+    core = get_core()
+    return {
+        "log": core.get_execution_log(limit),
+        "total_executions": len(core.execution_log)
+    }
+
