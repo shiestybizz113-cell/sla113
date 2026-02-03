@@ -277,6 +277,7 @@ async def health_check():
             "analysis_engine",
             "opportunity_mapper_engine",
             "evaluator_engine",
+            "pricing_engine",
             "canon_enforcer",
             "drift_monitor",
             "error_handler"
