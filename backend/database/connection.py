@@ -150,6 +150,15 @@ async def create_indexes():
         IndexModel([("created_at", DESCENDING)]),
     ])
     
+    # Password reset tokens indexes
+    await db.password_reset_tokens.create_indexes([
+        IndexModel([("token_hash", ASCENDING)], unique=True),
+        IndexModel([("email", ASCENDING)]),
+        IndexModel([("expires_at", ASCENDING)]),
+        IndexModel([("ip_address", ASCENDING)]),
+        IndexModel([("created_at", DESCENDING)]),
+    ])
+    
     logger.info("Database indexes created successfully")
 
 
