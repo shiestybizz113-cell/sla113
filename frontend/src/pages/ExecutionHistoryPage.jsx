@@ -234,7 +234,7 @@ const ExecutionHistoryPage = () => {
               {logs.map((log) => (
                 <>
                   <tr key={log.id} className={`log-row ${log.status}`} data-testid={`log-${log.id}`}>
-                    <td className="timestamp-cell">{formatTimestamp(log.timestamp)}</td>
+                    <td className="timestamp-cell">{formatTimestamp(log.created_at)}</td>
                     <td className="engine-cell">
                       <span className="engine-icon">{getEngineIcon(log.engine)}</span>
                       {formatEngineName(log.engine)}
