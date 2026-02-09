@@ -12,6 +12,7 @@ from .connection import (
     audit_logs_collection,
     pipelines_collection,
     execution_logs_collection,
+    password_reset_tokens_collection,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "audit_logs_collection",
     "pipelines_collection",
     "execution_logs_collection",
+    "password_reset_tokens_collection",
 ]
