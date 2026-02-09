@@ -199,23 +199,22 @@ A comprehensive backend system featuring 19 specialized AI engines orchestrated 
 - Multi-page React frontend (6 pages including Analytics Dashboard)
 - Modular FastAPI backend
 - Execution logging & history
-- Real-time Monitoring & Analytics Dashboard
+- Real-time Monitoring & Analytics Dashboard with **real system metrics**
 
 ## Analytics Dashboard (Feb 9, 2025)
 New `/analytics` page with 3 tabs:
 - **Engine Performance**: Requests/engine bar chart, latency chart, error rates table
 - **AI Quality & Drift**: Confidence trends (12h), drift alerts, model comparison
-- **System Health**: CPU/Memory/Disk gauges, connections, uptime, pipeline flow
+- **System Health**: CPU/Memory/Disk gauges, detailed metrics, load average, connections, uptime, pipeline flow
 
 **Features**: Real-time polling (5s), LIVE indicator, 9 backend endpoints
-**Note**: System metrics use MOCK data (psutil integration planned for production)
+**psutil Integration**: ✅ Complete - real CPU, RAM, Disk, Load Average metrics with safe fallbacks
 
 ## Next Tasks
-- Integrate real system metrics with psutil
 - Add WebSocket support for sub-second updates
+- Alert/notification system for drift events
 
 ## Backlog
-- Alert/notification system for drift events
 - Historical analytics data export
 - Custom dashboard widgets
 - Engine performance comparison dashboard
