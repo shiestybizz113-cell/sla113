@@ -78,6 +78,7 @@ api_router.include_router(profile_router)
 api_router.include_router(invites_router)  # Public invite endpoints
 api_router.include_router(billing_router)  # Billing endpoints
 api_router.include_router(api_keys_router)  # API key management
+api_router.include_router(admin_router)  # Admin endpoints (system admin only)
 
 # Include protected routers (require auth)
 api_router.include_router(history_protected_router)  # /api/history (protected)
