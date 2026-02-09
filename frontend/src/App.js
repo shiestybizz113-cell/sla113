@@ -78,6 +78,16 @@ function App() {
                 <TeamSettingsPage />
               </ProtectedRoute>
             } />
+            <Route path="/billing" element={
+              <ProtectedRoute>
+                <BillingPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/api-keys" element={
+              <ProtectedRoute>
+                <APIKeysPage />
+              </ProtectedRoute>
+            } />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
