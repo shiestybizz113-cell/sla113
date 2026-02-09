@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from typing import Optional
 from pydantic import BaseModel
 
-from core.dependencies import get_current_user, get_client_info
+from core.dependencies import get_current_user, get_current_team, get_client_info
 from services.billing_service import (
     create_checkout_session,
     create_portal_session,
