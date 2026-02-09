@@ -46,6 +46,7 @@ from routers.profile import router as profile_router
 from routers.invites import router as invites_router
 from routers.billing import router as billing_router
 from routers.api_keys import router as api_keys_router
+from routers.admin import router as admin_router
 
 # Import and include all engine routers
 from routers.engines import (
