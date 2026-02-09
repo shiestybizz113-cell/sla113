@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const HomePage = () => {
+  const { user, currentTeam, authAxios } = useAuth();
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [testLoading, setTestLoading] = useState(false);
@@ -29,7 +31,7 @@ const HomePage = () => {
     setTestLoading(true);
     setTestResult(null);
     try {
-      const res = await axios.post(`${API}/money-pipeline`, {
+      const res = await authAxios().post(`/engines/money-pipeline`, {
         idea: "AI-powered task management for remote teams",
         model: "gemini-3-flash"
       }, { timeout: 120000 });
