@@ -30,6 +30,9 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
             <Route path="/invite/accept" element={<AcceptInvitePage />} />
             
             {/* Protected routes */}
