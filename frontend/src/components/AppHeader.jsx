@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import TeamSwitcher from './TeamSwitcher';
 
 const AppHeader = () => {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, currentTeam } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
@@ -40,6 +40,10 @@ const AppHeader = () => {
     }
     return '?';
   };
+
+  // Check if user is owner/admin of current team
+  const isTeamAdmin = currentTeam && ['owner', 'admin'].includes(currentTeam.role);
+  const isSystemAdmin = user?.system_role === 'admin';
 
   if (!isAuthenticated) {
     return (
@@ -99,9 +103,50 @@ const AppHeader = () => {
                 onClick={() => setShowUserMenu(false)}
                 data-testid="profile-link"
               >
-                <span>⚙️</span>
+                <span>👤</span>
                 <span>Profile Settings</span>
               </Link>
+              
+              {isTeamAdmin && (
+                <>
+                  <Link
+                    to="/billing"
+                    className="dropdown-item"
+                    onClick={() => setShowUserMenu(false)}
+                    data-testid="billing-link"
+                  >
+                    <span>💳</span>
+                    <span>Billing</span>
+                  </Link>
+                  
+                  <Link
+                    to="/settings/api-keys"
+                    className="dropdown-item"
+                    onClick={() => setShowUserMenu(false)}
+                    data-testid="api-keys-link"
+                  >
+                    <span>🔑</span>
+                    <span>API Keys</span>
+                  </Link>
+                </>
+              )}
+              
+              {isSystemAdmin && (
+                <>
+                  <div className="dropdown-divider"></div>
+                  <Link
+                    to="/admin/overview"
+                    className="dropdown-item admin-link"
+                    onClick={() => setShowUserMenu(false)}
+                    data-testid="admin-link"
+                  >
+                    <span>🛡️</span>
+                    <span>Admin Dashboard</span>
+                  </Link>
+                </>
+              )}
+              
+              <div className="dropdown-divider"></div>
               
               <button
                 className="dropdown-item logout"
