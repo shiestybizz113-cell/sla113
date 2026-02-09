@@ -168,11 +168,7 @@ const ProfilePage = () => {
   };
 
   if (!user) {
-    return (
-      <div className="page-container" data-testid="profile-loading">
-        <div className="spinner"></div>
-      </div>
-    );
+    return <PageLoading message="Loading profile..." />;
   }
 
   return (
@@ -184,11 +180,12 @@ const ProfilePage = () => {
 
       <div className="profile-grid">
         {/* Profile Info Card */}
-        <section className="profile-card" data-testid="profile-info-card">
+        <section className="profile-card settings-card" data-testid="profile-info-card">
           <div className="card-header">
             <h2>Profile Information</h2>
           </div>
-          <form onSubmit={handleUpdateProfile} className="profile-form">
+          <div className="card-body" style={{ padding: '1.25rem' }}>
+            <form onSubmit={handleUpdateProfile} className="profile-form">
             <div className="form-group">
               <label>Email</label>
               <input
