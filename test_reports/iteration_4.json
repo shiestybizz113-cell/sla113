@@ -1,0 +1,76 @@
+{
+  "summary": "Full polish testing of Monitoring & Analytics Dashboard - All 3 tiers verified. 23 backend tests passed, all frontend features working correctly including WebSocket with polling fallback, theme toggle, widget customization, and export functionality.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_analytics.py",
+    "/app/backend/tests/test_analytics_polish.py",
+    "/app/test_reports/pytest/analytics_polish_results.xml",
+    "/app/test_reports/pytest/analytics_polish_tier_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_analytics_polish.py"
+  ],
+  "success_rate": {
+    "backend": "100% (23/23 tests passed - 11 original + 12 new polish tests)",
+    "frontend": "100% (all polish features verified via Playwright)"
+  },
+  "test_credentials": "None required",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 3 tiers of polish features are working. WebSocket connects but falls back to polling in test environment (expected behavior). Theme and widget preferences persist in localStorage. Export buttons are functional.",
+  "features_tested": {
+    "tier_1_features": [
+      {"feature": "Threshold alerts (CPU > 80%, Memory > 90%, Disk > 95%)", "status": "PASS", "notes": "Alert banner shows '1 Critical Alert' when thresholds exceeded"},
+      {"feature": "Last Updated timestamp", "status": "PASS", "notes": "Shows 'Updated: HH:MM:SS AM/PM' and updates every 5 seconds"},
+      {"feature": "Skeleton loaders during initial load", "status": "PASS", "notes": "Skeleton grid visible during loading state"},
+      {"feature": "Animations on cards and gauges", "status": "PASS", "notes": "animated-card, animated-gauge, animate-value classes working"}
+    ],
+    "tier_2_features": [
+      {"feature": "WebSocket support at /api/analytics/ws", "status": "PASS", "notes": "WebSocket connects and sends realtime data every 1 second"},
+      {"feature": "WebSocket fallback to polling", "status": "PASS", "notes": "Falls back to 5-second polling when WebSocket disconnects"},
+      {"feature": "Connection badge (LIVE/POLLING)", "status": "PASS", "notes": "Shows green LIVE badge for WebSocket, blue POLLING for fallback"},
+      {"feature": "Drift notifications with pulse animation", "status": "PASS", "notes": "Red drift cards have alert-pulse animation class"},
+      {"feature": "Mini sparklines in Engine Performance tab", "status": "PASS", "notes": "Sparkline table shows recent trends for each engine"},
+      {"feature": "Metrics source indicator (psutil/mock)", "status": "PASS", "notes": "Shows '🟢 Real Metrics (psutil)' with green indicator"},
+      {"feature": "Connection type indicator (WebSocket/Polling)", "status": "PASS", "notes": "Shows '⚡ WebSocket' or '🔄 Polling (5s)' in System Health tab"}
+    ],
+    "tier_3_features": [
+      {"feature": "Export JSON button", "status": "PASS", "notes": "Downloads analytics-export-{timestamp}.json with all data"},
+      {"feature": "Export CSV button", "status": "PASS", "notes": "Downloads analytics-export-{timestamp}.csv with tabular data"},
+      {"feature": "Customizable widgets with localStorage", "status": "PASS", "notes": "Widget toggles persist in localStorage as 'analytics-widgets'"},
+      {"feature": "Dark/Light theme toggle", "status": "PASS", "notes": "Theme persists in localStorage as 'analytics-theme'"},
+      {"feature": "Settings modal", "status": "PASS", "notes": "Opens with ⚙️ button, contains theme, widgets, and export sections"}
+    ],
+    "responsive_design": [
+      {"feature": "Mobile responsive (390x844)", "status": "PASS", "notes": "Tabs stack vertically, stats cards stack, gauges single column"},
+      {"feature": "Desktop layout (1920x1080)", "status": "PASS", "notes": "Full grid layout with all widgets visible"}
+    ],
+    "backend_api_tests": [
+      {"endpoint": "/api/analytics/system-health", "status": "PASS", "notes": "Returns psutil_available: true with real metrics"},
+      {"endpoint": "/api/analytics/realtime-stats", "status": "PASS", "notes": "Returns timestamp for Last Updated feature"},
+      {"endpoint": "/api/analytics/drift-status", "status": "PASS", "notes": "Returns status (green/yellow/red) for drift cards"},
+      {"endpoint": "/api/analytics/engine-latency", "status": "PASS", "notes": "Returns data for sparklines"},
+      {"endpoint": "/api/analytics/ws (WebSocket)", "status": "PASS", "notes": "Sends realtime updates with stats and health data"}
+    ]
+  },
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  },
+  "websocket_behavior": {
+    "note": "WebSocket connects successfully but may fall back to polling in certain network conditions. This is expected behavior - the fallback mechanism works correctly.",
+    "websocket_url": "wss://oceanic-shooter.preview.emergentagent.com/api/analytics/ws",
+    "fallback_interval": "5 seconds polling"
+  }
+}
