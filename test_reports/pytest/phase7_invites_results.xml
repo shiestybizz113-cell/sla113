@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="10" failures="1" skipped="0" tests="16" time="0.845" timestamp="2026-02-09T07:58:52.396411+00:00" hostname="agent-env-eccd95cb-acf6-4afa-8695-46f812174e3a"><testcase classname="backend.tests.test_phase7_invites.TestInviteCreation" name="test_create_invite_success" time="0.334"><error message="failed on setup with &quot;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend/tests/test_phase7_invites.py:49: in team_id
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="backend.tests.test_phase7_invites.TestInviteCreation" name="test_create_admin_invite" time="0.000"><error message="failed on setup with &quot;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend/tests/test_phase7_invites.py:49: in team_id
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="backend.tests.test_phase7_invites.TestInviteCreation" name="test_create_invite_duplicate_email" time="0.000"><error message="failed on setup with &quot;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend/tests/test_phase7_invites.py:49: in team_id
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="backend.tests.test_phase7_invites.TestInviteList" name="test_list_pending_invites" time="0.000"><error message="failed on setup with &quot;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend/tests/test_phase7_invites.py:49: in team_id
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="backend.tests.test_phase7_invites.TestInviteValidation" name="test_validate_valid_token" time="0.000"><error message="failed on setup with &quot;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend/tests/test_phase7_invites.py:49: in team_id
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="backend.tests.test_phase7_invites.TestInviteValidation" name="test_validate_invalid_token" time="0.060" /><testcase classname="backend.tests.test_phase7_invites.TestInviteRevoke" name="test_revoke_invite" time="0.000"><error message="failed on setup with &quot;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend/tests/test_phase7_invites.py:49: in team_id
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="backend.tests.test_phase7_invites.TestInviteRevoke" name="test_revoke_nonexistent_invite" time="0.000"><error message="failed on setup with &quot;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend/tests/test_phase7_invites.py:49: in team_id
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="backend.tests.test_phase7_invites.TestInviteAccept" name="test_accept_invite_wrong_email" time="0.000"><error message="failed on setup with &quot;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend/tests/test_phase7_invites.py:49: in team_id
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="backend.tests.test_phase7_invites.TestInviteAccept" name="test_accept_invalid_token" time="0.011"><failure message="AssertionError: Expected 400 for invalid token, got 401&#10;assert 401 == 400&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_phase7_invites.py:256: in test_accept_invalid_token
+    assert response.status_code == 400, f"Expected 400 for invalid token, got {response.status_code}"
+E   AssertionError: Expected 400 for invalid token, got 401
+E   assert 401 == 400
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_phase7_invites.TestUnauthorizedAccess" name="test_create_invite_no_auth" time="0.040" /><testcase classname="backend.tests.test_phase7_invites.TestUnauthorizedAccess" name="test_list_invites_no_auth" time="0.045" /><testcase classname="backend.tests.test_phase7_invites.TestUnauthorizedAccess" name="test_revoke_invite_no_auth" time="0.048" /><testcase classname="backend.tests.test_phase7_invites.TestUnauthorizedAccess" name="test_accept_invite_no_auth" time="0.044" /><testcase classname="backend.tests.test_phase7_invites.TestEmailCheck" name="test_check_email_match" time="0.000"><error message="failed on setup with &quot;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend/tests/test_phase7_invites.py:49: in team_id
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="backend.tests.test_phase7_invites.TestEmailCheck" name="test_check_email_no_match" time="0.000"><error message="failed on setup with &quot;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend/tests/test_phase7_invites.py:49: in team_id
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase></testsuite></testsuites>
