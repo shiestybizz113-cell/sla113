@@ -1,159 +1,142 @@
 <analysis>**original_problem_statement:**
-The user's primary goal is to refactor the existing Hybrid Intelligence Core application into a production-grade, multi-tenant SaaS platform. This is a major architectural overhaul.
+The user is guiding the agent through a series of phased feature implementations to build a multi-tenant SaaS application. The latest request was to implement **Phase C-Lite: Minimal Governance Layer**.
 
-The key, non-negotiable requirements include:
--   **Full Authentication & RBAC:** User accounts (signup/login), password hashing (bcrypt), JWT sessions (access + refresh tokens), and both system-level (admin) and team-level (owner, member) roles.
--   **Multi-Tenant Workspace Model:** Each user belongs to one or more teams, with all data (pipelines, logs, dashboards) strictly isolated at the team level. New users should have a Personal team created automatically on signup.
--   **Database Migration:** All application data must be migrated from the previous JSONL files to MongoDB.
--   **Future-Proofing:** The user model must be designed to accommodate future OAuth integration (e.g., Google).
-
-The work is to be executed in five distinct phases, with the backend foundation being built first, followed by the frontend integration.
+**PRODUCT REQUIREMENTS (Phase C-Lite):**
+1.  **Navigation Enhancements:**
+    *   Add Billing ->  and API Keys ->  links to the user dropdown menu.
+    *   Restrict visibility to team owners/admins where appropriate.
+2.  **Team Activity Log (Lightweight):**
+    *   **Backend:** Create a  endpoint to return the 20 most recent audit log entries for a team.
+    *   **Frontend:** Add a Recent Activity section to the Team Settings page, displaying a simple table of the latest activities. No filtering or pagination.
+3.  **Minimal Admin Overview:**
+    *   **Backend:** Create a  endpoint (SystemAdminOnly) returning , , , and .
+    *   **Frontend:** Create a simple admin page at  to display these stats.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The project is a full-stack React/FastAPI application that has undergone a significant backend refactor.
--   **Backend (Phases 1-4 Complete):** A robust, multi-tenant foundation has been built on top of MongoDB. This includes:
-    -   **Database Models:** Pydantic models for , , , , , , and .
-    -   **Authentication System:** A complete auth service using  and JWT (access/refresh tokens). API endpoints for signup, login, and fetching user data () are implemented and working.
-    -   **Multi-Tenancy System:** Services and API endpoints () for creating and managing teams are in place.
-    -   **Protected Routes:** New, team-scoped, and auth-protected API endpoints have been created for  and . The old, public-facing engine and analytics routes still exist alongside them.
--   **Frontend (Needs Refactoring):** A multi-page React app with a highly polished Analytics Dashboard exists. However, it is **not yet connected** to the new backend auth system. It still functions as a public, single-user application. New files like  and  have been created but are not fully implemented.
+A full-stack application with a Python (FastAPI) backend and a React frontend. The application features a robust Identity and Access Management (IAM) layer, including JWT-based authentication, OAuth 2.0 (Google, GitHub), password resets, and session management. It is built on a multi-tenant architecture with teams, role-based access control (RBAC), and a complete team invitation system. It also includes foundational modules for Stripe billing, API key management, and audit logging. All features from Phases 1-7, Macro Phase A, Macro Phase B, and the latest Phase C-Lite have been implemented.
 
 **Last working item**:
--   **Last item agent was working:** **Phase 4: Backend Feature Migration**. The agent successfully migrated the execution history and pipeline features to be team-scoped and require authentication. This involved creating new database services (, ) and new protected API routers (, ).
--   **Status:** IN PROGRESS (The overall SaaS refactor is in progress. Phase 4 is complete, Phase 5 is the next immediate task).
--   **Agent Testing Done:** Y
--   **Which testing method agent to use?** frontend testing agent
--   **User Testing Done:** N
+*   **Last item agent was working:** Finishing the implementation of **Phase C-Lite: Minimal Governance Layer** and verifying the UI changes. The agent successfully added the navigation links, created the backend endpoints for the activity log and admin overview, and integrated them into the frontend. It was in the process of visually verifying these changes.
+*   **Status:** USER VERIFICATION PENDING
+*   **Agent Testing Done:** Y (Tested backend endpoints via  and started UI verification via screenshots).
+*   **Which testing method agent to use?** screenshot tool
+*   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- There are no outstanding bugs. The current focus is entirely on the planned SaaS architecture refactor.
+There are no known pending issues.
 
 **In progress Task List**:
--   **Task 1:** Complete Production SaaS Architecture Refactor (P0)
-
-**Task Detail:**
--   **Task 1:** Complete Production SaaS Architecture Refactor
-    -   **Where to resume:** **Phase 5: Frontend Integration**. The backend foundation is complete and tested. The next step is to connect the frontend to this new architecture. Key steps include:
-        1.  Fully implement the  to manage user state, tokens, and team switching.
-        2.  Build out the  and create a new .
-        3.  Create a protected route component to guard access to authenticated pages.
-        4.  Refactor all existing pages (, , , etc.) to use the  and call the new authenticated, team-scoped APIs.
-        5.  Implement a UI element for switching between teams.
-        6.  Handle JWT refresh token logic to maintain user sessions seamlessly.
-    -   **What will be achieved with this?** A fully functional, secure, multi-tenant SaaS application from end-to-end, where users can sign up, log in, create teams, and interact with their own isolated data.
-    -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** both
-    -   **Blocked on something:** None.
+*   **Task 1: Complete UI Verification for Phase C-Lite** (P0)
+    *   **Where to resume:** The agent has already verified the new links in the user dropdown menu. The next step is to take screenshots of the **Team Settings page** (to confirm the Recent Activity log is displayed) and the new **/admin/overview** page (to confirm the admin stats are visible).
+    *   **What will be achieved with this?** This will confirm that the frontend implementation for Phase C-Lite is complete and functioning as expected.
+    *   **Status:** IN PROGRESS
+    *   **Should Test frontend/backend/both after fix?** Frontend
+    - **Blocked on something:** None
 
 **Upcoming and Future Tasks**
-- **Upcoming Tasks:**
-    - **Task 1: Phase 5 - Frontend Auth UI (P0):** Implement login/signup pages, protected routes, a team switcher, and update all pages to use the new authenticated APIs.
-- **Future Tasks:**
-    - Implement a user invitation system for teams.
-    - Implement password reset functionality.
-    - Fully migrate the remaining public-facing API routes (especially ) to be authenticated and team-scoped.
-    - Implement frontend UI controls based on user roles (e.g., hiding an Admin button from a Member).
-    - Add frontend UI for future OAuth providers (Google, GitHub).
+*   **Upcoming Tasks:**
+    *   **Task 1:** Run the  to perform a comprehensive regression test of all implemented features, including the new Phase C-Lite components. (P1)
+    *   **Task 2:** Finalize and update documentation in  to reflect the completion of Phase C-Lite and document any new components or API endpoints. (P2)
+*   **Future Tasks:**
+    *   Prepare for production deployment. No new feature phases have been requested by the user.
 
 **Completed work in this session**
-- **SaaS Backend Foundation (Phases 1-4):**
-  - **Database & Models:** Migrated persistence from JSONL to MongoDB and created all necessary Pydantic models (, , , , etc.).
-  - **Authentication System:** Built a complete backend auth system with  password hashing and JWT (access + refresh token) strategy. Endpoints for , , and  are functional.
-  - **Multi-Tenancy System:** Implemented backend services and routes for creating and managing teams.
-  - **Feature Migration:** Created new, secure, team-scoped endpoints for  and  that use the new database layer.
-- **Analytics Dashboard (Polish):**
-  - Integrated  to show real system metrics.
-  - Implemented WebSockets for real-time updates, threshold-based alerts, skeleton loaders, historical data export, and a light/dark theme toggle.
-- **Code Cleanup:** Removed all obsolete files related to the abandoned FireKirin game engine task.
+*   **Phase 5: Frontend Integration & Auth:** Implemented , , and . Refactored all pages to use authenticated, team-scoped APIs.
+*   **Phase 6: User Profile & RBAC:** Created the User Profile page and a  component for granular UI permissions.
+*   **Phase 7: Team Invitation System:** Built the backend and frontend for inviting users to teams via email.
+*   **Macro Phase A: Identity & Access Layer:** Implemented a full password reset system, OAuth 2.0 for Google & GitHub, and enhanced session management.
+*   **Macro Phase B: Billing & Usage Layer:** Implemented the backend and frontend structure for Stripe billing, usage limits, and API key management.
+*   **Phase C-Lite: Minimal Governance Layer:** Added navigation links, a team activity log, and a system admin overview page.
 
 **Earlier issues found/mentioned but not fixed**
--   None.
+None.
 
 **Known issue recurrence from previous fork**
--   None.
+N/A
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI, MongoDB (with ), Pydantic, JWT Authentication (, ), Multi-tenancy, WebSockets.
--   **Frontend:** React, React Context, , Recharts, .
+*   **Frontend:** React, Vite, Axios
+*   **Backend:** Python, FastAPI
+*   **Database:** MongoDB
+*   **Authentication:** JWT (Access + Refresh Tokens), OAuth 2.0 (Google, GitHub), Hashed API Keys
+*   **Architecture:** REST API, Multi-tenant, Role-Based Access Control (RBAC)
 
 **key DB schema**
--   **users**: 
--   **teams**: 
--   **memberships**: 
--   **sessions**: 
--   **pipelines**: 
--   **execution_logs**: 
+*   : {_id, email, hashed_password, first_name, last_name, system_role}
+*   : {_id, name, owner_id, members: [{user_id, role}], billing_status}
+*   : {_id, team_id, email, role, token_hash, expires_at, status}
+*   : {_id, user_id, token_hash, ip_address, expires_at}
+*   : {user_id, token_hash, expires_at, used_at}
+*   : {_id, team_id, name, key_hash, last_used_at, revoked_at}
+*   : {_id, team_id, user_id, action, timestamp, details}
 
 **changes in tech stack**
--   **Database:** Complete migration from file-based storage () to **MongoDB**.
--   **Authentication:** A full authentication stack (, ) has been newly introduced.
+None.
 
 **All files of reference**
--   **/app/backend/models/**: The source of truth for the new database structure.
--   **/app/backend/core/** and **/app/backend/services/**: Contain all the new backend business logic.
--   **/app/frontend/src/context/AuthContext.jsx**: The starting point for the frontend refactor.
--   User message with final architecture choices (e.g., ) is the guiding document for the implementation.
+*   : Modified to add Billing and API Keys links to the user dropdown.
+*   : Modified to add the  endpoint.
+*   : Modified to include the Recent Activity log component.
+*   : New file created for  endpoint.
+*   : New file created for the admin overview UI.
+*   : Modified to add the  route.
+*   : Modified to register the new .
 
 **Areas that need refactoring**:
--   The **entire frontend application** needs to be refactored to integrate with the new authentication system and team-scoped APIs.
--   The old, public API endpoints (e.g., analytics, various engines) must be migrated to the new protected, team-scoped pattern and the old ones deprecated.
+*   The  component was simplified to a stub to resolve a frontend compilation error. It functions correctly but could be revisited if a more complex UI is needed.
 
 **key api endpoints**
--   **Auth**: , , 
--   **Teams**: , 
--   **Protected Data**: , 
+*   
+*   
+*   
+*   , , 
+*   
+*   
+*   
+*   
 
 **Critical Info for New Agent**
--   **PRIORITY 1: Frontend Refactor (Phase 5).** The backend foundation (Phases 1-4) is complete and tested. Your immediate and sole focus should be on implementing Phase 5: connecting the React frontend to the new auth system. This includes building login/signup pages, protected routes, and updating all API calls.
--   **Stick to the Plan:** The user has approved a very specific, multi-phase architectural plan. Do not deviate from it. The choices regarding bcrypt, JWT tokens, team structure, and MongoDB are final.
--   **Dual API State:** Be aware that the backend currently exposes both old (public) and new (protected) endpoints. All new frontend work must use the new protected endpoints (e.g., , not ). The eventual goal is to deprecate the old endpoints.
+*   An important fix was made by renaming the frontend route for API Keys from  to  to avoid a conflict with Kubernetes ingress rules. The backend endpoint remains .
+*   The application uses a  component for frontend RBAC and  dependencies in the backend. Pay close attention to these when adding new features.
+*   The agent is mid-verification for the last implemented feature (Phase C-Lite). The next logical step is to complete this verification.
 
 **documents and test reports created in this job**
--   
--   
--   
--   
--   
--   
--   
+*   
+*   Test reports located in , such as .
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Asks for a discussion on team collaboration features.
-2.  **Agent:** Asks clarifying questions to understand the scope.
-3.  **User:** Lays out non-negotiable requirements for a full production SaaS architecture (auth, multi-tenancy, DB migration).
-4.  **Agent:** Proposes a detailed architectural plan with a 5-phase breakdown and asks for user confirmation.
-5.  **Agent:** Re-sends the questions as a simplified checklist for easy confirmation.
-6.  **User:** Provides final, definitive choices for the entire architecture () and approves the 5-phase plan.
-7.  **Agent:** Begins work on Phase 1 (Database Models).
-8.  **Agent:** Summarizes completion of backend Phases 1-3 and asks for confirmation to proceed.
-9.  **User:** Approves the progress and instructs the agent to continue with Phase 4 (backend migration) followed by Phase 5 (frontend UI).
-10. **Agent:** Begins work on Phase 4.
+1.  **User (Message 404):** Defines requirements for **Phase C-Lite: Minimal Governance Layer**. (IN PROGRESS)
+2.  **User (Message 305):** Defines requirements for **Macro Phase B: Billing & Usage Layer**. (COMPLETED)
+3.  **User (Message 268):** Defines requirements for **Macro Phase A: Identity & Access Layer**. (COMPLETED)
+4.  **User (Message 173):** Defines requirements for **Phase 7: Team Invitation System**. (COMPLETED)
+5.  **User (Message 100):** Defines requirements for **Phase 6: User Profile & RBAC**. (COMPLETED)
+6.  **User (Message 4):** Provides clarifications for **Phase 5: Frontend Integration**. (COMPLETED)
+7.  **User (Message 1):** Initial instruction to start planning. (COMPLETED)
 
 **Project Health Check:**
--   **Broken:** The frontend is effectively disconnected from the new backend logic, making the user-facing application non-functional in its current state.
--   **Mocked:** None.
+*   **Broken:** None.
+*   **Mocked:** Billing functionality relies on placeholder UI and is not fully integrated with a live Stripe account. Email sending uses a Resend API key that may be a placeholder.
 
 **3rd Party Integrations**
--   OpenAI, Claude, Gemini (via ) — uses Emergent LLM Key
--    (System Metrics)
--    (Password Hashing)
--    (Authentication Tokens)
--    (Async MongoDB Driver)
+*   **Resend** (Email): Requires User API Key.
+*   **Stripe** (Payments): Requires User API Key.
+*   **Google OAuth** (Authentication): Requires User OAuth Credentials.
+*   **GitHub OAuth** (Authentication): Requires User OAuth Credentials.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES. The testing agent was used successfully to validate the polished analytics dashboard and the Phase 4 backend migration.
--   **Troubleshoot agent used after agent stuck in loop:** NO
--   **Test files created:** []
--   **Known regressions:** None.
+*   **Testing agent used after significant changes:** YES
+*   **Troubleshoot agent used after agent stuck in loop:** NO
+*   **Test files created:** Test reports were created in .
+*   **Known regressions:** None.
 
 **Credentials to test flow:**
--   A new user can be created via a  request to the  endpoint with an  and . The agent used  during testing.
+*   **User:** 
+*   **Password:** 
 
 **What agent forgot to execute**
--   The agent created  but has not yet created the corresponding  component, which is necessary for Phase 5.
--   The old  router still exists and is included in , creating a redundant endpoint alongside the new, protected  route. This should be cleaned up.</analysis>
+The agent has not forgotten any tasks. It is currently in the middle of verifying its last set of changes for Phase C-Lite.</analysis>
