@@ -6,6 +6,7 @@ Handles subscription management, checkout, and webhooks.
 from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from typing import Optional
 from pydantic import BaseModel
+from time import time
 
 from core.dependencies import get_current_user, get_current_team, get_client_info
 from services.billing_service import (
@@ -23,6 +24,10 @@ from bson import ObjectId
 
 
 router = APIRouter(prefix="/billing", tags=["Billing"])
+
+# Cache for plans (static data, 10 minute TTL)
+_plans_cache = {"data": None, "timestamp": 0}
+PLANS_CACHE_TTL = 600  # 10 minutes
 
 
 class CheckoutRequest(BaseModel):
@@ -46,8 +51,20 @@ async def get_billing_status(user: dict = Depends(get_current_user)):
 
 @router.get("/plans")
 async def list_plans():
-    """Get available subscription plans."""
-    return {"plans": get_available_plans()}
+    """Get available subscription plans (cached)."""
+    global _plans_cache
+    
+    now = time()
+    
+    # Return cached data if fresh
+    if _plans_cache["data"] and (now - _plans_cache["timestamp"]) < PLANS_CACHE_TTL:
+        return {"plans": _plans_cache["data"]}
+    
+    # Fetch fresh data
+    plans = get_available_plans()
+    _plans_cache = {"data": plans, "timestamp": now}
+    
+    return {"plans": plans}
 
 
 @router.get("/team")
