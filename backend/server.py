@@ -63,7 +63,6 @@ from routers.engines import (
     money_pipeline_router,
     analytics_router,
 )
-from routers.engines.history import router as history_router
 from routers.engines.history_protected import router as history_protected_router
 from routers.pipelines import router as pipelines_router
 
@@ -92,8 +91,7 @@ api_router.include_router(anime_lore_router)
 api_router.include_router(anime_story_router)
 api_router.include_router(art_direction_router)
 api_router.include_router(money_pipeline_router)
-api_router.include_router(history_router)  # Legacy /api/history/* (unprotected)
-api_router.include_router(analytics_router)
+api_router.include_router(analytics_router)  # Analytics remains public for now (system-wide metrics)
 
 
 # Define Models
