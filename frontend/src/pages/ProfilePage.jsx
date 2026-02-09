@@ -231,13 +231,15 @@ const ProfilePage = () => {
               {profileLoading ? 'Saving...' : 'Save Changes'}
             </button>
           </form>
+          </div>
         </section>
 
         {/* System Role & Teams Card */}
-        <section className="profile-card" data-testid="profile-roles-card">
+        <section className="profile-card settings-card" data-testid="profile-roles-card">
           <div className="card-header">
             <h2>Roles & Memberships</h2>
           </div>
+          <div className="card-body" style={{ padding: '1.25rem' }}>
           
           <div className="roles-section">
             <div className="role-item">
