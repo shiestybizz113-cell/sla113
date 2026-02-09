@@ -6,7 +6,7 @@ Provides:
 - Latency metrics
 - Error rates
 - Drift detection status
-- System health (mock)
+- System health (real metrics via psutil)
 - Pipeline visualization data
 """
 
@@ -17,6 +17,15 @@ from datetime import datetime, timezone, timedelta
 from services.execution_logger import get_logger
 import random
 import time
+import os
+
+# Try to import psutil, fallback to mock data if unavailable
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+    print("WARNING: psutil not available, using mock system metrics")
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
