@@ -2566,6 +2566,101 @@ body {
   font-size: 1.25rem;
 }
 
+/* Metrics Source Banner */
+.metrics-source-banner {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.source-indicator {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.source-indicator.real {
+  color: var(--accent-green);
+}
+
+.source-indicator.mock {
+  color: var(--accent-orange);
+}
+
+/* Detailed Stats Row */
+.detailed-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.detailed-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.detailed-stat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detailed-stat-icon {
+  font-size: 1.25rem;
+}
+
+.detailed-stat-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.detailed-stat-body {
+  padding: 1rem;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+}
+
+.stat-key {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.stat-val {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.stat-val.highlight {
+  color: var(--accent-green);
+}
+
+.stat-val.muted {
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-style: italic;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .chart-card.large {
