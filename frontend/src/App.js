@@ -14,6 +14,8 @@ import OAuthCallbackPage from "./pages/OAuthCallbackPage";
 import ProfilePage from "./pages/ProfilePage";
 import TeamSettingsPage from "./pages/TeamSettingsPage";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
+import BillingPage from "./pages/BillingPage";
+import APIKeysPage from "./pages/APIKeysPage";
 import EnginesPage from "./pages/EnginesPage";
 import MoneyPipelinePage from "./pages/MoneyPipelinePage";
 import PipelineComposerPage from "./pages/PipelineComposerPage";
