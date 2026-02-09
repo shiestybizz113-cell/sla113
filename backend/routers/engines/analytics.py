@@ -84,10 +84,16 @@ class DriftAlert(BaseModel):
 class SystemHealthResponse(BaseModel):
     cpu_usage: float
     memory_usage: float
+    memory_total_gb: float
+    memory_used_gb: float
     disk_usage: float
+    disk_total_gb: float
+    disk_used_gb: float
+    load_average: Optional[List[float]] = None  # 1, 5, 15 min averages
     active_connections: int
     uptime_hours: float
     status: str  # healthy, degraded, critical
+    psutil_available: bool  # Indicates if real metrics or mock
 
 
 class PipelineNode(BaseModel):
