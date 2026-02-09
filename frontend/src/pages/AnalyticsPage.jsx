@@ -497,6 +497,13 @@ const AnalyticsPage = () => {
         {/* SYSTEM HEALTH TAB */}
         {activeTab === 'system' && (
           <div className="tab-panel" data-testid="panel-system">
+            {/* Metrics Source Indicator */}
+            <div className="metrics-source-banner" data-testid="metrics-source">
+              <span className={`source-indicator ${systemHealth?.psutil_available ? 'real' : 'mock'}`}>
+                {systemHealth?.psutil_available ? '🟢 Real Metrics (psutil)' : '🟡 Mock Metrics (psutil unavailable)'}
+              </span>
+            </div>
+
             {/* System Gauges */}
             <div className="gauges-row">
               <GaugeCard 
@@ -514,6 +521,78 @@ const AnalyticsPage = () => {
                 value={systemHealth?.disk_usage || 0} 
                 status={systemHealth?.status}
               />
+            </div>
+
+            {/* Detailed Memory & Disk Stats */}
+            <div className="detailed-stats-row">
+              <div className="detailed-stat-card">
+                <div className="detailed-stat-header">
+                  <span className="detailed-stat-icon">🧠</span>
+                  <span className="detailed-stat-title">Memory Details</span>
+                </div>
+                <div className="detailed-stat-body">
+                  <div className="stat-row">
+                    <span className="stat-key">Total:</span>
+                    <span className="stat-val">{systemHealth?.memory_total_gb || 0} GB</span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-key">Used:</span>
+                    <span className="stat-val">{systemHealth?.memory_used_gb || 0} GB</span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-key">Usage:</span>
+                    <span className="stat-val highlight">{systemHealth?.memory_usage || 0}%</span>
+                  </div>
+                </div>
+              </div>
+              <div className="detailed-stat-card">
+                <div className="detailed-stat-header">
+                  <span className="detailed-stat-icon">💾</span>
+                  <span className="detailed-stat-title">Disk Details</span>
+                </div>
+                <div className="detailed-stat-body">
+                  <div className="stat-row">
+                    <span className="stat-key">Total:</span>
+                    <span className="stat-val">{systemHealth?.disk_total_gb || 0} GB</span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-key">Used:</span>
+                    <span className="stat-val">{systemHealth?.disk_used_gb || 0} GB</span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-key">Usage:</span>
+                    <span className="stat-val highlight">{systemHealth?.disk_usage || 0}%</span>
+                  </div>
+                </div>
+              </div>
+              <div className="detailed-stat-card">
+                <div className="detailed-stat-header">
+                  <span className="detailed-stat-icon">📊</span>
+                  <span className="detailed-stat-title">Load Average</span>
+                </div>
+                <div className="detailed-stat-body">
+                  {systemHealth?.load_average ? (
+                    <>
+                      <div className="stat-row">
+                        <span className="stat-key">1 min:</span>
+                        <span className="stat-val">{systemHealth.load_average[0]}</span>
+                      </div>
+                      <div className="stat-row">
+                        <span className="stat-key">5 min:</span>
+                        <span className="stat-val">{systemHealth.load_average[1]}</span>
+                      </div>
+                      <div className="stat-row">
+                        <span className="stat-key">15 min:</span>
+                        <span className="stat-val">{systemHealth.load_average[2]}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="stat-row">
+                      <span className="stat-val muted">Not available</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* System Stats */}
