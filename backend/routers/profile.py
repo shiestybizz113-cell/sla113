@@ -2,51 +2,33 @@
 User Profile API endpoints.
 
 Provides:
-- Change password
-- View active sessions
-- Logout specific session
-- Logout all sessions
-- Get profile details with memberships
+- Get full profile details with memberships
+- Update profile info (name)
 """
 
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime, timezone
-import bcrypt
-import re
+from bson import ObjectId
 
 from core.dependencies import get_current_user
-from database import users_collection, sessions_collection, memberships_collection, teams_collection
+from database import users_collection, teams_collection, team_memberships_collection
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 
 
-class ChangePasswordRequest(BaseModel):
-    current_password: str = Field(..., min_length=1)
-    new_password: str = Field(..., min_length=8)
-    
-    @field_validator('new_password')
-    @classmethod
-    def validate_new_password(cls, v):
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters')
-        if not re.search(r'[A-Z]', v):
-            raise ValueError('Password must contain at least one uppercase letter')
-        if not re.search(r'[a-z]', v):
-            raise ValueError('Password must contain at least one lowercase letter')
-        if not re.search(r'[0-9]', v):
-            raise ValueError('Password must contain at least one number')
-        return v
+class UpdateProfileRequest(BaseModel):
+    first_name: Optional[str] = Field(None, min_length=1, max_length=50)
+    last_name: Optional[str] = Field(None, min_length=1, max_length=50)
 
 
-class SessionResponse(BaseModel):
+class TeamMembershipResponse(BaseModel):
     id: str
-    created_at: str
-    expires_at: str
-    is_current: bool
-    user_agent: Optional[str] = None
-    ip_address: Optional[str] = None
+    name: str
+    type: str
+    role: str
+    joined_at: str
 
 
 class ProfileResponse(BaseModel):
@@ -56,175 +38,80 @@ class ProfileResponse(BaseModel):
     last_name: Optional[str]
     system_role: str
     created_at: str
-    teams: List[dict]
+    teams: List[TeamMembershipResponse]
 
 
 @router.get("/me", response_model=ProfileResponse)
 async def get_profile(current_user: dict = Depends(get_current_user)):
     """Get current user's full profile with team memberships."""
-    user_id = current_user["id"]
+    user_id = current_user["_id"]
     
     # Get user details
     user = await users_collection().find_one(
-        {"id": user_id},
-        {"_id": 0, "hashed_password": 0}
+        {"_id": ObjectId(user_id) if isinstance(user_id, str) else user_id},
+        {"_id": 0, "password_hash": 0}
     )
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
     # Get all memberships
-    memberships = await memberships_collection().find(
-        {"user_id": user_id},
-        {"_id": 0}
+    memberships = await team_memberships_collection().find(
+        {"user_id": user_id, "is_active": True}
     ).to_list(100)
     
     # Get team details for each membership
     teams = []
     for membership in memberships:
         team = await teams_collection().find_one(
-            {"id": membership["team_id"]},
-            {"_id": 0}
+            {"_id": ObjectId(membership["team_id"]) if isinstance(membership["team_id"], str) else membership["team_id"]},
         )
         if team:
-            teams.append({
-                "id": team["id"],
-                "name": team["name"],
-                "type": team.get("type", "organization"),
-                "role": membership["role"],
-                "joined_at": membership.get("created_at", "")
-            })
+            teams.append(TeamMembershipResponse(
+                id=str(team["_id"]),
+                name=team["name"],
+                type=team.get("type", "organization"),
+                role=membership["role"],
+                joined_at=membership.get("created_at", datetime.now(timezone.utc)).isoformat() if isinstance(membership.get("created_at"), datetime) else str(membership.get("created_at", ""))
+            ))
     
     return ProfileResponse(
-        id=user["id"],
+        id=str(user_id),
         email=user["email"],
         first_name=user.get("first_name"),
         last_name=user.get("last_name"),
         system_role=user.get("system_role", "user"),
-        created_at=user.get("created_at", ""),
+        created_at=user.get("created_at", datetime.now(timezone.utc)).isoformat() if isinstance(user.get("created_at"), datetime) else str(user.get("created_at", "")),
         teams=teams
     )
 
 
-@router.post("/change-password")
-async def change_password(
-    request: ChangePasswordRequest,
+@router.put("/me")
+async def update_profile(
+    request: UpdateProfileRequest,
     current_user: dict = Depends(get_current_user)
 ):
-    """Change the current user's password."""
-    user_id = current_user["id"]
+    """Update current user's profile information."""
+    user_id = current_user["_id"]
     
-    # Get user with password
-    user = await users_collection().find_one({"id": user_id})
+    update_data = {}
+    if request.first_name is not None:
+        update_data["first_name"] = request.first_name
+    if request.last_name is not None:
+        update_data["last_name"] = request.last_name
     
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
     
-    # Verify current password
-    if not bcrypt.checkpw(
-        request.current_password.encode('utf-8'),
-        user["hashed_password"].encode('utf-8')
-    ):
-        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    update_data["updated_at"] = datetime.now(timezone.utc)
     
-    # Check new password is different
-    if request.current_password == request.new_password:
-        raise HTTPException(status_code=400, detail="New password must be different from current password")
-    
-    # Hash new password
-    new_hashed = bcrypt.hashpw(
-        request.new_password.encode('utf-8'),
-        bcrypt.gensalt()
-    ).decode('utf-8')
-    
-    # Update password
-    await users_collection().update_one(
-        {"id": user_id},
-        {"$set": {
-            "hashed_password": new_hashed,
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }}
+    result = await users_collection().update_one(
+        {"_id": ObjectId(user_id) if isinstance(user_id, str) else user_id},
+        {"$set": update_data}
     )
     
-    return {"message": "Password changed successfully"}
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"message": "Profile updated successfully"}
 
-
-@router.get("/sessions", response_model=List[SessionResponse])
-async def get_sessions(
-    current_user: dict = Depends(get_current_user),
-    current_session_id: Optional[str] = None
-):
-    """Get all active sessions for the current user."""
-    user_id = current_user["id"]
-    
-    # Get all sessions
-    sessions = await sessions_collection().find(
-        {
-            "user_id": user_id,
-            "expires_at": {"$gt": datetime.now(timezone.utc).isoformat()}
-        },
-        {"_id": 0}
-    ).to_list(100)
-    
-    # Get current session ID from user context if available
-    current_sess_id = current_user.get("session_id", current_session_id)
-    
-    return [
-        SessionResponse(
-            id=s["id"],
-            created_at=s.get("created_at", ""),
-            expires_at=s.get("expires_at", ""),
-            is_current=s["id"] == current_sess_id if current_sess_id else False,
-            user_agent=s.get("user_agent"),
-            ip_address=s.get("ip_address")
-        )
-        for s in sessions
-    ]
-
-
-@router.delete("/sessions/{session_id}")
-async def revoke_session(
-    session_id: str,
-    current_user: dict = Depends(get_current_user)
-):
-    """Revoke a specific session."""
-    user_id = current_user["id"]
-    
-    # Verify session belongs to user
-    session = await sessions_collection().find_one({
-        "id": session_id,
-        "user_id": user_id
-    })
-    
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    # Delete session
-    await sessions_collection().delete_one({"id": session_id})
-    
-    return {"message": "Session revoked successfully"}
-
-
-@router.delete("/sessions")
-async def revoke_all_sessions(
-    current_user: dict = Depends(get_current_user),
-    keep_current: bool = True
-):
-    """Revoke all sessions for the current user."""
-    user_id = current_user["id"]
-    current_session_id = current_user.get("session_id")
-    
-    # Build query
-    query = {"user_id": user_id}
-    
-    # Optionally keep current session
-    if keep_current and current_session_id:
-        query["id"] = {"$ne": current_session_id}
-    
-    # Delete sessions
-    result = await sessions_collection().delete_many(query)
-    
-    return {
-        "message": f"Revoked {result.deleted_count} session(s)",
-        "count": result.deleted_count
-    }
