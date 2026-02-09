@@ -264,3 +264,62 @@ async def accept_team_invite(
         )
     except TeamError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
+
+
+
+@router.get("/{team_id}/activity")
+async def get_team_activity(
+    team_id: str,
+    ctx: EngineContext = Depends(get_engine_context),
+):
+    """
+    Get recent activity log for the team.
+    Returns the 20 most recent audit log entries.
+    """
+    ctx.require_read()
+    
+    if ctx.team_id != team_id:
+        raise HTTPException(status_code=403, detail="Not authorized for this team")
+    
+    from database import audit_logs_collection, users_collection
+    from bson import ObjectId
+    
+    # Fetch recent audit logs for this team
+    logs = await audit_logs_collection().find(
+        {"team_id": team_id},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(20).to_list(20)
+    
+    # Get user info for actors
+    user_ids = list(set(log.get("user_id") for log in logs if log.get("user_id")))
+    users_map = {}
+    
+    if user_ids:
+        users = await users_collection().find(
+            {"_id": {"$in": [ObjectId(uid) for uid in user_ids if ObjectId.is_valid(uid)]}},
+            {"_id": 1, "email": 1, "first_name": 1, "last_name": 1}
+        ).to_list(100)
+        
+        for u in users:
+            users_map[str(u["_id"])] = {
+                "email": u["email"],
+                "name": f"{u.get('first_name', '')} {u.get('last_name', '')}".strip() or u["email"]
+            }
+    
+    # Format response
+    activity = []
+    for log in logs:
+        user_id = log.get("user_id")
+        user_info = users_map.get(user_id, {"email": "system", "name": "System"})
+        
+        activity.append({
+            "action": log.get("action", "unknown"),
+            "actor": user_info["name"],
+            "actor_email": user_info["email"],
+            "timestamp": log["created_at"].isoformat() if log.get("created_at") else None,
+            "details": log.get("details"),
+            "resource_type": log.get("resource_type"),
+            "ip_address": log.get("ip_address"),
+        })
+    
+    return {"activity": activity}
