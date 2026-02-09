@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { toast, Toaster } from "sonner";
+import { useAuth } from "../context/AuthContext";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Cell, Legend,
