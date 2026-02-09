@@ -68,6 +68,8 @@ async def create_key(
             user_agent=client_info.get("user_agent"),
         )
         return result
+    except UsageLimitError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message)
     except APIKeyError as e:
         raise HTTPException(status_code=e.status_code, detail=e.message)
 
