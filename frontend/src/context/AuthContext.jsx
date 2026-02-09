@@ -310,6 +310,10 @@ export const AuthProvider = ({ children }) => {
     authAxios,
     getAccessToken,
     getCurrentTeamId,
+    handleOAuthCallback,
+    refreshTeams,
+    getOAuthProviders,
+    initiateOAuthLogin,
   };
 
   return (
