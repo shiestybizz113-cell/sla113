@@ -157,11 +157,12 @@ async def stripe_webhook(
 
 
 @router.get("/usage")
-async def get_usage(user: dict = Depends(get_current_user)):
+async def get_usage(
+    request: Request,
+    user: dict = Depends(get_current_user)
+):
     """Get current usage for the team."""
-    team_id = user.get("team_id")
-    
-    if not team_id:
-        raise HTTPException(status_code=400, detail="No team selected")
+    team = await get_current_team(request, user)
+    team_id = team.get("_id")
     
     return await get_team_usage_with_limits(team_id)
