@@ -331,10 +331,11 @@ const ProfilePage = () => {
               {passwordLoading ? 'Changing...' : 'Change Password'}
             </button>
           </form>
+          </div>
         </section>
 
         {/* Active Sessions Card */}
-        <section className="profile-card sessions-card" data-testid="sessions-card">
+        <section className="profile-card settings-card sessions-card" data-testid="sessions-card">
           <div className="card-header">
             <h2>Active Sessions</h2>
             <button
@@ -345,14 +346,16 @@ const ProfilePage = () => {
               Logout All
             </button>
           </div>
-          
-          {sessionsLoading ? (
-            <div className="sessions-loading">
-              <div className="spinner"></div>
-            </div>
-          ) : sessions.length === 0 ? (
-            <p className="no-sessions">No active sessions found</p>
-          ) : (
+          <div className="card-body" style={{ padding: '1rem' }}>
+            {sessionsLoading ? (
+              <LoadingState message="Loading sessions..." size="small" />
+            ) : sessions.length === 0 ? (
+              <EmptyState
+                icon="💻"
+                title="No active sessions"
+                description="Your active login sessions will appear here."
+              />
+            ) : (
             <div className="sessions-list">
               {sessions.map((session) => (
                 <div key={session.id} className="session-item" data-testid={`session-${session.id}`}>
