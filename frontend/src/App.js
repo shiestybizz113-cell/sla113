@@ -32,7 +32,11 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <AppHeader />
-          <Routes>
+          <SystemStatusBanner />
+          <div className="app-layout">
+            <SettingsSidebar />
+            <main className="app-main">
+              <Routes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
