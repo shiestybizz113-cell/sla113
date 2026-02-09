@@ -42,6 +42,7 @@ api_router = APIRouter(prefix="/api")
 # Import auth and team routers
 from routers.auth import router as auth_router
 from routers.teams import router as teams_router
+from routers.profile import router as profile_router
 
 # Import and include all engine routers
 from routers.engines import (
