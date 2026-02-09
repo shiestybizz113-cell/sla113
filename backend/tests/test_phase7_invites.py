@@ -31,12 +31,14 @@ def auth_session():
         pytest.skip(f"Login failed: {response.text}")
     
     data = response.json()
-    token = data.get("token")
+    # API returns access_token, not token
+    token = data.get("access_token")
     session.headers.update({"Authorization": f"Bearer {token}"})
     
     # Store user info for later
     session.user_info = data.get("user", {})
     session.token = token
+    session.current_team = data.get("current_team", {})
     
     return session
 
