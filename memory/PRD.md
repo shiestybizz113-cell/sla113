@@ -133,9 +133,13 @@ A comprehensive backend system featuring 19 specialized AI engines orchestrated 
 | `TeamSwitcher.jsx` | `/components/` | Dropdown to switch teams and create new ones |
 | `CreateTeamModal.jsx` | `/components/` | Modal dialog for creating organization teams |
 | `RoleGate.jsx` | `/components/` | Role-based visibility controls (TeamRoleGate, AdminOnly, OwnerOnly) |
+| `InviteMembersModal.jsx` | `/components/` | Modal for inviting new team members |
+| `PendingInvitesList.jsx` | `/components/` | List of pending invitations with revoke |
 | `LoginPage.jsx` | `/pages/` | Email/password login form |
 | `SignupPage.jsx` | `/pages/` | Registration form with password validation |
 | `ProfilePage.jsx` | `/pages/` | Profile settings, password change, session management |
+| `TeamSettingsPage.jsx` | `/pages/` | Team members, invitations, settings |
+| `AcceptInvitePage.jsx` | `/pages/` | Accept invite flow with token validation |
 
 ### Auth Flow
 1. User visits any protected route → Redirected to `/login`
