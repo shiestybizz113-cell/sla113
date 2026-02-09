@@ -582,6 +582,20 @@ async def get_realtime_stats():
         if (now - datetime.fromisoformat(l.timestamp.replace('Z', '+00:00'))).total_seconds() < 300
     ]
     
+    # Get real system metrics if psutil available
+    if PSUTIL_AVAILABLE:
+        cpu = psutil.cpu_percent(interval=0.1)
+        memory = psutil.virtual_memory().percent
+        system_status = "healthy"
+        if cpu > 90 or memory > 90:
+            system_status = "critical"
+        elif cpu > 70 or memory > 75:
+            system_status = "degraded"
+    else:
+        cpu = round(35 + random.uniform(-10, 15), 1)
+        memory = round(45 + random.uniform(-5, 10), 1)
+        system_status = "healthy"
+    
     return {
         "timestamp": now.isoformat(),
         "total_executions": stats.get("total_executions", 0),
@@ -595,8 +609,9 @@ async def get_realtime_stats():
         },
         "active_engines": len(stats.get("engines", {})),
         "system": {
-            "cpu": round(35 + random.uniform(-10, 15), 1),
-            "memory": round(45 + random.uniform(-5, 10), 1),
-            "status": "healthy"
+            "cpu": round(cpu, 1),
+            "memory": round(memory, 1),
+            "status": system_status,
+            "psutil_available": PSUTIL_AVAILABLE
         }
     }
