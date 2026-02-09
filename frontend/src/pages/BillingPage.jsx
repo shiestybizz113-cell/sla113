@@ -164,24 +164,24 @@ const BillingPage = () => {
                 <div className="meter-header">
                   <span className="meter-label">Executions</span>
                   <span className="meter-value">
-                    {usage.usage?.executions_count || 0}
-                    {usage.limits?.executions_per_month > 0 && (
+                    {usage.usage.executions_count || 0}
+                    {usage.limits.executions_per_month > 0 && (
                       <span className="meter-limit">
                         / {usage.limits.executions_per_month.toLocaleString()}
                       </span>
                     )}
-                    {usage.limits?.executions_per_month === -1 && (
+                    {usage.limits.executions_per_month === -1 && (
                       <span className="meter-limit">/ Unlimited</span>
                     )}
                   </span>
                 </div>
                 <div className="meter-bar">
                   <div
-                    className={`meter-fill ${usage.over_limit?.executions ? 'over-limit' : ''}`}
-                    style={{ width: `${Math.min(100, usage.percentages?.executions || 0)}%` }}
+                    className={`meter-fill ${usage.over_limit.executions ? 'over-limit' : ''}`}
+                    style={{ width: `${Math.min(100, usage.percentages.executions || 0)}%` }}
                   />
                 </div>
-                {usage.over_limit?.executions && (
+                {usage.over_limit.executions && (
                   <p className="limit-warning">Limit reached - please upgrade</p>
                 )}
               </div>
@@ -190,19 +190,19 @@ const BillingPage = () => {
                 <div className="stat-item">
                   <span className="stat-label">Team Members</span>
                   <span className="stat-value">
-                    {usage.limits?.team_members === -1 ? 'Unlimited' : `Max ${usage.limits?.team_members}`}
+                    {usage.limits.team_members === -1 ? 'Unlimited' : `Max ${usage.limits.team_members}`}
                   </span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-label">API Keys</span>
                   <span className="stat-value">
-                    {usage.limits?.api_keys === -1 ? 'Unlimited' : `Max ${usage.limits?.api_keys}`}
+                    {usage.limits.api_keys === -1 ? 'Unlimited' : `Max ${usage.limits.api_keys}`}
                   </span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-label">Pipelines</span>
                   <span className="stat-value">
-                    {usage.limits?.pipelines === -1 ? 'Unlimited' : `Max ${usage.limits?.pipelines}`}
+                    {usage.limits.pipelines === -1 ? 'Unlimited' : `Max ${usage.limits.pipelines}`}
                   </span>
                 </div>
               </div>
