@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
-
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { useAuth } from "../context/AuthContext";
 
 const ExecutionHistoryPage = () => {
+  const { authAxios, currentTeam } = useAuth();
   const [logs, setLogs] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,34 +30,36 @@ const ExecutionHistoryPage = () => {
       if (statusFilter) params.append("status", statusFilter);
       if (sourceFilter) params.append("source", sourceFilter);
       
-      const res = await axios.get(`${API}/history?${params.toString()}`);
+      const res = await authAxios().get(`/history?${params.toString()}`);
       setLogs(res.data.logs);
       setTotal(res.data.total);
     } catch (e) {
       console.error(e);
+      setLogs([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
-  }, [search, engineFilter, statusFilter, sourceFilter, page]);
+  }, [authAxios, search, engineFilter, statusFilter, sourceFilter, page]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/history/stats`);
+      const res = await authAxios().get(`/history/stats`);
       setStats(res.data);
     } catch (e) {
       console.error(e);
     }
-  };
+  }, [authAxios]);
 
   useEffect(() => {
     fetchLogs();
     fetchStats();
-  }, [fetchLogs]);
+  }, [fetchLogs, fetchStats, currentTeam]);
 
   const clearHistory = async () => {
     if (!window.confirm("Are you sure you want to clear all execution history?")) return;
     try {
-      await axios.delete(`${API}/history/clear`);
+      await authAxios().delete(`/history/clear`);
       fetchLogs();
       fetchStats();
     } catch (e) {
