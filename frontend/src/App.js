@@ -89,6 +89,11 @@ function App() {
                 <APIKeysPage />
               </ProtectedRoute>
             } />
+            <Route path="/admin/overview" element={
+              <ProtectedRoute>
+                <AdminOverviewPage />
+              </ProtectedRoute>
+            } />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
