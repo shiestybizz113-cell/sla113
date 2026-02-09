@@ -8,16 +8,19 @@ Provides:
 - Drift detection status
 - System health (real metrics via psutil)
 - Pipeline visualization data
+- WebSocket for real-time updates
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone, timedelta
 from services.execution_logger import get_logger
+import asyncio
 import random
 import time
 import os
+import json
 
 # Try to import psutil, fallback to mock data if unavailable
 try:
