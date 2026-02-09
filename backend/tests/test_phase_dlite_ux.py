@@ -195,13 +195,15 @@ class TestAuthenticatedEndpoints:
     def team_id(self, auth_token):
         """Get current team ID"""
         response = requests.get(
-            f"{BASE_URL}/api/auth/me",
+            f"{BASE_URL}/api/teams",
             headers={"Authorization": f"Bearer {auth_token}"}
         )
         if response.status_code != 200:
-            pytest.skip("Could not get user info")
-        user_data = response.json()
-        return user_data.get("current_team", {}).get("id")
+            pytest.skip("Could not get teams")
+        teams = response.json()
+        if not teams:
+            pytest.skip("No teams found")
+        return teams[0].get("id")
     
     def test_billing_team_endpoint(self, auth_token):
         """Test billing team endpoint returns billing and usage"""
