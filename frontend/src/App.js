@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppHeader from "./components/AppHeader";
+import SystemStatusBanner from "./components/SystemStatusBanner";
+import SettingsSidebar from "./components/SettingsSidebar";
+import { Toaster } from "./components/ui/sonner";
 
 // Pages
 import HomePage from "./pages/HomePage";
