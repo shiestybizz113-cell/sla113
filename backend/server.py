@@ -1,7 +1,7 @@
 from fastapi import FastAPI, APIRouter
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
@@ -14,20 +14,34 @@ from datetime import datetime, timezone
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+# Import database connection
+from database import connect_to_database, close_database_connection, get_database
 
-# Create the main app without a prefix
+# Lifespan context manager for startup/shutdown
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Connect to database
+    await connect_to_database()
+    logging.info("Database connected on startup")
+    yield
+    # Shutdown: Close database connection
+    await close_database_connection()
+    logging.info("Database connection closed on shutdown")
+
+# Create the main app with lifespan
 app = FastAPI(
     title="Hybrid AI Stack",
     description="Multi-model AI pipeline with GPT-5.2, Claude Sonnet 4.5, and Gemini 3 Flash",
-    version="1.0.0"
+    version="2.0.0",
+    lifespan=lifespan,
 )
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# Import auth and team routers
+from routers.auth import router as auth_router
+from routers.teams import router as teams_router
 
 # Import and include all engine routers
 from routers.engines import (
@@ -50,6 +64,10 @@ from routers.engines import (
     analytics_router,
 )
 from routers.engines.history import router as history_router
+
+# Include auth and team routers first (higher priority)
+api_router.include_router(auth_router)
+api_router.include_router(teams_router)
 
 # Include all engine routers
 api_router.include_router(core_router)
