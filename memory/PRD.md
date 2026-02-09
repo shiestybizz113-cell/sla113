@@ -337,8 +337,8 @@ New `/analytics` page with 3 tabs and premium polish:
 
 ## Next Tasks
 - Migrate remaining public engine APIs to authenticated pattern
-- Add user invitation system for teams (email invites)
-- Password reset functionality
+- Password reset functionality (forgot password flow)
+- Configure RESEND_API_KEY for production email delivery
 
 ## Backlog
 - User invitation system for teams (email invites)
