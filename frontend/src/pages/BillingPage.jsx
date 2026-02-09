@@ -22,10 +22,8 @@ const BillingPage = () => {
     
     setLoading(true);
     try {
-      const [billingRes, plansRes] = await Promise.all([
-        authAxios().get('/billing/team'),
-        authAxios().get('/billing/plans'),
-      ]);
+      const billingRes = await authAxios().get('/billing/team');
+      const plansRes = await authAxios().get('/billing/plans');
       
       setBilling(billingRes.data.billing);
       setUsage(billingRes.data.usage);
@@ -82,12 +80,12 @@ const BillingPage = () => {
 
   const getStatusBadge = (status) => {
     const badges = {
-      active: { class: 'badge-success', text: 'Active' },
-      trialing: { class: 'badge-info', text: 'Trial' },
-      past_due: { class: 'badge-warning', text: 'Past Due' },
-      canceled: { class: 'badge-danger', text: 'Canceled' },
+      active: { cls: 'badge-success', text: 'Active' },
+      trialing: { cls: 'badge-info', text: 'Trial' },
+      past_due: { cls: 'badge-warning', text: 'Past Due' },
+      canceled: { cls: 'badge-danger', text: 'Canceled' },
     };
-    return badges[status] || { class: '', text: status };
+    return badges[status] || { cls: '', text: status };
   };
 
   if (loading) {
@@ -101,35 +99,43 @@ const BillingPage = () => {
     );
   }
 
+  const currentPlan = billing ? billing.plan : 'free';
+  const planName = billing ? billing.plan_name : 'Free';
+  const billingStatus = billing ? billing.status : 'active';
+  const statusBadge = getStatusBadge(billingStatus);
+  const features = billing && billing.features ? billing.features : [];
+  const stripeConfigured = billing ? billing.stripe_configured : false;
+  const periodEnd = billing ? billing.current_period_end : null;
+
+  const usageData = usage ? usage.usage : { executions_count: 0 };
+  const limits = usage ? usage.limits : { executions_per_month: 100, team_members: 3, api_keys: 2, pipelines: 5 };
+  const percentages = usage ? usage.percentages : { executions: 0 };
+  const overLimit = usage ? usage.over_limit : { executions: false };
+
   return (
     <div className="page-container" data-testid="billing-page">
       <header className="page-header">
         <h1>Billing & Usage</h1>
-        <p className="subtitle">{currentTeam?.name}</p>
+        <p className="subtitle">{currentTeam ? currentTeam.name : ''}</p>
       </header>
 
       <div className="billing-grid">
-        {/* Current Plan Card */}
         <section className="billing-card current-plan-card" data-testid="current-plan">
           <div className="card-header">
             <h2>Current Plan</h2>
-            {billing?.status && (
-              <span className={`status-badge ${getStatusBadge(billing.status).class}`}>
-                {getStatusBadge(billing.status).text}
-              </span>
-            )}
+            <span className={`status-badge ${statusBadge.cls}`}>
+              {statusBadge.text}
+            </span>
           </div>
           
           <div className="plan-details">
-            <div className="plan-name">{billing?.plan_name || 'Free'}</div>
-            {billing?.current_period_end && (
-              <p className="plan-renewal">
-                Renews on {formatDate(billing.current_period_end)}
-              </p>
+            <div className="plan-name">{planName}</div>
+            {periodEnd && (
+              <p className="plan-renewal">Renews on {formatDate(periodEnd)}</p>
             )}
             
             <div className="plan-features">
-              {billing?.features?.map((feature, i) => (
+              {features.map((feature, i) => (
                 <div key={i} className="feature-item">
                   <span className="feature-check">✓</span>
                   <span>{feature}</span>
@@ -139,7 +145,7 @@ const BillingPage = () => {
           </div>
           
           <AdminOnly>
-            {billing?.stripe_configured && billing?.plan !== 'free' && (
+            {stripeConfigured && currentPlan !== 'free' && (
               <button
                 className="btn-secondary manage-btn"
                 onClick={handleManageBilling}
@@ -151,66 +157,62 @@ const BillingPage = () => {
           </AdminOnly>
         </section>
 
-        {/* Usage Card */}
         <section className="billing-card usage-card" data-testid="usage-card">
           <div className="card-header">
             <h2>Current Usage</h2>
             <span className="usage-period">This billing period</span>
           </div>
           
-          {usage && (
-            <div className="usage-meters">
-              <div className="usage-meter" data-testid="executions-usage">
-                <div className="meter-header">
-                  <span className="meter-label">Executions</span>
-                  <span className="meter-value">
-                    {usage.usage.executions_count || 0}
-                    {usage.limits.executions_per_month > 0 && (
-                      <span className="meter-limit">
-                        / {usage.limits.executions_per_month.toLocaleString()}
-                      </span>
-                    )}
-                    {usage.limits.executions_per_month === -1 && (
-                      <span className="meter-limit">/ Unlimited</span>
-                    )}
-                  </span>
-                </div>
-                <div className="meter-bar">
-                  <div
-                    className={`meter-fill ${usage.over_limit.executions ? 'over-limit' : ''}`}
-                    style={{ width: `${Math.min(100, usage.percentages.executions || 0)}%` }}
-                  />
-                </div>
-                {usage.over_limit.executions && (
-                  <p className="limit-warning">Limit reached - please upgrade</p>
-                )}
+          <div className="usage-meters">
+            <div className="usage-meter" data-testid="executions-usage">
+              <div className="meter-header">
+                <span className="meter-label">Executions</span>
+                <span className="meter-value">
+                  {usageData.executions_count || 0}
+                  {limits.executions_per_month > 0 && (
+                    <span className="meter-limit">
+                      / {limits.executions_per_month.toLocaleString()}
+                    </span>
+                  )}
+                  {limits.executions_per_month === -1 && (
+                    <span className="meter-limit">/ Unlimited</span>
+                  )}
+                </span>
               </div>
-              
-              <div className="usage-stats">
-                <div className="stat-item">
-                  <span className="stat-label">Team Members</span>
-                  <span className="stat-value">
-                    {usage.limits.team_members === -1 ? 'Unlimited' : `Max ${usage.limits.team_members}`}
-                  </span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-label">API Keys</span>
-                  <span className="stat-value">
-                    {usage.limits.api_keys === -1 ? 'Unlimited' : `Max ${usage.limits.api_keys}`}
-                  </span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-label">Pipelines</span>
-                  <span className="stat-value">
-                    {usage.limits.pipelines === -1 ? 'Unlimited' : `Max ${usage.limits.pipelines}`}
-                  </span>
-                </div>
+              <div className="meter-bar">
+                <div
+                  className={`meter-fill ${overLimit.executions ? 'over-limit' : ''}`}
+                  style={{ width: `${Math.min(100, percentages.executions || 0)}%` }}
+                />
+              </div>
+              {overLimit.executions && (
+                <p className="limit-warning">Limit reached - please upgrade</p>
+              )}
+            </div>
+            
+            <div className="usage-stats">
+              <div className="stat-item">
+                <span className="stat-label">Team Members</span>
+                <span className="stat-value">
+                  {limits.team_members === -1 ? 'Unlimited' : `Max ${limits.team_members}`}
+                </span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">API Keys</span>
+                <span className="stat-value">
+                  {limits.api_keys === -1 ? 'Unlimited' : `Max ${limits.api_keys}`}
+                </span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Pipelines</span>
+                <span className="stat-value">
+                  {limits.pipelines === -1 ? 'Unlimited' : `Max ${limits.pipelines}`}
+                </span>
               </div>
             </div>
-          )}
+          </div>
         </section>
 
-        {/* Available Plans */}
         <AdminOnly>
           <section className="billing-card plans-card" data-testid="plans-section">
             <div className="card-header">
@@ -218,63 +220,64 @@ const BillingPage = () => {
             </div>
             
             <div className="plans-grid">
-              {plans.map((plan) => (
-                <div
-                  key={plan.key}
-                  className={`plan-card ${billing?.plan === plan.key ? 'current' : ''}`}
-                  data-testid={`plan-${plan.key}`}
-                >
-                  <div className="plan-card-header">
-                    <h3>{plan.name}</h3>
-                    {billing?.plan === plan.key && (
-                      <span className="current-badge">Current</span>
+              {plans.map((plan) => {
+                const isCurrent = currentPlan === plan.key;
+                return (
+                  <div
+                    key={plan.key}
+                    className={`plan-card ${isCurrent ? 'current' : ''}`}
+                    data-testid={`plan-${plan.key}`}
+                  >
+                    <div className="plan-card-header">
+                      <h3>{plan.name}</h3>
+                      {isCurrent && <span className="current-badge">Current</span>}
+                    </div>
+                    
+                    <div className="plan-card-limits">
+                      <div className="limit-item">
+                        <span className="limit-value">
+                          {plan.limits.executions_per_month === -1 
+                            ? 'Unlimited' 
+                            : plan.limits.executions_per_month.toLocaleString()}
+                        </span>
+                        <span className="limit-label">executions/mo</span>
+                      </div>
+                      <div className="limit-item">
+                        <span className="limit-value">
+                          {plan.limits.team_members === -1 ? '∞' : plan.limits.team_members}
+                        </span>
+                        <span className="limit-label">team members</span>
+                      </div>
+                    </div>
+                    
+                    <div className="plan-card-features">
+                      {plan.features.map((feature, i) => (
+                        <div key={i} className="feature-item">
+                          <span className="feature-check">✓</span>
+                          <span>{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {!isCurrent && plan.has_price && stripeConfigured && (
+                      <button
+                        className="btn-primary upgrade-btn"
+                        onClick={() => handleUpgrade(plan.key)}
+                        disabled={upgrading}
+                        data-testid={`upgrade-${plan.key}`}
+                      >
+                        {upgrading ? 'Processing...' : `Upgrade to ${plan.name}`}
+                      </button>
+                    )}
+                    
+                    {plan.key === 'enterprise' && !plan.has_price && (
+                      <button className="btn-secondary contact-btn">
+                        Contact Sales
+                      </button>
                     )}
                   </div>
-                  
-                  <div className="plan-card-limits">
-                    <div className="limit-item">
-                      <span className="limit-value">
-                        {plan.limits.executions_per_month === -1 
-                          ? 'Unlimited' 
-                          : plan.limits.executions_per_month.toLocaleString()}
-                      </span>
-                      <span className="limit-label">executions/mo</span>
-                    </div>
-                    <div className="limit-item">
-                      <span className="limit-value">
-                        {plan.limits.team_members === -1 ? '∞' : plan.limits.team_members}
-                      </span>
-                      <span className="limit-label">team members</span>
-                    </div>
-                  </div>
-                  
-                  <div className="plan-card-features">
-                    {plan.features.map((feature, i) => (
-                      <div key={i} className="feature-item">
-                        <span className="feature-check">✓</span>
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {plan.key !== billing?.plan && plan.has_price && billing?.stripe_configured && (
-                    <button
-                      className="btn-primary upgrade-btn"
-                      onClick={() => handleUpgrade(plan.key)}
-                      disabled={upgrading}
-                      data-testid={`upgrade-${plan.key}`}
-                    >
-                      {upgrading ? 'Processing...' : `Upgrade to ${plan.name}`}
-                    </button>
-                  )}
-                  
-                  {plan.key === 'enterprise' && !plan.has_price && (
-                    <button className="btn-secondary contact-btn">
-                      Contact Sales
-                    </button>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         </AdminOnly>
