@@ -120,15 +120,37 @@ A comprehensive backend system featuring 19 specialized AI engines orchestrated 
 | `/api/teams/{id}/invites` | GET | List pending invites |
 | `/api/teams/invites/accept` | POST | Accept invite |
 
+## Frontend Architecture (Phase 5)
+
+### Auth Components
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `AuthContext.jsx` | `/context/` | Global auth state, token management, login/signup/logout |
+| `ProtectedRoute.jsx` | `/components/` | Route guard, redirects unauthenticated to /login |
+| `AppHeader.jsx` | `/components/` | Global nav header with logo, links, team switcher, user menu |
+| `TeamSwitcher.jsx` | `/components/` | Dropdown to switch teams and create new ones |
+| `CreateTeamModal.jsx` | `/components/` | Modal dialog for creating organization teams |
+| `LoginPage.jsx` | `/pages/` | Email/password login form |
+| `SignupPage.jsx` | `/pages/` | Registration form with password validation |
+
+### Auth Flow
+1. User visits any protected route → Redirected to `/login`
+2. User logs in/signs up → Tokens stored in localStorage
+3. `AuthContext` checks token on mount → Fetches user data
+4. `authAxios()` automatically attaches Bearer token + X-Team-ID header
+5. 401 response → Auto-refresh token or redirect to login
+
 ## Frontend Pages
 
 | Page | Route | Features |
 |------|-------|----------|
-| **Home** | `/` | Health status, engine count, model status, Quick Actions (6 cards), Engine preview |
+| **Login** | `/login` | Email/password form, error handling, redirect to intended page |
+| **Signup** | `/signup` | Full registration with password requirements, auto-login |
+| **Home** | `/` | Health status, team workspace name, welcome message, Quick Actions |
 | **Engines Dashboard** | `/engines` | Table of all 19 engines with Method, Endpoint, Description, Test buttons with modal |
 | **Money Pipeline** | `/money-pipeline` | Full form (idea, target revenue, industry, context), sample ideas, tabbed results view |
 | **Pipeline Composer** | `/pipeline-composer` | Chain engines, reorder steps, execute pipeline, timeline results, save/load presets |
-| **Execution History** | `/history` | Searchable/filterable log of all engine calls with input/output details |
+| **Execution History** | `/history` | Team-scoped logs, searchable/filterable with authenticated API |
 | **Analytics Dashboard** | `/analytics` | Real-time monitoring: Performance charts, AI drift detection, System health gauges |
 
 ## Engine Test Modal Features
