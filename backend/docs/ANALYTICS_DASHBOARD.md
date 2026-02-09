@@ -3,6 +3,18 @@
 ## Overview
 The Monitoring & Analytics Dashboard provides real-time visibility into the Hybrid Intelligence system's performance, AI quality, and system health.
 
+## System Requirements
+
+### psutil Dependency
+The analytics dashboard uses **psutil** for real system metrics (CPU, RAM, Disk, Load Average).
+
+**Important:** `psutil` must be installed globally on the VPS environment:
+```bash
+pip install psutil
+```
+
+If psutil is not available, the dashboard will automatically fall back to mock data and display a warning indicator.
+
 ## Features
 
 ### 1. Engine Performance Tab
@@ -17,8 +29,11 @@ The Monitoring & Analytics Dashboard provides real-time visibility into the Hybr
 
 ### 3. System Health Tab
 - **CPU/Memory/Disk Gauges**: Visual ring gauges with color-coded thresholds
+- **Detailed Metrics**: Total/Used GB for Memory and Disk
+- **Load Average**: 1, 5, 15 minute averages (Unix systems)
 - **System Stats**: Active connections, uptime, overall status
 - **Pipeline Visualization**: Active pipeline flow diagram with throughput metrics
+- **Metrics Source Indicator**: Shows if using real (psutil) or mock data
 
 ## Real-Time Updates
 - Dashboard polls every **5 seconds** for fresh data
@@ -33,11 +48,29 @@ The Monitoring & Analytics Dashboard provides real-time visibility into the Hybr
 | `GET /api/analytics/engine-latency` | Latency metrics (avg, min, max, p95) |
 | `GET /api/analytics/engine-errors` | Error rates and severity |
 | `GET /api/analytics/drift-status` | AI drift detection alerts |
-| `GET /api/analytics/system-health` | CPU, memory, disk metrics (mock) |
+| `GET /api/analytics/system-health` | CPU, memory, disk metrics (real or mock) |
 | `GET /api/analytics/pipeline-graph` | Active pipeline visualization |
 | `GET /api/analytics/confidence-trends` | 12-hour confidence time series |
 | `GET /api/analytics/model-comparison` | LLM model performance comparison |
 | `GET /api/analytics/realtime-stats` | Quick stats for polling |
+
+### System Health Response Schema
+```json
+{
+  "cpu_usage": 35.2,
+  "memory_usage": 45.8,
+  "memory_total_gb": 16.0,
+  "memory_used_gb": 7.33,
+  "disk_usage": 28.5,
+  "disk_total_gb": 100.0,
+  "disk_used_gb": 28.5,
+  "load_average": [1.5, 1.2, 0.9],
+  "active_connections": 15,
+  "uptime_hours": 145.6,
+  "status": "healthy",
+  "psutil_available": true
+}
+```
 
 ## Data Storage
 - Uses JSONL format consistent with `execution_logs.json`
@@ -51,16 +84,6 @@ The Monitoring & Analytics Dashboard provides real-time visibility into the Hybr
 2. Create endpoint in `analytics.py`
 3. Add chart component in `AnalyticsPage.jsx`
 4. Style with CSS in `App.css`
-
-### Integrating Real System Metrics (psutil)
-Replace mock data in `/api/analytics/system-health`:
-```python
-import psutil
-
-cpu = psutil.cpu_percent()
-memory = psutil.virtual_memory().percent
-disk = psutil.disk_usage('/').percent
-```
 
 ### Adding WebSocket Support
 For lower latency updates, implement WebSocket:
@@ -84,10 +107,11 @@ async def websocket_endpoint(websocket: WebSocket):
 ```
 
 ## Dependencies
-- **Backend**: FastAPI, Pydantic
+- **Backend**: FastAPI, Pydantic, psutil (optional but recommended)
 - **Frontend**: React, Recharts, Axios
 
 ## Performance Notes
 - Caching prevents database/log file hammering
 - Polling interval is configurable (default 5s)
 - Large datasets are truncated to last 1000 logs
+- psutil calls use minimal interval (0.1s) for CPU to avoid blocking
