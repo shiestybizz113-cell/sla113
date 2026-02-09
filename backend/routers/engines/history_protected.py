@@ -115,3 +115,20 @@ async def create_execution_log(
     )
     
     return {"status": "logged", "id": log_id}
+
+
+@router.delete("/clear")
+async def clear_execution_history(
+    ctx: EngineContext = Depends(get_engine_context),
+):
+    """
+    Clear all execution history for the current team.
+    Requires owner or admin role.
+    """
+    ctx.require_admin()
+    
+    from database import execution_logs_collection
+    
+    result = await execution_logs_collection().delete_many({"team_id": ctx.team_id})
+    
+    return {"message": f"Cleared {result.deleted_count} execution logs"}
