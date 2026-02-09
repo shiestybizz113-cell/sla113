@@ -1,15 +1,23 @@
 /**
  * Signup Page
  * New user registration with validation
+ * Supports invite token flow for team invitations
  */
 
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const SignupPage = () => {
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('invite');
+  const inviteEmail = searchParams.get('email');
+  
   const [formData, setFormData] = useState({
-    email: '',
+    email: inviteEmail || '',
     password: '',
     confirmPassword: '',
     firstName: '',
@@ -18,9 +26,32 @@ const SignupPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [inviteInfo, setInviteInfo] = useState(null);
   
-  const { signup } = useAuth();
+  const { signup, authAxios, refreshTeams } = useAuth();
   const navigate = useNavigate();
+  
+  // Fetch invite info if token present
+  useEffect(() => {
+    const fetchInviteInfo = async () => {
+      if (!inviteToken) return;
+      
+      try {
+        const res = await axios.get(`${API}/invites/validate/${inviteToken}`);
+        if (res.data.valid) {
+          setInviteInfo(res.data);
+          // Pre-fill email if from invite
+          if (res.data.email) {
+            setFormData(prev => ({ ...prev, email: res.data.email }));
+          }
+        }
+      } catch (e) {
+        console.error('Failed to validate invite:', e);
+      }
+    };
+    
+    fetchInviteInfo();
+  }, [inviteToken]);
   
   const validatePassword = (password) => {
     const errors = [];
@@ -80,13 +111,24 @@ const SignupPage = () => {
       formData.lastName.trim()
     );
     
-    setLoading(false);
-    
     if (result.success) {
+      // If there's an invite token, accept it automatically
+      if (inviteToken) {
+        try {
+          await authAxios().post('/teams/invites/accept', { token: inviteToken });
+          await refreshTeams();
+        } catch (e) {
+          console.error('Failed to auto-accept invite:', e);
+          // Still redirect even if invite acceptance fails
+        }
+      }
+      
       navigate('/', { replace: true });
     } else {
       setError(result.error);
     }
+    
+    setLoading(false);
   };
   
   return (
@@ -94,8 +136,19 @@ const SignupPage = () => {
       <div className="auth-container">
         <div className="auth-header">
           <h1>Create Account</h1>
-          <p>Get started with Hybrid Intelligence</p>
+          {inviteInfo ? (
+            <p>Join <strong>{inviteInfo.team_name}</strong> as {inviteInfo.role}</p>
+          ) : (
+            <p>Get started with Hybrid Intelligence</p>
+          )}
         </div>
+        
+        {inviteInfo && (
+          <div className="invite-banner" data-testid="invite-banner">
+            <span className="invite-banner-icon">🎉</span>
+            <span>You've been invited by {inviteInfo.invited_by_name}</span>
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className="auth-form" data-testid="signup-form">
           {error && (
@@ -151,8 +204,15 @@ const SignupPage = () => {
               placeholder="you@example.com"
               required
               autoComplete="email"
+              disabled={!!inviteInfo}
+              className={inviteInfo ? 'input-disabled' : ''}
               data-testid="signup-email"
             />
+            {inviteInfo && (
+              <span className="field-hint">
+                Email is set from the invitation
+              </span>
+            )}
           </div>
           
           <div className="form-group">
@@ -200,14 +260,19 @@ const SignupPage = () => {
             disabled={loading}
             data-testid="signup-submit"
           >
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? 'Creating account...' : inviteInfo ? 'Create Account & Join Team' : 'Create Account'}
           </button>
         </form>
         
         <div className="auth-footer">
           <p>
             Already have an account?{' '}
-            <Link to="/login" data-testid="login-link">Sign in</Link>
+            <Link 
+              to={inviteToken ? `/login?invite=${inviteToken}&email=${encodeURIComponent(formData.email)}` : '/login'} 
+              data-testid="login-link"
+            >
+              Sign in
+            </Link>
           </p>
         </div>
       </div>
