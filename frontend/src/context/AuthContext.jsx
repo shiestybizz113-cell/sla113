@@ -239,6 +239,56 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Handle OAuth callback - called from OAuthCallbackPage
+  const handleOAuthCallback = async (accessToken, refreshToken) => {
+    // Store tokens
+    storeTokens(accessToken, refreshToken);
+    
+    // Fetch user data
+    await fetchUser();
+  };
+
+  // Refresh teams list (useful after accepting invite)
+  const refreshTeams = async () => {
+    try {
+      const response = await authAxios().get('/auth/me');
+      const userData = response.data;
+      
+      if (userData.teams && userData.teams.length > 0) {
+        setTeams(userData.teams);
+        
+        // Update current team if needed
+        const storedTeamId = getCurrentTeamId();
+        const currentTeamExists = userData.teams.find(t => t.id === storedTeamId);
+        
+        if (!currentTeamExists) {
+          setCurrentTeam(userData.teams[0]);
+          localStorage.setItem(CURRENT_TEAM_KEY, userData.teams[0].id);
+        } else if (currentTeam && currentTeamExists) {
+          setCurrentTeam(currentTeamExists);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to refresh teams:', err);
+    }
+  };
+
+  // Get OAuth providers configuration
+  const getOAuthProviders = async () => {
+    try {
+      const response = await axios.get(`${API}/api/auth/oauth/providers`);
+      return response.data.providers;
+    } catch (err) {
+      console.error('Failed to get OAuth providers:', err);
+      return [];
+    }
+  };
+
+  // Initiate OAuth login
+  const initiateOAuthLogin = (provider) => {
+    window.location.href = `${API}/api/auth/oauth/${provider}/redirect`;
+  };
+
   // Initialize auth state
   useEffect(() => {
     fetchUser();
