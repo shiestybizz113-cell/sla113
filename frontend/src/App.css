@@ -3273,6 +3273,22 @@ body {
   margin-top: 0.25rem;
 }
 
+.forgot-password-link {
+  text-align: right;
+  margin-top: -0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.forgot-password-link a {
+  color: var(--accent-blue);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.forgot-password-link a:hover {
+  text-decoration: underline;
+}
+
 .auth-btn {
   width: 100%;
   padding: 0.9rem;
