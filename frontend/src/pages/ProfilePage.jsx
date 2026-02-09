@@ -130,7 +130,7 @@ const ProfilePage = () => {
       toast.success('Session revoked');
       fetchSessions();
     } catch (e) {
-      toast.error(e.response?.data?.detail || 'Failed to revoke session');
+      toast.error(getErrorMessage(e));
     }
   };
 
@@ -147,7 +147,7 @@ const ProfilePage = () => {
       toast.success('All sessions revoked');
       logout();
     } catch (e) {
-      toast.error(e.response?.data?.detail || 'Failed to logout all sessions');
+      toast.error(getErrorMessage(e));
     }
   };
 
