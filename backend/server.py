@@ -47,6 +47,7 @@ from routers.engines import (
     anime_story_router,
     art_direction_router,
     money_pipeline_router,
+    analytics_router,
 )
 from routers.engines.history import router as history_router
 
@@ -68,6 +69,7 @@ api_router.include_router(anime_story_router)
 api_router.include_router(art_direction_router)
 api_router.include_router(money_pipeline_router)
 api_router.include_router(history_router)
+api_router.include_router(analytics_router)
 
 
 # Define Models
