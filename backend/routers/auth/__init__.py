@@ -364,12 +364,27 @@ async def confirm_reset(
 
 # ==================== OAuth ====================
 
+# Cache for OAuth providers (1 minute TTL - config can change at runtime)
+from time import time as get_time
+_oauth_cache = {"data": None, "timestamp": 0}
+OAUTH_CACHE_TTL = 60  # 1 minute
+
+
 @router.get("/oauth/providers")
 async def get_oauth_providers():
     """
-    Get available OAuth providers and their configuration status.
+    Get available OAuth providers and their configuration status (cached).
     """
-    return {
+    global _oauth_cache
+    
+    now = get_time()
+    
+    # Return cached data if fresh
+    if _oauth_cache["data"] and (now - _oauth_cache["timestamp"]) < OAUTH_CACHE_TTL:
+        return _oauth_cache["data"]
+    
+    # Build fresh response
+    result = {
         "providers": [
             {
                 "name": "google",
@@ -383,6 +398,11 @@ async def get_oauth_providers():
             },
         ]
     }
+    
+    # Cache the result
+    _oauth_cache = {"data": result, "timestamp": now}
+    
+    return result
 
 
 @router.get("/oauth/{provider}/redirect")
