@@ -314,7 +314,12 @@ async def refresh_tokens(
     
     now = datetime.now(timezone.utc)
     
-    if session["expires_at"] < now:
+    # Handle both offset-naive and offset-aware datetimes from MongoDB
+    expires_at = session["expires_at"]
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    
+    if expires_at < now:
         raise AuthError("Session expired", 401)
     
     # Verify user is still active
