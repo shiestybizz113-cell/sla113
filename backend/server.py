@@ -64,12 +64,18 @@ from routers.engines import (
     analytics_router,
 )
 from routers.engines.history import router as history_router
+from routers.engines.history_protected import router as history_protected_router
+from routers.pipelines import router as pipelines_router
 
 # Include auth and team routers first (higher priority)
 api_router.include_router(auth_router)
 api_router.include_router(teams_router)
 
-# Include all engine routers
+# Include protected routers (require auth)
+api_router.include_router(history_protected_router)  # /api/history (protected)
+api_router.include_router(pipelines_router)  # /api/pipelines (protected)
+
+# Include all engine routers (currently public for backward compatibility)
 api_router.include_router(core_router)
 api_router.include_router(strategy_router)
 api_router.include_router(drift_router)
@@ -86,7 +92,7 @@ api_router.include_router(anime_lore_router)
 api_router.include_router(anime_story_router)
 api_router.include_router(art_direction_router)
 api_router.include_router(money_pipeline_router)
-api_router.include_router(history_router)
+api_router.include_router(history_router)  # Legacy /api/history/* (unprotected)
 api_router.include_router(analytics_router)
 
 
