@@ -162,13 +162,26 @@ A comprehensive backend system featuring 19 specialized AI engines orchestrated 
 | **Signup** | `/signup` | Full registration with password requirements, auto-login |
 | **Home** | `/` | Health status, team workspace name, welcome message, Quick Actions |
 | **Profile** | `/profile` | Profile info, roles/memberships, password change, active sessions |
-| **Team Settings** | `/team/settings` | Team members, pending invitations, invite modal |
+| **Team Settings** | `/team/settings` | Team members, pending invitations, activity log |
+| **Billing** | `/billing` | Current plan, usage meters, available plans, mock mode banner |
+| **API Keys** | `/settings/api-keys` | Create/revoke API keys, empty state, usage instructions |
+| **Admin Overview** | `/admin/overview` | System stats (users, teams, executions), recent signups |
 | **Accept Invite** | `/invite/accept` | Validate and accept team invitations |
 | **Engines Dashboard** | `/engines` | Table of all 19 engines with Method, Endpoint, Description, Test buttons with modal |
 | **Money Pipeline** | `/money-pipeline` | Full form (idea, target revenue, industry, context), sample ideas, tabbed results view |
 | **Pipeline Composer** | `/pipeline-composer` | Chain engines, reorder steps, execute pipeline, timeline results, save/load presets |
 | **Execution History** | `/history` | Team-scoped logs, searchable/filterable with authenticated API |
 | **Analytics Dashboard** | `/analytics` | Real-time monitoring: Performance charts, AI drift detection, System health gauges |
+
+## Phase D-Lite: UX Polish Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `SettingsSidebar.jsx` | `/components/` | Consistent navigation sidebar for settings pages |
+| `SystemStatusBanner.jsx` | `/components/` | Admin-only banner showing unconfigured services |
+| `LoadingState.jsx` | `/components/ui/` | Reusable loading indicators (PageLoading, InlineLoading) |
+| `EmptyState.jsx` | `/components/ui/` | Empty state displays (NoAPIKeysFound, NoActivityFound) |
+| `ErrorMessage.jsx` | `/components/ui/` | Standardized error messages and user-friendly error mapping |
 
 ## Engine Test Modal Features
 - Shows endpoint info (Method + Path)
