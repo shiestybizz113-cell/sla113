@@ -102,6 +102,9 @@ function App() {
               </ProtectedRoute>
             } />
           </Routes>
+            </main>
+          </div>
+          <Toaster richColors position="top-right" />
         </AuthProvider>
       </BrowserRouter>
     </div>
