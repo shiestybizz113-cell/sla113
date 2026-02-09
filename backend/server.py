@@ -44,6 +44,8 @@ from routers.auth import router as auth_router
 from routers.teams import router as teams_router
 from routers.profile import router as profile_router
 from routers.invites import router as invites_router
+from routers.billing import router as billing_router
+from routers.api_keys import router as api_keys_router
 
 # Import and include all engine routers
 from routers.engines import (
