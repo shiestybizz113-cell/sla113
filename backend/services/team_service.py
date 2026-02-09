@@ -385,7 +385,7 @@ async def create_invite(
     ip_address: Optional[str] = None,
     user_agent: Optional[str] = None,
 ) -> dict:
-    """Create a team invite."""
+    """Create a team invite and send email notification."""
     if inviter_role not in ["owner", "admin"]:
         raise TeamError("Only owners and admins can invite members", 403)
     
@@ -428,6 +428,23 @@ async def create_invite(
     
     result = await team_invites_collection().insert_one(invite_doc)
     
+    # Get team and inviter info for email
+    team = await teams_collection().find_one({"_id": ObjectId(team_id)})
+    inviter = await users_collection().find_one({"_id": ObjectId(inviter_id)})
+    
+    team_name = team["name"] if team else "Unknown Team"
+    inviter_name = f"{inviter['first_name']} {inviter['last_name']}" if inviter else "A team member"
+    
+    # Send invite email (non-blocking)
+    from services.email_service import send_invite_email
+    email_result = await send_invite_email(
+        to_email=invite_data.email,
+        team_name=team_name,
+        inviter_name=inviter_name,
+        role=invite_data.role,
+        token=token,
+    )
+    
     # Audit log
     await create_audit_log(
         user_id=inviter_id,
@@ -435,15 +452,20 @@ async def create_invite(
         action="membership.invite_sent",
         resource_type="invite",
         resource_id=str(result.inserted_id),
-        details={"email": invite_data.email, "role": invite_data.role},
+        details={
+            "email": invite_data.email,
+            "role": invite_data.role,
+            "email_sent": email_result is not None,
+        },
         ip_address=ip_address,
         user_agent=user_agent,
     )
     
     return {
         "invite_id": str(result.inserted_id),
-        "token": token,  # Return to send via email
+        "token": token,  # Return for testing/debugging
         "expires_at": invite_doc["expires_at"].isoformat(),
+        "email_sent": email_result is not None,
     }
 
 
