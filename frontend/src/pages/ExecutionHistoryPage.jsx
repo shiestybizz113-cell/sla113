@@ -269,18 +269,18 @@ const ExecutionHistoryPage = () => {
                         <div className="log-details">
                           <div className="detail-section">
                             <h4>📥 Input</h4>
-                            <pre>{JSON.stringify(log.input_data, null, 2)}</pre>
+                            <pre>{log.input_summary || 'N/A'}</pre>
                           </div>
-                          {log.output_data && (
+                          {log.output_summary && (
                             <div className="detail-section">
                               <h4>📤 Output</h4>
-                              <pre>{JSON.stringify(log.output_data, null, 2)}</pre>
+                              <pre>{log.output_summary}</pre>
                             </div>
                           )}
-                          {log.error && (
+                          {log.error_message && (
                             <div className="detail-section error">
                               <h4>❌ Error</h4>
-                              <pre>{log.error}</pre>
+                              <pre>{log.error_message}</pre>
                             </div>
                           )}
                         </div>
