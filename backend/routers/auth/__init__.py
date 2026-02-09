@@ -1,10 +1,13 @@
 """
 Authentication API routes.
-Handles signup, login, token refresh, logout, and password management.
+Handles signup, login, token refresh, logout, password management, and OAuth.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
+from fastapi.responses import RedirectResponse
 from typing import Optional
+from pydantic import BaseModel, EmailStr, Field, field_validator
+import re
 
 from models import (
     UserCreate,
@@ -22,6 +25,19 @@ from services.auth_service import (
     logout_user,
     get_user_with_teams,
     AuthError,
+)
+from services.password_reset_service import (
+    request_password_reset,
+    validate_reset_token,
+    confirm_password_reset,
+    PasswordResetError,
+)
+from services.oauth_service import (
+    get_authorization_url,
+    handle_oauth_callback,
+    generate_oauth_state,
+    is_oauth_configured,
+    OAuthError,
 )
 from core.dependencies import get_current_user, get_client_info
 from core.security import hash_password, verify_password, get_token_expiry_seconds
