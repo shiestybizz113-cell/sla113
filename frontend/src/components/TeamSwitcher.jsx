@@ -88,6 +88,16 @@ const TeamSwitcher = () => {
 
             <div className="dropdown-divider"></div>
             
+            <Link
+              to="/team/settings"
+              className="team-settings-link"
+              onClick={() => setIsOpen(false)}
+              data-testid="team-settings-link"
+            >
+              <span>⚙️</span>
+              <span>Team Settings</span>
+            </Link>
+            
             <button
               className="create-team-btn"
               onClick={() => {
