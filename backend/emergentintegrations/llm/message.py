@@ -78,6 +78,8 @@ class SystemMessage(Message):
         system = SystemMessage(text="You are a helpful assistant.")
     """
     text: str = ""
+    role: MessageRole = field(default=MessageRole.SYSTEM)
+    content: str = ""
     
     def __post_init__(self):
         self.role = MessageRole.SYSTEM
@@ -96,6 +98,8 @@ class UserMessage(Message):
         msg = UserMessage(text="Hello, how are you?")
     """
     text: str = ""
+    role: MessageRole = field(default=MessageRole.USER)
+    content: str = ""
     
     def __post_init__(self):
         self.role = MessageRole.USER
@@ -114,6 +118,8 @@ class AssistantMessage(Message):
         msg = AssistantMessage(text="I'm doing well, thank you!")
     """
     text: str = ""
+    role: MessageRole = field(default=MessageRole.ASSISTANT)
+    content: str = ""
     
     def __post_init__(self):
         self.role = MessageRole.ASSISTANT
