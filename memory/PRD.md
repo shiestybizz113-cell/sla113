@@ -1,378 +1,76 @@
-# Hybrid Intelligence Core - PRD
+# SLA113 — Universal AI Game Studio
 
-## Original Problem Statement
-Build a "Hybrid Intelligence Core," a sophisticated multi-model AI pipeline composed of specialized, single-purpose engines. The system uses GPT-5.2, Claude Sonnet 4.5, and Gemini 3 Flash via the `emergentintegrations` library with a universal key for seamless LLM access.
+## Product Overview
+SLA113 is a sovereign AI-powered game creation platform that generates complete game packages — from AAA titles (COD, GTA, Mortal Kombat style) to casino/arcade games — using AI engines for vision, logic, and composition. It sits alongside "Empire 1" (the existing Hybrid Intelligence Core SaaS) as its own domain page.
 
-**Production SaaS Requirements (Feb 2025):**
-- Full authentication with JWT (access + refresh tokens)
-- Multi-tenant team/workspace model
-- Role-based access control (system + team levels)
-- Audit trail for all actions
-- MongoDB for all persistence
+## Architecture
+- **Frontend**: React + Tailwind CSS + lucide-react, mounted at `/sla113`
+- **Backend**: FastAPI, routes at `/api/sla113/*`
+- **Database**: MongoDB (`sla113_projects` collection)
+- **AI**: Emergent LLM Key via `emergentintegrations` pip package (OpenAI GPT-4o-mini)
 
-## Project Overview
-A comprehensive backend system featuring 19 specialized AI engines orchestrated by a Hybrid Intelligence Core. Each engine is a distinct service responsible for a specific AI task, exposed via modular API endpoints. The platform is built as a production-ready multi-tenant SaaS.
+## Partitions (UI)
+| Partition | Theme | Tabs |
+|-----------|-------|------|
+| FACTORY | Cyan (#00C8FF) | Frontline (live feed), White Label Mint |
+| EMPIRE 1 | Indigo (#6366f1) | Mint Ledger, Revenue Pipelines |
+| FOUNDRY | Gold (#D4AF37) | OS Builder, Vision Smith, Audio Forge |
+| VAULT | Deep Red (#8B0000) | System Core, Night Queue |
 
-## Architecture Summary
-```
-                    ┌─────────────────────────────┐
-                    │  HYBRID INTELLIGENCE CORE   │
-                    │    (Master Orchestrator)    │
-                    └─────────────┬───────────────┘
-                                  │
-        ┌─────────────────────────┼─────────────────────────┐
-        │                         │                         │
-        ▼                         ▼                         ▼
-┌───────────────┐       ┌───────────────┐       ┌───────────────┐
-│   GPT-5.2     │       │Claude Sonnet  │       │Gemini 3 Flash │
-│   (Code)      │       │ 4.5 (Strategy)│       │   (Quick)     │
-└───────────────┘       └───────────────┘       └───────────────┘
-                                  │
-                    ┌─────────────┴───────────────┐
-                    │    19 SPECIALIZED ENGINES   │
-                    └─────────────────────────────┘
+## Supported Game Types (16)
+### Casino/Arcade
+- Fish Shooter, Slot Machine, Crash Game, Card Game
 
-## Multi-Tenant Architecture
-```
-┌─────────────────────────────────────────────────────────┐
-│                    AUTHENTICATION                        │
-│  JWT Access Token (15min) + Refresh Token (7 days)      │
-│  bcrypt password hashing | OAuth-ready user model       │
-└─────────────────────────────────────────────────────────┘
-                           │
-┌─────────────────────────────────────────────────────────┐
-│                      TEAMS/TENANTS                       │
-│  Users → Multiple Teams → Team-scoped resources         │
-│  Roles: owner | admin | member | viewer                 │
-│  Auto-creates "Personal" team on signup                 │
-└─────────────────────────────────────────────────────────┘
-                           │
-┌─────────────────────────────────────────────────────────┐
-│                    TEAM-SCOPED DATA                      │
-│  Pipelines | Execution Logs | Engine Configs            │
-│  All resources isolated by team_id                      │
-└─────────────────────────────────────────────────────────┘
-```
+### AAA / Universal
+- Open World (GTA Style), Tactical FPS (COD Style), Fighting Game (MK Style), Fantasy RPG, Survival Horror
 
-## What's Been Implemented
+### Action/Casual
+- Platformer, Puzzle, Tower Defense, Endless Runner, Battle Royale, Racing, Sports
 
-| Date | Feature | Status |
-|------|---------|--------|
-| 2026-01-03 | Integration playbook (HYBRID_AI_STACK_PLAYBOOK.md) | ✅ Done |
-| 2026-01-03 | Hybrid Intelligence Core | ✅ Done |
-| 2026-01-03 | Core engines (Strategy, Plan, Analysis, Opportunity, Evaluator, Pricing, Blueprint, Persona) | ✅ Done |
-| 2026-01-03 | Infrastructure (Canon Enforcer, Drift Monitor, Error Handler, Routing Engine) | ✅ Done |
-| 2026-01-03 | Anime Character Engine | ✅ Done |
-| 2026-01-03 | Pipeline Composer Engine | ✅ Done |
-| 2026-02-03 | **Router Refactoring** - Split 1450-line monolithic router into 16 modular files | ✅ Done |
-| 2026-02-03 | Anime Lore Engine + API endpoints | ✅ Done |
-| 2026-02-03 | Anime Story Engine + API endpoints | ✅ Done |
-| 2026-02-03 | Art Direction Engine + API endpoints | ✅ Done |
-| 2026-02-03 | **Universal Money Pipeline Engine** | ✅ Done |
-| 2026-02-03 | Pipeline Composer updated with all 13 engines + 7 templates | ✅ Done |
-| 2026-02-03 | **Frontend Dashboard** - 3 pages with real backend integration | ✅ Done |
-| 2026-02-07 | **Codebase Cleanup** - Removed abandoned FireKirin project and AI Arcade files | ✅ Done |
-| 2026-02-09 | **Monitoring & Analytics Dashboard** - Real-time analytics with charts | ✅ Done |
-| 2026-02-09 | **Analytics Polish** - All 3 tiers (Alerts, WebSocket, Export, Themes) | ✅ Done |
-| 2026-02-09 | **Phase 1: Database Models** - User, Team, Membership, Session, AuditLog | ✅ Done |
-| 2026-02-09 | **Phase 2: Auth System** - Signup, Login, JWT, Protected routes | ✅ Done |
-| 2026-02-09 | **Phase 3: Team System** - Create, Invite, Switch, Roles, Permissions | ✅ Done |
-|| 2026-02-09 | **Phase 4: Feature Migration** - Team-scoped pipelines and history | ✅ Done |
-|| 2026-02-09 | **Phase 5: Frontend Integration** - Login/Signup UI, Protected Routes, Team Switcher, Header Nav | ✅ Done |
-|| 2026-02-09 | **Phase 6: Cleanup & Profile** - Remove legacy routes, Profile page, Role-based UI visibility | ✅ Done |
-|| 2026-02-09 | **Phase 7: Team Invitations** - Full invite system with email, accept flow, signup integration | ✅ Done |
-|| 2026-02-09 | **Macro Phase A: Identity & Access** - Password Reset, OAuth (Google/GitHub), Session Management | ✅ Done |
-|| 2026-02-09 | **Macro Phase B: Billing & Usage** - Stripe billing, Usage limits, API Keys | ✅ Done |
-|| 2026-02-09 | **Phase C-Lite: Minimal Governance** - Team activity log, Admin overview page, Navigation links | ✅ Done |
-|| 2026-02-09 | **Phase D-Lite: Launch Polish** - Settings sidebar, Loading/Empty states, Error handling, System status, Caching | ✅ Done |
+## AI Engines
+1. **Vision Engine** (`/api/sla113/vision/generate`) — Generates sprite/asset specs
+2. **Logic Engine** (`/api/sla113/logic/generate`) — Generates game math, mechanics, RTP, paytables
+3. **Composer Engine** (`/api/sla113/compose`) — Assembles game bundles
 
-## Backend SaaS Architecture
+## API Endpoints
+- `GET /api/sla113/game-types` — List all 16 game types
+- `GET /api/sla113/stats` — Platform stats
+- `POST /api/sla113/projects` — Create game project
+- `GET /api/sla113/projects` — List projects
+- `GET /api/sla113/projects/{id}` — Get project
+- `DELETE /api/sla113/projects/{id}` — Delete project
+- `POST /api/sla113/vision/generate` — Generate visual assets
+- `POST /api/sla113/logic/generate` — Generate game logic
+- `POST /api/sla113/compose` — Compose game bundle
 
-### Database Collections (MongoDB)
-| Collection | Purpose |
-|------------|---------|
-| `users` | User accounts with bcrypt passwords, OAuth support |
-| `teams` | Teams/workspaces (personal + organization) |
-| `team_memberships` | User-team relationships with roles |
-| `sessions` | JWT refresh token storage |
-| `team_invites` | Pending team invitations |
-| `audit_logs` | Full audit trail of all actions |
-| `pipelines` | Team-scoped pipeline configurations |
-| `execution_logs` | Team-scoped engine execution history |
-
-### Authentication Endpoints
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/auth/signup` | POST | Register new user (creates personal team) |
-| `/api/auth/login` | POST | Login with email/password |
-| `/api/auth/refresh` | POST | Refresh access token |
-| `/api/auth/logout` | POST | Revoke session(s) |
-| `/api/auth/me` | GET | Get current user with teams |
-| `/api/auth/password` | PUT | Change password |
-| `/api/auth/sessions` | GET | List active sessions |
-
-### Team Endpoints
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/teams` | POST | Create new team |
-| `/api/teams` | GET | List user's teams |
-| `/api/teams/{id}` | GET | Get team details |
-| `/api/teams/{id}` | PUT | Update team (owner/admin) |
-| `/api/teams/{id}/members` | GET | List team members |
-| `/api/teams/{id}/members/{uid}/role` | PUT | Change member role |
-| `/api/teams/{id}/members/{uid}` | DELETE | Remove member |
-| `/api/teams/{id}/leave` | POST | Leave team |
-| `/api/teams/{id}/invites` | POST | Create invite (sends email) |
-| `/api/teams/{id}/invites` | GET | List pending invites |
-| `/api/teams/{id}/invites/{invite_id}` | DELETE | Revoke invite |
-| `/api/teams/invites/accept` | POST | Accept invite (requires auth) |
-| `/api/invites/validate/{token}` | GET | Validate invite token (public) |
-
-## Frontend Architecture (Phase 5)
-
-### Auth Components
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `AuthContext.jsx` | `/context/` | Global auth state, token management, login/signup/logout |
-| `ProtectedRoute.jsx` | `/components/` | Route guard, redirects unauthenticated to /login |
-| `AppHeader.jsx` | `/components/` | Global nav header with logo, links, team switcher, user menu |
-| `TeamSwitcher.jsx` | `/components/` | Dropdown to switch teams and create new ones |
-| `CreateTeamModal.jsx` | `/components/` | Modal dialog for creating organization teams |
-| `RoleGate.jsx` | `/components/` | Role-based visibility controls (TeamRoleGate, AdminOnly, OwnerOnly) |
-| `InviteMembersModal.jsx` | `/components/` | Modal for inviting new team members |
-| `PendingInvitesList.jsx` | `/components/` | List of pending invitations with revoke |
-| `LoginPage.jsx` | `/pages/` | Email/password login form |
-| `SignupPage.jsx` | `/pages/` | Registration form with password validation |
-| `ProfilePage.jsx` | `/pages/` | Profile settings, password change, session management |
-| `TeamSettingsPage.jsx` | `/pages/` | Team members, invitations, settings |
-| `AcceptInvitePage.jsx` | `/pages/` | Accept invite flow with token validation |
-
-### Auth Flow
-1. User visits any protected route → Redirected to `/login`
-2. User logs in/signs up → Tokens stored in localStorage
-3. `AuthContext` checks token on mount → Fetches user data
-4. `authAxios()` automatically attaches Bearer token + X-Team-ID header
-5. 401 response → Auto-refresh token or redirect to login
-
-## Frontend Pages
-
-| Page | Route | Features |
-|------|-------|----------|
-| **Login** | `/login` | Email/password form, error handling, redirect to intended page |
-| **Signup** | `/signup` | Full registration with password requirements, auto-login |
-| **Home** | `/` | Health status, team workspace name, welcome message, Quick Actions |
-| **Profile** | `/profile` | Profile info, roles/memberships, password change, active sessions |
-| **Team Settings** | `/team/settings` | Team members, pending invitations, activity log |
-| **Billing** | `/billing` | Current plan, usage meters, available plans, mock mode banner |
-| **API Keys** | `/settings/api-keys` | Create/revoke API keys, empty state, usage instructions |
-| **Admin Overview** | `/admin/overview` | System stats (users, teams, executions), recent signups |
-| **Accept Invite** | `/invite/accept` | Validate and accept team invitations |
-| **Engines Dashboard** | `/engines` | Table of all 19 engines with Method, Endpoint, Description, Test buttons with modal |
-| **Money Pipeline** | `/money-pipeline` | Full form (idea, target revenue, industry, context), sample ideas, tabbed results view |
-| **Pipeline Composer** | `/pipeline-composer` | Chain engines, reorder steps, execute pipeline, timeline results, save/load presets |
-| **Execution History** | `/history` | Team-scoped logs, searchable/filterable with authenticated API |
-| **Analytics Dashboard** | `/analytics` | Real-time monitoring: Performance charts, AI drift detection, System health gauges |
-
-## Phase D-Lite: UX Polish Components
-
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `SettingsSidebar.jsx` | `/components/` | Consistent navigation sidebar for settings pages |
-| `SystemStatusBanner.jsx` | `/components/` | Admin-only banner showing unconfigured services |
-| `LoadingState.jsx` | `/components/ui/` | Reusable loading indicators (PageLoading, InlineLoading) |
-| `EmptyState.jsx` | `/components/ui/` | Empty state displays (NoAPIKeysFound, NoActivityFound) |
-| `ErrorMessage.jsx` | `/components/ui/` | Standardized error messages and user-friendly error mapping |
-
-## Engine Test Modal Features
-- Shows endpoint info (Method + Path)
-- Description of engine purpose
-- Editable JSON payload for POST requests
-- "Run Test" button with loading state
-- Success badge on completion
-- Full JSON response display
-- Supports all 17 testable engines (2 internal engines excluded)
-
-## Pipeline Composer Features
-- **Engine Selection**: Click any of 13 engines to add to pipeline
-- **Step Management**: Reorder with ↑↓ buttons, remove with × button
-- **5 Preset Pipelines**: Full Business Plan, Startup Validation, Idea to Money, Anime Full Concept, Product Launch
-- **Save/Load Custom Pipelines**: Persist to localStorage
-- **Execution Timeline**: Vertical timeline showing each step's input/output
-- **Real-time Progress**: Shows "Executing Step X/Y" during execution
-
-## Execution History Features
-- **Auto-logging Middleware**: All engine POST calls automatically logged
-- **Stats Dashboard**: Total executions, success rate, avg duration, error count
-- **Searchable Table**: Search across engine names, endpoints, inputs
-- **Filters**: By engine, status (success/error), source (api/pipeline)
-- **Expandable Details**: Click to view full input/output JSON for each call
-- **Pagination**: Navigate through large log sets
-- **Clear History**: Delete all logs with confirmation
-- **Persistent Storage**: Logs saved to `/app/backend/execution_logs.json`
-
-## Engine Inventory (19 Total)
-
-### Business & Strategy Engines
-| Engine | Purpose | Default Model |
-|--------|---------|---------------|
-| Strategy Engine | High-level strategy generation | Claude |
-| Plan Builder Engine | Tactical execution planning | GPT-5.2 |
-| Analysis Engine | Deep SWOT analysis | Claude |
-| Opportunity Mapper | Identify high-leverage opportunities | Claude |
-| Evaluator Engine | Score and evaluate with criteria | Claude |
-| Pricing Engine | Generate pricing structures | Claude |
-| Blueprint Engine | System architecture blueprints | GPT-5.2 |
-| Persona Engine | User/customer persona generation | Claude |
-| **Money Pipeline Engine** | Complete monetization system | Claude |
-
-### Creative Engines
-| Engine | Purpose | Default Model |
-|--------|---------|---------------|
-| Anime Character Engine | Original anime character creation | Claude |
-| Anime Lore Engine | World-building, mythology, factions | Claude |
-| Anime Story Engine | Narrative structure, story arcs | Claude |
-| Art Direction Engine | Visual direction for creative projects | Claude |
-
-### Infrastructure Engines
-| Engine | Purpose |
-|--------|---------|
-| Hybrid Intelligence Core | Master orchestrator |
-| Routing Engine | Task classification → model selection |
-| Pipeline Composer Engine | Multi-engine workflow orchestration |
-| Canon Enforcer | Output normalization |
-| Drift Monitor | Behavioral tracking |
-| Error Handler | Structured errors |
-
-## API Endpoints (77 Total)
-
-### Core Endpoints
-- `POST /api/core/execute` - Unified execution via Hybrid Core
-- `GET /api/core/status` - Core system status
-- `GET /api/health` - Pipeline health check (lists all 19 engines)
-
-### Money Pipeline Endpoints
-- `POST /api/money-pipeline` - Full monetization pipeline
-- `POST /api/money-pipeline/quick` - Quick monetization
-- `POST /api/money-pipeline/saas` - SaaS-specific pipeline
-- `POST /api/money-pipeline/service` - Service business pipeline
-- `POST /api/money-pipeline/ecommerce` - E-commerce pipeline
-- `POST /api/money-pipeline/api` - API product pipeline
-
-### Pipeline Composer Endpoints
-- `POST /api/pipeline/compose` - Compose multi-engine pipeline
-- `GET /api/pipeline/engines` - List all 13 chainable engines
-- `GET /api/pipeline/templates` - List 7 pre-built templates
-
-### Creative Endpoints
-- `POST /api/anime/character` - Generate anime character
-- `POST /api/anime/lore` - Generate world lore
-- `POST /api/anime/story` - Generate story structure
-- `POST /api/art-direction` - Generate art direction
-
-## Pipeline Templates (7)
-
-| Template | Engines Chain |
-|----------|---------------|
-| full_business_plan | strategy → analysis → opportunity → plan → pricing → evaluator |
-| product_launch | persona → strategy → pricing → plan |
-| startup_validation | analysis → persona → opportunity → evaluator |
-| system_design | strategy → blueprint → plan → evaluator |
-| **idea_to_money** | money_pipeline → persona → blueprint → evaluator |
-| **anime_full_concept** | lore → story → character → character → art_direction |
-| **saas_monetization** | money_pipeline → blueprint → plan |
-
-## Code Architecture
-```
-/app/backend/
-├── services/                    # 19 engine service files
-│   ├── hybrid_core.py
-│   ├── strategy_engine.py
-│   ├── money_pipeline_engine.py # NEW
-│   ├── anime_lore_engine.py
-│   ├── anime_story_engine.py
-│   ├── art_direction_engine.py
-│   └── ... (13 more)
-├── routers/
-│   ├── engines/                 # 16 modular router files
-│   │   ├── __init__.py
-│   │   ├── core.py
-│   │   ├── money_pipeline.py    # NEW
-│   │   ├── anime_lore.py
-│   │   ├── anime_story.py
-│   │   ├── art_direction.py
-│   │   └── ... (10 more)
-├── server.py
-├── requirements.txt
-└── .env
-```
-
-## Key Technical Details
-- **API Key**: Emergent Universal Key (EMERGENT_LLM_KEY)
-- **Library**: emergentintegrations
-- **Models**: 
-  - OpenAI: gpt-5.2
-  - Anthropic: claude-sonnet-4-5-20250929
-  - Google: gemini-3-flash-preview
-
-## Cleanup Completed (Feb 7, 2025)
-- Removed abandoned FireKirin game engine project (`/app/firekirin/`)
-- Deleted abandoned AI Arcade components (`ArcadeHub.jsx`, `ArcadeSubpages.jsx`, `CanonRoom.jsx`, `MachineModal.jsx`)
-- Deleted obsolete monolithic router (`/app/backend/routers/strategy.py`)
-
-## Current State
-✅ **COMPLETE Production SaaS Platform** with:
-- Full authentication system (signup, login, logout with JWT)
-- Multi-tenant team/workspace support with role-based access
-- 19 specialized AI engines
-- Multi-page React frontend (6+ pages)
-- Protected routes with auto-redirect
-- Team Switcher UI with Create Team modal
-- Global navigation header
-- Execution logging & history (team-scoped)
-- **Premium Monitoring & Analytics Dashboard** with all polish features
-
-## Analytics Dashboard (Feb 9, 2025)
-New `/analytics` page with 3 tabs and premium polish:
-- **Engine Performance**: Bar charts, latency metrics, error rates table, mini sparklines
-- **AI Quality & Drift**: Confidence trends, drift alerts with pulse animations, model comparison
-- **System Health**: Gauges with animations, detailed metrics, load average, pipeline flow
-
-### Tier 1 — Must-Have Polish ✅
-- Threshold-based alerts (CPU>80%, Memory>90%, Disk>95%)
-- Toast notifications for critical alerts
-- Last Updated timestamp with 5-second refresh
-- Skeleton loaders during initial load
-- Smooth animations on all metric changes
-
-### Tier 2 — Premium Polish ✅
-- WebSocket support for sub-second updates (`/api/analytics/ws`)
-- Auto-fallback to 5-second polling if WebSocket fails
-- Drift event notifications with visual highlighting
-- Mini sparklines showing recent trends
-- Metrics source indicator (LIVE/POLLING)
-
-### Tier 3 — Luxury Polish ✅
-- Historical export (JSON + CSV download)
-- Customizable widgets (show/hide sections)
-- Preferences saved to localStorage
-- Dark/Light theme toggle with smooth transitions
-
-**10 API Endpoints**: 9 REST + 1 WebSocket
-**psutil Integration**: ✅ Real system metrics with safe fallbacks
-
-## Next Tasks
-- Configure production credentials:
-  - `RESEND_API_KEY` for email delivery
-  - `STRIPE_SECRET_KEY` + `STRIPE_PRO_PRICE_ID` for billing
-  - `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` for Google OAuth
-  - `GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET` for GitHub OAuth
-- Migrate remaining public engine APIs to authenticated pattern
-- Add navigation links to Billing and API Keys pages
+## What's Implemented (Feb 2026)
+- [x] Full multi-partition UI (Factory, Empire 1, Foundry, Vault)
+- [x] 9 panels across 4 partitions
+- [x] Backend CRUD for game projects
+- [x] AI Vision Engine (real LLM calls)
+- [x] AI Logic Engine (real LLM calls)
+- [x] AI Composer Engine (real LLM calls)
+- [x] AI Terminal (overseer command interface)
+- [x] Critical Drift overlay
+- [x] Daemon Uplink heartbeat
+- [x] 16 game types (casino + AAA)
+- [x] LLM integration fixed (proper emergentintegrations pip package)
 
 ## Backlog
-- User invitation system for teams (email invites)
-- Password reset functionality
-- OAuth provider UI (Google, GitHub)
-- Additional dashboard themes/skins
-- Alert notification history/log
-- Engine performance comparison charts
+- [ ] Audio Forge — wire to real audio generation API
+- [ ] White Label Mint — real tenant provisioning
+- [ ] Revenue Pipelines — real pipeline data from backend
+- [ ] Night Queue — persistent job queue with backend workers
+- [ ] System Core — real firewall/security toggles
+- [ ] Build Pipeline — export to APK/WebGL
+- [ ] Compliance Engine — certification automation
+- [ ] Deploy Engine — CDN distribution
+
+## Key Files
+- `/app/frontend/src/pages/SLA113Page.jsx` — Main SLA113 UI
+- `/app/backend/routers/sla113.py` — API router
+- `/app/backend/sla113/` — Engine modules (vision, logic, composer)
+- `/app/backend/sla113/models.py` — Data models
+
+## Credentials
+- Test user: `newuser@example.com` / `NewPass123!`
