@@ -7,6 +7,7 @@ import uuid
 
 # ─── Game Types ───
 GAME_TYPES = {
+    # Casino/Arcade
     "fish_shooter": {
         "name": "Fish Shooter",
         "description": "Multiplayer fish hunting arcade game with weapon upgrades",
@@ -22,6 +23,32 @@ GAME_TYPES = {
         "description": "Multiplier-based game with cash-out mechanics",
         "category": "casino",
     },
+    "card_game": {
+        "name": "Card Game",
+        "description": "Poker, blackjack, or custom card-based game",
+        "category": "casino",
+    },
+    # AAA / Universal
+    "open_world": {
+        "name": "Open World (GTA Style)",
+        "description": "Cinematic urban open world with missions, vehicles, and NPC AI",
+        "category": "aaa",
+    },
+    "tactical_fps": {
+        "name": "Tactical FPS (COD Style)",
+        "description": "Military tactical shooter with loadouts, maps, and multiplayer",
+        "category": "aaa",
+    },
+    "fighting_game": {
+        "name": "Fighting Game (MK Style)",
+        "description": "Character movesets, combos, frame data, and fatalities",
+        "category": "aaa",
+    },
+    "fantasy_rpg": {
+        "name": "Fantasy RPG",
+        "description": "Magical open world RPG with quests, stats, and crafting",
+        "category": "aaa",
+    },
     "platformer": {
         "name": "Platformer",
         "description": "Side-scrolling platform game with levels and enemies",
@@ -31,11 +58,6 @@ GAME_TYPES = {
         "name": "Puzzle",
         "description": "Match-3, tile-based, or logic puzzle game",
         "category": "casual",
-    },
-    "card_game": {
-        "name": "Card Game",
-        "description": "Poker, blackjack, or custom card-based game",
-        "category": "casino",
     },
     "tower_defense": {
         "name": "Tower Defense",
@@ -47,15 +69,25 @@ GAME_TYPES = {
         "description": "Auto-running character with obstacles and power-ups",
         "category": "casual",
     },
-    "rpg": {
-        "name": "RPG",
-        "description": "Role-playing game with stats, inventory, and quests",
-        "category": "adventure",
-    },
     "battle_royale": {
         "name": "Battle Royale",
         "description": "Last-player-standing arena combat game",
         "category": "action",
+    },
+    "racing": {
+        "name": "Racing",
+        "description": "High-speed vehicle racing with tracks and power-ups",
+        "category": "action",
+    },
+    "survival_horror": {
+        "name": "Survival Horror",
+        "description": "Atmospheric horror with resource management and puzzles",
+        "category": "aaa",
+    },
+    "sports": {
+        "name": "Sports",
+        "description": "Team or individual sports simulation",
+        "category": "sports",
     },
 }
 

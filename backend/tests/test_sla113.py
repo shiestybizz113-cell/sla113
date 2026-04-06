@@ -43,40 +43,57 @@ def authenticated_client(api_client, auth_token):
 
 
 class TestSLA113GameTypes:
-    """Test game types endpoint"""
+    """Test game types endpoint - now includes 16 types with AAA games"""
     
-    def test_get_game_types_returns_10_types(self, api_client):
-        """GET /api/sla113/game-types should return 10 supported game types"""
+    def test_get_game_types_returns_16_types(self, api_client):
+        """GET /api/sla113/game-types should return 16 supported game types including AAA"""
         response = api_client.get(f"{API_URL}/game-types")
         assert response.status_code == 200
         
         data = response.json()
         assert "game_types" in data
         game_types = data["game_types"]
-        assert len(game_types) == 10
+        assert len(game_types) >= 16, f"Expected at least 16 game types, got {len(game_types)}"
         
-        # Verify expected game types exist
-        expected_types = ["fish_shooter", "slot_machine", "crash_game", "platformer", 
-                         "puzzle", "card_game", "tower_defense", "runner", "rpg", "battle_royale"]
+        # Verify expected game types exist (including AAA types)
+        expected_types = [
+            # Casino/Arcade
+            "fish_shooter", "slot_machine", "crash_game", "card_game",
+            # AAA types
+            "open_world", "tactical_fps", "fighting_game", "fantasy_rpg",
+            # Other types
+            "platformer", "puzzle", "tower_defense", "runner", 
+            "battle_royale", "racing", "survival_horror", "sports"
+        ]
         for gt in expected_types:
             assert gt in game_types, f"Missing game type: {gt}"
             assert "name" in game_types[gt]
             assert "description" in game_types[gt]
             assert "category" in game_types[gt]
+    
+    def test_aaa_game_types_have_correct_category(self, api_client):
+        """Verify AAA game types have 'aaa' category"""
+        response = api_client.get(f"{API_URL}/game-types")
+        assert response.status_code == 200
+        
+        game_types = response.json()["game_types"]
+        aaa_types = ["open_world", "tactical_fps", "fighting_game", "fantasy_rpg", "survival_horror"]
+        for gt in aaa_types:
+            assert game_types[gt]["category"] == "aaa", f"{gt} should have 'aaa' category"
 
 
 class TestSLA113Stats:
     """Test stats endpoint"""
     
     def test_get_stats_returns_valid_structure(self, api_client):
-        """GET /api/sla113/stats should return stats object"""
+        """GET /api/sla113/stats should return stats object with 16 game types"""
         response = api_client.get(f"{API_URL}/stats")
         assert response.status_code == 200
         
         data = response.json()
         assert "total_projects" in data
         assert "supported_game_types" in data
-        assert data["supported_game_types"] == 10
+        assert data["supported_game_types"] >= 16, f"Expected at least 16 game types, got {data['supported_game_types']}"
         assert "engines" in data
         assert set(data["engines"]) == {"vision", "logic", "composer"}
         assert "version" in data
@@ -119,6 +136,26 @@ class TestSLA113ProjectsCRUD:
         
         # Store project ID for cleanup
         TestSLA113ProjectsCRUD.created_project_id = data["id"]
+    
+    def test_create_project_tactical_fps(self, api_client):
+        """POST /api/sla113/projects should create AAA tactical FPS project"""
+        project_data = {
+            "name": "TEST_Tactical_Ops",
+            "game_type": "tactical_fps",
+            "theme": "military",
+            "target_platform": "both"
+        }
+        response = api_client.post(f"{API_URL}/projects", json=project_data)
+        assert response.status_code == 200
+        
+        data = response.json()
+        assert data["name"] == "TEST_Tactical_Ops"
+        assert data["game_type"] == "tactical_fps"
+        assert data["game_type_info"]["category"] == "aaa"
+        assert data["game_type_info"]["name"] == "Tactical FPS (COD Style)"
+        
+        # Store for cleanup
+        TestSLA113ProjectsCRUD.aaa_project_id = data["id"]
     
     def test_get_project_by_id(self, api_client):
         """GET /api/sla113/projects/{id} should return project details"""
@@ -165,6 +202,18 @@ class TestSLA113ProjectsCRUD:
         # Verify deletion
         get_response = api_client.get(f"{API_URL}/projects/{project_id}")
         assert get_response.status_code == 404
+    
+    def test_delete_aaa_project(self, api_client):
+        """DELETE /api/sla113/projects/{id} should delete AAA project"""
+        project_id = getattr(TestSLA113ProjectsCRUD, 'aaa_project_id', None)
+        if not project_id:
+            pytest.skip("No AAA project created to delete")
+        
+        response = api_client.delete(f"{API_URL}/projects/{project_id}")
+        assert response.status_code == 200
+        
+        data = response.json()
+        assert data["deleted"] == True
     
     def test_delete_nonexistent_project(self, api_client):
         """DELETE /api/sla113/projects/{id} with invalid ID should return 404"""
