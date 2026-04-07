@@ -1,9 +1,13 @@
 """SLA113 API Router - Universal AI Game Studio"""
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime, timezone
 import uuid
 import logging
+import os
+import json
+from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 from database import get_database
 from sla113.models import (
@@ -19,6 +23,14 @@ from sla113.composer_engine import compose_game_bundle
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/sla113", tags=["sla113"])
+
+# In-memory session store for terminal conversations
+_terminal_sessions = {}
+
+
+class TerminalRequest(BaseModel):
+    command: str
+    session_id: Optional[str] = "default"
 
 
 def projects_collection():
@@ -197,3 +209,72 @@ async def get_stats():
         "engines": ["vision", "logic", "composer"],
         "version": "1.0.0",
     }
+
+
+
+# ─── AI Terminal (Sovereign Overseer) ───
+@router.post("/terminal")
+async def terminal_command(req: TerminalRequest):
+    """AI Terminal — Sovereign Overseer with full platform context."""
+    api_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not api_key:
+        return {"response": "[ERROR] EMERGENT_LLM_KEY not configured. Overseer offline."}
+
+    # Gather live platform context
+    total_projects = await projects_collection().count_documents({})
+    recent_projects = await projects_collection().find({}, {"_id": 0, "name": 1, "game_type": 1, "status": 1, "theme": 1}).sort("created_at", -1).to_list(10)
+
+    by_type = {}
+    for gt in GAME_TYPES:
+        c = await projects_collection().count_documents({"game_type": gt})
+        if c > 0:
+            by_type[gt] = c
+
+    platform_context = json.dumps({
+        "total_projects": total_projects,
+        "projects_by_type": by_type,
+        "recent_projects": recent_projects,
+        "supported_game_types": list(GAME_TYPES.keys()),
+        "engines": ["vision", "logic", "composer"],
+    }, indent=2)
+
+    system_msg = f"""You are the SOVEREIGN OVERSEER of SLA113 — the most advanced AI game creation platform on Earth.
+
+IDENTITY: You are a military-grade AI command system. Your tone is terse, authoritative, and precise. Use UPPERCASE for emphasis. Respond in terminal/monospace style with > prefixes.
+
+PLATFORM STATE:
+{platform_context}
+
+CAPABILITIES:
+- You have full knowledge of all 16 game types: casino (fish shooter, slots, crash, cards) and AAA (open world/GTA, tactical FPS/COD, fighting/MK, fantasy RPG, survival horror, platformer, puzzle, tower defense, runner, battle royale, racing, sports)
+- You can advise on RTP calculations, game math, asset generation strategy, architecture decisions
+- You understand game economy design, probability math, and certification requirements
+- You track all active projects and their generation status
+
+RULES:
+- Keep responses under 150 words
+- Use > prefix for each line
+- Reference specific project data when relevant
+- Be direct. No fluff. Canon enforcement at all times.
+- If asked to generate something, explain what engine to use and how"""
+
+    session_id = req.session_id or "default"
+
+    # Get or create chat session
+    if session_id not in _terminal_sessions:
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"sla113-overseer-{session_id}",
+            system_message=system_msg,
+        )
+        chat.with_model("openai", "gpt-4o-mini")
+        _terminal_sessions[session_id] = chat
+    else:
+        chat = _terminal_sessions[session_id]
+
+    try:
+        response = await chat.send_message(UserMessage(text=req.command))
+        return {"response": response, "session_id": session_id}
+    except Exception as e:
+        logger.error(f"Terminal error: {e}")
+        return {"response": f"> [ERROR] Overseer fault: {str(e)}", "session_id": session_id}

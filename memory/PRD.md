@@ -50,7 +50,7 @@ SLA113 is a sovereign AI-powered game creation platform that generates complete 
 - [x] AI Vision Engine (real LLM calls)
 - [x] AI Logic Engine (real LLM calls)
 - [x] AI Composer Engine (real LLM calls)
-- [x] AI Terminal (overseer command interface)
+- [x] AI Terminal — Sovereign Overseer (real GPT with platform context + session persistence)
 - [x] Critical Drift overlay
 - [x] Daemon Uplink heartbeat
 - [x] 16 game types (casino + AAA)

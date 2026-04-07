@@ -350,15 +350,20 @@ export default function SLA113Page() {
 
   const removeQueueItem = (id) => setQueue(queue.filter(item => item.id !== id));
 
-  const askAI = () => {
+  const askAI = async () => {
     if (!aiInput.trim()) return;
     setIsThinking(true);
     setIsTerminalExpanded(true);
-    setTimeout(() => {
-      setAiOutput(prev => prev + `\n> [USER]: ${aiInput}\n> [SYS]: Acknowledged. Canon rules enforced. Context injected to active pipeline.`);
-      setIsThinking(false);
-      setAiInput("");
-    }, 1500);
+    const command = aiInput;
+    setAiInput("");
+    setAiOutput(prev => prev + `\n> [USER]: ${command}`);
+    try {
+      const res = await axios.post(`${API}/terminal`, { command, session_id: 'main' });
+      setAiOutput(prev => prev + `\n${res.data.response}`);
+    } catch (e) {
+      setAiOutput(prev => prev + `\n> [ERROR] Overseer unreachable: ${e.message}`);
+    }
+    setIsThinking(false);
   };
 
   return (
