@@ -22,6 +22,17 @@ const CANON_PALETTE = {
 };
 
 const STYLES = `
+  /* SLA113 ISOLATION — Reset all Empire 1 globals */
+  #sla113-root, #sla113-root * {
+    margin: 0; padding: 0; box-sizing: border-box;
+    --bg-primary: initial; --bg-secondary: initial; --bg-card: initial;
+    --accent-green: initial; --accent-blue: initial;
+  }
+  #sla113-root {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #050505; overflow: hidden;
+  }
+
   :root {
     --obsidian: ${CANON_PALETTE.obsidian};
     --gold: ${CANON_PALETTE.gold};

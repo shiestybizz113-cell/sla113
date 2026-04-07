@@ -4,7 +4,8 @@
 SLA113 is a sovereign AI-powered game creation platform that generates complete game packages — from AAA titles (COD, GTA, Mortal Kombat style) to casino/arcade games — using AI engines for vision, logic, and composition. It sits alongside "Empire 1" (the existing Hybrid Intelligence Core SaaS) as its own domain page.
 
 ## Architecture
-- **Frontend**: React + Tailwind CSS + lucide-react, mounted at `/sla113`
+- **Frontend**: React + Tailwind CSS + lucide-react, isolated micro-frontend at `/sla113/*`
+- **SLA113 has its own app shell** (`/app/frontend/src/sla113/`) — zero Empire 1 bleed, no shared AuthProvider, own CSS scope
 - **Backend**: FastAPI, routes at `/api/sla113/*`
 - **Database**: MongoDB (`sla113_projects` collection)
 - **AI**: Emergent LLM Key via `emergentintegrations` pip package (OpenAI GPT-4o-mini)
@@ -67,8 +68,10 @@ SLA113 is a sovereign AI-powered game creation platform that generates complete 
 - [ ] Deploy Engine — CDN distribution
 
 ## Key Files
-- `/app/frontend/src/pages/SLA113Page.jsx` — Main SLA113 UI
-- `/app/backend/routers/sla113.py` — API router
+- `/app/frontend/src/sla113/SLA113App.jsx` — Standalone micro-frontend shell
+- `/app/frontend/src/sla113/SLA113Page.jsx` — Main SLA113 UI (all partitions)
+- `/app/frontend/src/App.js` — Root router (splits traffic: /sla113 → SLA113App, else → Empire 1)
+- `/app/backend/routers/sla113.py` — API router (incl. AI Terminal endpoint)
 - `/app/backend/sla113/` — Engine modules (vision, logic, composer)
 - `/app/backend/sla113/models.py` — Data models
 
