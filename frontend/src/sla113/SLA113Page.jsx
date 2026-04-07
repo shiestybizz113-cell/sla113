@@ -7,7 +7,7 @@ import {
   HardDrive, Globe, Ghost, Layers, Factory, CheckCircle2, Moon, RefreshCw, XCircle,
   Settings, Server, Lock, SlidersHorizontal, Key, Network, ShieldCheck, Package,
   BarChart3, Hammer, Code, Grid3X3, Mic, Archive, ChevronDown, Scan, Paintbrush, Scissors,
-  Rocket, FileCheck, Upload, Play, ExternalLink, CloudLightning
+  Rocket, FileCheck, Upload, Play, ExternalLink, CloudLightning, Link2
 } from 'lucide-react';
 import SpriteCutter from './SpriteCutter';
 import DependencyGraph from './DependencyGraph';
