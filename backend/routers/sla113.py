@@ -358,15 +358,13 @@ STYLE_PROMPTS = {
 
 @router.post("/vision/generate-image")
 async def generate_image(req: ImageGenRequest):
-    """Generate AAA-quality game art assets using GPT Image 1."""
+    """Generate AAA-quality game art assets using Gemini 3 Pro Image Generation."""
     import base64
-    import requests as http_requests
-    from litellm import image_generation
-    from emergentintegrations.llm.openai.image_generation import OpenAIImageGeneration
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
 
-    api_key = os.environ.get("EMERGENT_LLM_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="EMERGENT_LLM_KEY not configured")
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    if not gemini_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not configured")
 
     # Build professional prompt
     asset_prefix = ASSET_TYPE_PROMPTS.get(req.asset_type, ASSET_TYPE_PROMPTS["concept_art"])
@@ -381,43 +379,24 @@ async def generate_image(req: ImageGenRequest):
     )
 
     try:
-        # Get proxy URL from the library
-        img_gen_helper = OpenAIImageGeneration(api_key=api_key)
-        proxy_url = img_gen_helper.emergent_proxy_url
+        session_id = f"vision-smith-{uuid.uuid4().hex[:8]}"
+        chat = LlmChat(
+            api_key=gemini_key,
+            session_id=session_id,
+            system_message="You are an elite AAA game art director. Generate exactly what is requested with maximum quality."
+        )
+        chat.with_model("gemini", "gemini-3-pro-image-preview").with_params(modalities=["image", "text"])
 
-        # Call LiteLLM directly to pass size parameter
-        params = {
-            "model": "openai/gpt-image-1",
-            "prompt": full_prompt,
-            "n": 1,
-            "quality": req.quality,
-            "size": req.size,
-            "api_key": api_key,
-        }
+        msg = UserMessage(text=full_prompt)
+        text_response, images = await chat.send_message_multimodal_response(msg)
 
-        # Use Emergent proxy if using Emergent key
-        if img_gen_helper._is_emergent_key(api_key):
-            params["api_base"] = proxy_url
-
-        response = image_generation(**params)
-
-        # Extract image bytes
-        image_bytes = None
-        if response.data and len(response.data) > 0:
-            img = response.data[0]
-            if hasattr(img, 'b64_json') and img.b64_json:
-                image_bytes = base64.b64decode(img.b64_json)
-            elif hasattr(img, 'url') and img.url:
-                img_resp = http_requests.get(img.url)
-                image_bytes = img_resp.content
-
-        if image_bytes:
-            image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+        if images and len(images) > 0:
+            image_base64 = images[0]['data']
             return {"image_base64": image_base64, "prompt": req.prompt, "style": req.style, "asset_type": req.asset_type}
 
         raise HTTPException(status_code=500, detail="No image generated")
     except Exception as e:
-        logger.error(f"Image generation failed: {e}")
+        logger.error(f"Gemini image generation failed: {e}")
         raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")
 
 
