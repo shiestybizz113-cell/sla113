@@ -360,6 +360,8 @@ STYLE_PROMPTS = {
 async def generate_image(req: ImageGenRequest):
     """Generate AAA-quality game art assets using GPT Image 1."""
     import base64
+    import requests as http_requests
+    from litellm import image_generation
     from emergentintegrations.llm.openai.image_generation import OpenAIImageGeneration
 
     api_key = os.environ.get("EMERGENT_LLM_KEY")
@@ -375,21 +377,44 @@ async def generate_image(req: ImageGenRequest):
         f"Subject: {req.prompt}. "
         f"Art Direction: {style_suffix} "
         f"Render at maximum detail and clarity. Professional game studio production quality. "
-        f"No watermarks, no text, no logos, no borders."
+        f"Absolutely no watermarks, no text overlays, no signatures, no logos, no borders, no labels."
     )
 
     try:
-        image_gen = OpenAIImageGeneration(api_key=api_key)
-        images = await image_gen.generate_images(
-            prompt=full_prompt,
-            model="gpt-image-1",
-            number_of_images=1,
-            quality=req.quality,
-            size=req.size,
-        )
-        if images and len(images) > 0:
-            image_base64 = base64.b64encode(images[0]).decode("utf-8")
+        # Get proxy URL from the library
+        img_gen_helper = OpenAIImageGeneration(api_key=api_key)
+        proxy_url = img_gen_helper.emergent_proxy_url
+
+        # Call LiteLLM directly to pass size parameter
+        params = {
+            "model": "openai/gpt-image-1",
+            "prompt": full_prompt,
+            "n": 1,
+            "quality": req.quality,
+            "size": req.size,
+            "api_key": api_key,
+        }
+
+        # Use Emergent proxy if using Emergent key
+        if img_gen_helper._is_emergent_key(api_key):
+            params["api_base"] = proxy_url
+
+        response = image_generation(**params)
+
+        # Extract image bytes
+        image_bytes = None
+        if response.data and len(response.data) > 0:
+            img = response.data[0]
+            if hasattr(img, 'b64_json') and img.b64_json:
+                image_bytes = base64.b64decode(img.b64_json)
+            elif hasattr(img, 'url') and img.url:
+                img_resp = http_requests.get(img.url)
+                image_bytes = img_resp.content
+
+        if image_bytes:
+            image_base64 = base64.b64encode(image_bytes).decode("utf-8")
             return {"image_base64": image_base64, "prompt": req.prompt, "style": req.style, "asset_type": req.asset_type}
+
         raise HTTPException(status_code=500, detail="No image generated")
     except Exception as e:
         logger.error(f"Image generation failed: {e}")
