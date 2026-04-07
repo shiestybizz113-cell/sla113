@@ -296,12 +296,69 @@ def pipelines_collection():
 class ImageGenRequest(BaseModel):
     prompt: str
     style: str = "pixel_art"
+    asset_type: str = "concept_art"  # concept_art | sprite_sheet | tileset | ui_element | background | character | boss | vfx
     size: str = "1024x1024"
+    quality: str = "high"
+
+
+ASSET_TYPE_PROMPTS = {
+    "sprite_sheet": (
+        "Create a professional game sprite sheet with multiple animation frames arranged in a grid layout. "
+        "Each frame should be clearly separated. Characters/objects should be centered in each cell with consistent proportions. "
+        "Transparent or solid dark background between frames. Suitable for game engine import and slicing. "
+    ),
+    "concept_art": (
+        "Create a AAA-quality game concept art illustration. Rich detail, dramatic lighting, cinematic composition. "
+        "Professional digital painting quality suitable for a game studio art bible. "
+    ),
+    "character": (
+        "Create a detailed game character design with front-facing full body view. "
+        "Clean silhouette, distinct features, game-ready proportions. Professional character concept art. "
+        "Include subtle detail in armor/clothing/accessories. Dynamic but readable pose. "
+    ),
+    "boss": (
+        "Create an imposing game boss character design. Massive scale, intimidating presence, unique silhouette. "
+        "Multiple attack indicators visible (weapons, magic auras, armored weak points). "
+        "Epic scale, dramatic lighting. AAA game quality boss concept art. "
+    ),
+    "tileset": (
+        "Create a seamless game tileset with multiple tile variations arranged in a grid. "
+        "Include ground, walls, corners, edges, and decorative variants. Each tile should seamlessly connect. "
+        "Consistent art style across all tiles. Top-down or side-view as appropriate. Game-ready quality. "
+    ),
+    "background": (
+        "Create a wide panoramic game background/environment. Parallax-ready with clear foreground, midground, and background layers. "
+        "Rich atmospheric detail, mood lighting. Suitable for scrolling game backgrounds. Cinematic quality. "
+    ),
+    "ui_element": (
+        "Create a set of game UI elements on a dark/transparent background. Include buttons, frames, health bars, "
+        "inventory slots, dialog boxes, and icons. Consistent art style, clean edges, scalable design. "
+        "Professional game UI kit quality with glowing/metallic accents. "
+    ),
+    "vfx": (
+        "Create game visual effects sprites: explosions, fire, lightning, magic particles, smoke, energy beams. "
+        "Each effect on transparent/dark background, suitable for sprite sheet extraction. Vibrant, dynamic, "
+        "with alpha-ready edges. Multiple frames showing effect progression. "
+    ),
+}
+
+STYLE_PROMPTS = {
+    "pixel_art": "Pixel art style: crisp 16-32bit pixels, limited but vibrant color palette, no anti-aliasing on edges, retro game aesthetic with modern polish.",
+    "vector": "Clean vector illustration: flat bold colors, sharp geometric edges, minimal gradients, modern mobile game aesthetic.",
+    "3d_render": "High-quality 3D render: physically-based materials, dramatic volumetric lighting, ambient occlusion, AAA game production quality.",
+    "hand_drawn": "Hand-painted illustration: visible brushstrokes, rich watercolor textures, ink outlines, artisan game art quality like Hollow Knight or Hades.",
+    "anime": "Japanese anime/manga art style: cel shading, vibrant saturated colors, expressive features, clean lineart, Studio Ghibli meets game art quality.",
+    "neon_cyberpunk": "Cyberpunk neon aesthetic: deep black backgrounds, electric neon glows (cyan, magenta, gold), holographic effects, Blade Runner meets arcade game.",
+    "dark_fantasy": "Dark fantasy art: muted earth tones with blood red/gold accents, gritty textures, medieval horror atmosphere, Dark Souls quality.",
+    "military_realism": "Military realism: tactical gear detail, weathered textures, muted olive/tan/black palette, photorealistic rendering, Call of Duty art direction.",
+    "comic_book": "Bold comic book style: thick outlines, halftone dots, dynamic action lines, saturated primary colors, Marvel/DC game adaptation quality.",
+    "low_poly": "Stylized low-poly 3D: faceted surfaces, vibrant flat colors per face, clean geometric forms, Monument Valley meets game art.",
+}
 
 
 @router.post("/vision/generate-image")
 async def generate_image(req: ImageGenRequest):
-    """Generate actual game art image using GPT Image 1."""
+    """Generate AAA-quality game art assets using GPT Image 1."""
     import base64
     from emergentintegrations.llm.openai.image_generation import OpenAIImageGeneration
 
@@ -309,17 +366,17 @@ async def generate_image(req: ImageGenRequest):
     if not api_key:
         raise HTTPException(status_code=500, detail="EMERGENT_LLM_KEY not configured")
 
-    style_map = {
-        "pixel_art": "16-bit pixel art style, limited color palette, retro game aesthetic",
-        "vector": "clean vector illustration, flat colors, sharp edges, game asset",
-        "3d_render": "3D rendered, realistic lighting, game-ready asset",
-        "hand_drawn": "hand-drawn illustration, ink outlines, watercolor fills",
-        "anime": "Japanese anime art style, cel shading, vibrant colors",
-        "neon": "neon-lit cyberpunk style, glowing edges, dark background",
-        "retro": "retro 80s arcade style, bold colors, scanline effects",
-    }
-    style_desc = style_map.get(req.style, req.style)
-    full_prompt = f"{req.prompt}. Style: {style_desc}. Game asset on transparent/dark background, high detail."
+    # Build professional prompt
+    asset_prefix = ASSET_TYPE_PROMPTS.get(req.asset_type, ASSET_TYPE_PROMPTS["concept_art"])
+    style_suffix = STYLE_PROMPTS.get(req.style, STYLE_PROMPTS["pixel_art"])
+
+    full_prompt = (
+        f"{asset_prefix}"
+        f"Subject: {req.prompt}. "
+        f"Art Direction: {style_suffix} "
+        f"Render at maximum detail and clarity. Professional game studio production quality. "
+        f"No watermarks, no text, no logos, no borders."
+    )
 
     try:
         image_gen = OpenAIImageGeneration(api_key=api_key)
@@ -327,14 +384,25 @@ async def generate_image(req: ImageGenRequest):
             prompt=full_prompt,
             model="gpt-image-1",
             number_of_images=1,
+            quality=req.quality,
+            size=req.size,
         )
         if images and len(images) > 0:
             image_base64 = base64.b64encode(images[0]).decode("utf-8")
-            return {"image_base64": image_base64, "prompt": req.prompt, "style": req.style}
+            return {"image_base64": image_base64, "prompt": req.prompt, "style": req.style, "asset_type": req.asset_type}
         raise HTTPException(status_code=500, detail="No image generated")
     except Exception as e:
         logger.error(f"Image generation failed: {e}")
         raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")
+
+
+@router.get("/vision/styles")
+async def list_vision_styles():
+    """Return available styles and asset types for the Vision Smith."""
+    return {
+        "styles": list(STYLE_PROMPTS.keys()),
+        "asset_types": list(ASSET_TYPE_PROMPTS.keys()),
+    }
 
 
 # ─── White Label Tenants ───

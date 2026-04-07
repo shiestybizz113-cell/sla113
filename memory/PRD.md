@@ -54,6 +54,7 @@ SLA113 is a sovereign AI-powered game creation platform that generates complete 
 - `PUT /api/sla113/tenants/{id}/rtp` — Set tenant RTP mode
 - `GET /api/sla113/jobs` — List jobs
 - `POST /api/sla113/jobs` — Create job
+- [x] **Night Queue Background Worker** — Auto-processes jobs through named stages every 3s, worker start/stop toggle, 10 game presets with unique stage sequences, frontend auto-polls
 - `PUT /api/sla113/jobs/{id}/progress` — Update job progress
 - `POST /api/sla113/jobs/{id}/process` — Advance job (simulate)
 - `DELETE /api/sla113/jobs/{id}` — Delete job
@@ -70,14 +71,14 @@ SLA113 is a sovereign AI-powered game creation platform that generates complete 
 - [x] AI Logic Engine (real LLM calls)
 - [x] AI Composer Engine (real LLM calls)
 - [x] AI Terminal — Sovereign Overseer (real GPT with platform context + session persistence)
-- [x] Vision Smith — GPT Image 1 real image generation
+- [x] **Vision Smith v2** — 8 asset types (concept art, character, boss, sprite sheet, tileset, background, UI kit, VFX), 10 art styles, 3 resolutions, pro-level prompt engineering per asset type
 - [x] **Sprite Cutter Tool** — Canvas-based sprite sheet slicing with grid overlay, cell selection, cut/download
 - [x] **Sprite Animation Preview** — Frame-by-frame playback (play/pause, FPS control, forward/reverse/pingpong)
 - [x] **Revenue Pipeline Pulse** — Individual + Pulse All triggers, real revenue generation ($50-500 per pulse)
 - [x] **Build Pipeline** — Compile Engine with WebGL/APK/Both targets, 5-stage build process, optimization modes
 - [x] **Compliance Engine** — Certification scans for GLI, MGA, UKGC, CURACAO jurisdictions with pass/fail results
 - [x] **Deploy Engine** — CDN deployment (Cloudflare/AWS/GCP/Custom) with region selection, SSL, live URLs
-- [x] **Night Queue Background Worker** — Auto-processes jobs through named stages every 3s, worker start/stop toggle, 10 game presets with unique stage sequences, frontend auto-polls
+- [x] **Job Dependencies Graph** — dependency picker, blocked/auto-unblock, SVG graph visualization with list/graph view toggle
 - [x] Critical Drift overlay
 - [x] Daemon Uplink heartbeat
 - [x] 16 game types (casino + AAA)

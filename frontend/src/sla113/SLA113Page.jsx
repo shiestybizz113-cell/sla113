@@ -218,6 +218,9 @@ export default function SLA113Page() {
   const [visionLoading, setVisionLoading] = useState(false);
   const [generatedImages, setGeneratedImages] = useState([]);
   const [spriteCutterImage, setSpriteCutterImage] = useState(null);
+  const [visionAssetType, setVisionAssetType] = useState('concept_art');
+  const [visionStyle, setVisionStyle] = useState('pixel_art');
+  const [visionSize, setVisionSize] = useState('1024x1024');
 
   // Mint Ledger State
   const [agents, setAgents] = useState([]);
@@ -359,14 +362,22 @@ export default function SLA113Page() {
     if (!prompt) return;
     setVisionLoading(true);
     try {
-      // Generate real image via GPT Image 1
+      // Generate AAA-quality game art via GPT Image 1
       const imgRes = await axios.post(`${API}/vision/generate-image`, {
         prompt,
-        style: selectedPreset === 'GTA5_TYPE' ? 'neon' : selectedPreset === 'COD_WARFARE' ? '3d_render' : selectedPreset === 'FANTASY_RPG' ? 'hand_drawn' : 'pixel_art',
-        size: '1024x1024',
+        asset_type: visionAssetType,
+        style: visionStyle,
+        size: visionSize,
+        quality: 'high',
       });
       if (imgRes.data.image_base64) {
-        setGeneratedImages(prev => [{ base64: imgRes.data.image_base64, prompt: imgRes.data.prompt, style: imgRes.data.style, id: Date.now() }, ...prev]);
+        setGeneratedImages(prev => [{
+          base64: imgRes.data.image_base64,
+          prompt: imgRes.data.prompt,
+          style: imgRes.data.style,
+          asset_type: imgRes.data.asset_type,
+          id: Date.now()
+        }, ...prev]);
       }
 
       // Also generate asset specs if project exists
@@ -869,43 +880,129 @@ export default function SLA113Page() {
             {/* FOUNDRY: VISION SMITH */}
             {partition === 'foundry' && activeTab === 'VISION SMITH' && (
               <div className="grid grid-cols-12 gap-6 animate-in fade-in max-w-7xl mx-auto w-full" data-testid="vision-smith-panel">
-                <div className="col-span-4 space-y-6">
-                  <div className="glass-panel border-[#D4AF37]/20 p-8 space-y-6 shadow-xl">
-                    <div className="border-b border-[#D4AF37]/20 pb-4">
-                      <h3 className="text-lg text-[#D4AF37] font-bold tracking-widest uppercase flex items-center gap-2"><ImageIcon size={18} /> Prompt Architect</h3>
-                      <p className="text-[10px] text-zinc-400 mt-1 tracking-widest uppercase">Style Injection Enforcement</p>
+                <div className="col-span-4 space-y-5 max-h-[calc(100vh-220px)] overflow-y-auto custom-scrollbar">
+                  <div className="glass-panel border-[#D4AF37]/20 p-6 space-y-5 shadow-xl">
+                    <div className="border-b border-[#D4AF37]/20 pb-3">
+                      <h3 className="text-base text-[#D4AF37] font-bold tracking-widest uppercase flex items-center gap-2"><ImageIcon size={16} /> Prompt Architect</h3>
+                      <p className="text-[9px] text-zinc-500 mt-1 tracking-widest uppercase">AAA Game Asset Pipeline</p>
                     </div>
-                    <div className="space-y-6">
-                      <div>
-                        <label className="block text-[10px] text-[#D4AF37] mb-3 uppercase tracking-widest font-bold">1. Style Anchor</label>
-                        <div className={`border-2 border-dashed transition-all p-8 text-center relative group bg-black/50 ${referenceFile ? 'border-emerald-500/50' : 'border-zinc-800 hover:border-[#D4AF37]/50'}`}>
-                          <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={(e) => setReferenceFile(e.target.files[0])} data-testid="style-anchor-upload" />
-                          {referenceFile ? (
-                            <div className="flex flex-col items-center">
-                              <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest mb-1">Target Locked</span>
-                              <span className="text-zinc-500 text-[9px]">{referenceFile.name}</span>
-                            </div>
-                          ) : (
-                            <div className="text-zinc-500 flex flex-col items-center gap-3">
-                              <Scan size={24} className="opacity-50" />
-                              <span className="text-[10px] uppercase tracking-widest">Ingest Master Canon Art</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] text-[#D4AF37] mb-3 uppercase tracking-widest font-bold">2. Engine Preset</label>
-                        <select value={selectedPreset} onChange={(e) => setSelectedPreset(e.target.value)} className="input-dark uppercase tracking-widest focus:border-[#D4AF37]" data-testid="engine-preset-select">
-                          {ENGINE_PRESETS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] text-[#D4AF37] mb-3 uppercase tracking-widest font-bold">3. Directive</label>
-                        <textarea rows={3} value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Enter boss concept..." className="input-dark resize-none focus:border-[#D4AF37]" data-testid="vision-directive-input" />
+
+                    {/* Asset Type */}
+                    <div>
+                      <label className="block text-[9px] text-[#D4AF37] mb-2 uppercase tracking-widest font-bold">1. Asset Type</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { id: 'concept_art', label: 'Concept Art' },
+                          { id: 'character', label: 'Character' },
+                          { id: 'boss', label: 'Boss Design' },
+                          { id: 'sprite_sheet', label: 'Sprite Sheet' },
+                          { id: 'tileset', label: 'Tileset' },
+                          { id: 'background', label: 'Background' },
+                          { id: 'ui_element', label: 'UI Kit' },
+                          { id: 'vfx', label: 'VFX / Particles' },
+                        ].map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => setVisionAssetType(t.id)}
+                            className={`py-2 text-[8px] uppercase tracking-widest border transition-all ${
+                              visionAssetType === t.id ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-zinc-800 text-zinc-600 hover:text-zinc-300'
+                            }`}
+                            data-testid={`asset-type-${t.id}`}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
+
+                    {/* Art Style */}
+                    <div>
+                      <label className="block text-[9px] text-[#D4AF37] mb-2 uppercase tracking-widest font-bold">2. Art Style</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { id: 'pixel_art', label: 'Pixel Art' },
+                          { id: '3d_render', label: '3D Render' },
+                          { id: 'hand_drawn', label: 'Hand Painted' },
+                          { id: 'anime', label: 'Anime' },
+                          { id: 'neon_cyberpunk', label: 'Cyberpunk' },
+                          { id: 'dark_fantasy', label: 'Dark Fantasy' },
+                          { id: 'military_realism', label: 'Military' },
+                          { id: 'comic_book', label: 'Comic Book' },
+                          { id: 'vector', label: 'Vector/Flat' },
+                          { id: 'low_poly', label: 'Low Poly' },
+                        ].map(s => (
+                          <button
+                            key={s.id}
+                            onClick={() => setVisionStyle(s.id)}
+                            className={`py-2 text-[8px] uppercase tracking-widest border transition-all ${
+                              visionStyle === s.id ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-zinc-800 text-zinc-600 hover:text-zinc-300'
+                            }`}
+                            data-testid={`art-style-${s.id}`}
+                          >
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Resolution */}
+                    <div>
+                      <label className="block text-[9px] text-[#D4AF37] mb-2 uppercase tracking-widest font-bold">3. Resolution</label>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {[
+                          { id: '1024x1024', label: '1024x1024' },
+                          { id: '1536x1024', label: '1536x1024' },
+                          { id: '1024x1536', label: '1024x1536' },
+                        ].map(sz => (
+                          <button
+                            key={sz.id}
+                            onClick={() => setVisionSize(sz.id)}
+                            className={`py-2 text-[8px] uppercase tracking-widest border transition-all ${
+                              visionSize === sz.id ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-zinc-800 text-zinc-600 hover:text-zinc-300'
+                            }`}
+                          >
+                            {sz.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Style Anchor */}
+                    <div>
+                      <label className="block text-[9px] text-[#D4AF37] mb-2 uppercase tracking-widest font-bold">4. Style Anchor (Optional)</label>
+                      <div className={`border-2 border-dashed transition-all p-4 text-center relative group bg-black/50 ${referenceFile ? 'border-emerald-500/50' : 'border-zinc-800 hover:border-[#D4AF37]/50'}`}>
+                        <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={(e) => setReferenceFile(e.target.files[0])} data-testid="style-anchor-upload" />
+                        {referenceFile ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-emerald-400 text-[9px] font-bold uppercase tracking-widest">Locked:</span>
+                            <span className="text-zinc-500 text-[9px] truncate max-w-[120px]">{referenceFile.name}</span>
+                          </div>
+                        ) : (
+                          <div className="text-zinc-600 flex items-center justify-center gap-2">
+                            <Scan size={14} />
+                            <span className="text-[9px] uppercase tracking-widest">Upload Reference Art</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Engine Preset */}
+                    <div>
+                      <label className="block text-[9px] text-[#D4AF37] mb-2 uppercase tracking-widest font-bold">5. Game Engine</label>
+                      <select value={selectedPreset} onChange={(e) => setSelectedPreset(e.target.value)} className="input-dark uppercase tracking-widest text-[10px] focus:border-[#D4AF37]" data-testid="engine-preset-select">
+                        {ENGINE_PRESETS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Directive */}
+                    <div>
+                      <label className="block text-[9px] text-[#D4AF37] mb-2 uppercase tracking-widest font-bold">6. Directive</label>
+                      <textarea rows={3} value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to create..." className="input-dark resize-none focus:border-[#D4AF37] text-sm" data-testid="vision-directive-input" />
+                    </div>
+
+                    {/* Generate */}
                     <button onClick={handleVisionSmith} disabled={visionLoading || !prompt} className={`w-full py-4 font-bold tracking-[0.3em] uppercase transition-all text-xs border ${visionLoading || !prompt ? 'border-zinc-800 text-zinc-700 bg-black' : 'border-[#D4AF37] text-black bg-[#D4AF37] hover:bg-[#F3E5AB]'}`} data-testid="engage-smith-btn">
-                      {visionLoading ? 'Generating...' : !prompt ? 'Directive Required' : 'Engage Smith'}
+                      {visionLoading ? 'Forging...' : !prompt ? 'Directive Required' : `Forge ${visionAssetType.replace(/_/g, ' ').toUpperCase()}`}
                     </button>
                   </div>
                 </div>
