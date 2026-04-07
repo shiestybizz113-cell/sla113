@@ -73,6 +73,7 @@ SLA113 is a sovereign AI-powered game creation platform that generates complete 
 - [x] AI Terminal — Sovereign Overseer (real GPT with platform context + session persistence)
 - [x] Vision Smith — GPT Image 1 real image generation
 - [x] **Sprite Cutter Tool** — Canvas-based sprite sheet slicing with grid overlay, cell selection, cut/download
+- [x] **Sprite Animation Preview** — Frame-by-frame playback (play/pause, FPS control, forward/reverse/pingpong), auto-highlights active frame in sprite grid
 - [x] Critical Drift overlay
 - [x] Daemon Uplink heartbeat
 - [x] 16 game types (casino + AAA)
