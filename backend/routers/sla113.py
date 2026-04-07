@@ -438,30 +438,139 @@ class CreateJobRequest(BaseModel):
     preset: str
     config: Optional[dict] = None
     priority: str = "normal"
+    depends_on: Optional[List[str]] = None  # List of job IDs this job depends on
 
 
 @router.post("/jobs")
 async def create_job(req: CreateJobRequest):
-    """Queue a new build job with processing stages."""
+    """Queue a new build job with processing stages and optional dependencies."""
     now = datetime.now(timezone.utc).isoformat()
     stage_names = JOB_STAGES.get(req.preset, DEFAULT_STAGES)
     stages = [{"name": s, "status": "pending", "progress": 0} for s in stage_names]
 
+    # Validate dependencies exist
+    deps = req.depends_on or []
+    for dep_id in deps:
+        dep = await jobs_collection().find_one({"id": dep_id})
+        if not dep:
+            raise HTTPException(status_code=400, detail=f"Dependency job {dep_id} not found")
+
+    # If has unfinished dependencies, start as "blocked"
+    has_unfinished_deps = False
+    if deps:
+        for dep_id in deps:
+            dep = await jobs_collection().find_one({"id": dep_id}, {"_id": 0})
+            if dep and dep.get("status") != "completed":
+                has_unfinished_deps = True
+                break
+
+    initial_status = "blocked" if has_unfinished_deps else "pending"
+
     job = {
         "id": f"JOB-{uuid.uuid4().hex[:6].upper()}",
         "preset": req.preset,
-        "status": "pending",
+        "status": initial_status,
         "progress": 0,
         "priority": req.priority,
         "config": req.config or {},
         "stages": stages,
-        "logs": [f"[{now}] Job queued. Preset: {req.preset}. Priority: {req.priority}. Stages: {len(stages)}"],
+        "depends_on": deps,
+        "dependents": [],  # Jobs that depend on this one (populated via link)
+        "logs": [f"[{now}] Job queued. Preset: {req.preset}. Dependencies: {len(deps)}. Status: {initial_status}"],
         "created_at": now,
         "updated_at": now,
     }
     await jobs_collection().insert_one(job)
     job.pop("_id", None)
+
+    # Register as dependent on parent jobs
+    for dep_id in deps:
+        await jobs_collection().update_one(
+            {"id": dep_id},
+            {"$addToSet": {"dependents": job["id"]}}
+        )
+
     return job
+
+
+@router.post("/jobs/{job_id}/link")
+async def link_dependency(job_id: str, depends_on_id: str):
+    """Add a dependency link: job_id depends on depends_on_id."""
+    job = await jobs_collection().find_one({"id": job_id}, {"_id": 0})
+    parent = await jobs_collection().find_one({"id": depends_on_id}, {"_id": 0})
+    if not job or not parent:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Prevent circular deps
+    if job_id in (parent.get("depends_on") or []):
+        raise HTTPException(status_code=400, detail="Circular dependency detected")
+
+    now = datetime.now(timezone.utc).isoformat()
+    await jobs_collection().update_one(
+        {"id": job_id},
+        {"$addToSet": {"depends_on": depends_on_id}, "$push": {"logs": f"[{now}] Linked dependency: {depends_on_id}"}}
+    )
+    await jobs_collection().update_one(
+        {"id": depends_on_id},
+        {"$addToSet": {"dependents": job_id}}
+    )
+
+    # If parent not complete, block child
+    if parent.get("status") != "completed":
+        await jobs_collection().update_one(
+            {"id": job_id},
+            {"$set": {"status": "blocked", "updated_at": now}}
+        )
+
+    return {"linked": True, "job": job_id, "depends_on": depends_on_id}
+
+
+@router.delete("/jobs/{job_id}/link/{dep_id}")
+async def unlink_dependency(job_id: str, dep_id: str):
+    """Remove a dependency link."""
+    now = datetime.now(timezone.utc).isoformat()
+    await jobs_collection().update_one({"id": job_id}, {"$pull": {"depends_on": dep_id}})
+    await jobs_collection().update_one({"id": dep_id}, {"$pull": {"dependents": job_id}})
+
+    # Check if job should be unblocked
+    job = await jobs_collection().find_one({"id": job_id}, {"_id": 0})
+    if job and job.get("status") == "blocked":
+        deps = job.get("depends_on", [])
+        all_met = True
+        for d in deps:
+            parent = await jobs_collection().find_one({"id": d}, {"_id": 0})
+            if parent and parent.get("status") != "completed":
+                all_met = False
+                break
+        if all_met:
+            await jobs_collection().update_one(
+                {"id": job_id},
+                {"$set": {"status": "pending", "updated_at": now},
+                 "$push": {"logs": f"[{now}] All dependencies met. Unblocked."}}
+            )
+
+    return {"unlinked": True}
+
+
+@router.get("/jobs/graph")
+async def get_dependency_graph():
+    """Get the full job dependency graph for visualization."""
+    cursor = jobs_collection().find({}, {"_id": 0}).sort("created_at", -1)
+    jobs = await cursor.to_list(200)
+    nodes = []
+    edges = []
+    for j in jobs:
+        nodes.append({
+            "id": j["id"],
+            "preset": j.get("preset", ""),
+            "status": j.get("status", "pending"),
+            "progress": j.get("progress", 0),
+            "depends_on": j.get("depends_on", []),
+            "dependents": j.get("dependents", []),
+        })
+        for dep_id in j.get("depends_on", []):
+            edges.append({"from": dep_id, "to": j["id"]})
+    return {"nodes": nodes, "edges": edges}
 
 
 @router.get("/jobs")
@@ -553,6 +662,28 @@ async def _advance_job(job):
         {"$set": {"stages": stages, "progress": total_progress, "status": new_status, "updated_at": now},
          "$push": {"logs": log_msg}}
     )
+
+    # Auto-unblock dependents when job completes
+    if all_done:
+        dependents = job.get("dependents", [])
+        for dep_id in dependents:
+            dep_job = await jobs_collection().find_one({"id": dep_id}, {"_id": 0})
+            if dep_job and dep_job.get("status") == "blocked":
+                # Check if ALL of its dependencies are now completed
+                all_deps_met = True
+                for parent_id in dep_job.get("depends_on", []):
+                    parent = await jobs_collection().find_one({"id": parent_id}, {"_id": 0})
+                    if parent and parent.get("status") != "completed":
+                        all_deps_met = False
+                        break
+                if all_deps_met:
+                    await jobs_collection().update_one(
+                        {"id": dep_id},
+                        {"$set": {"status": "pending", "updated_at": now},
+                         "$push": {"logs": f"[{now}] Dependencies met. Auto-unblocked by {job['id']}."}}
+                    )
+                    logger.info(f"Auto-unblocked {dep_id} after {job['id']} completed")
+
     return await jobs_collection().find_one({"id": job["id"]}, {"_id": 0})
 
 
@@ -569,7 +700,7 @@ async def night_queue_worker():
 
     while _worker_running:
         try:
-            # Find jobs that need processing
+            # Find jobs that need processing (skip blocked jobs)
             active_jobs = await jobs_collection().find(
                 {"status": {"$in": ["pending", "processing"]}}, {"_id": 0}
             ).sort("priority", -1).to_list(10)
@@ -609,11 +740,13 @@ def stop_worker():
 async def worker_status():
     """Get Night Queue worker status."""
     active = await jobs_collection().count_documents({"status": {"$in": ["pending", "processing"]}})
+    blocked = await jobs_collection().count_documents({"status": "blocked"})
     completed = await jobs_collection().count_documents({"status": "completed"})
     total = await jobs_collection().count_documents({})
     return {
         "running": _worker_running and _worker_task is not None and not _worker_task.done(),
         "active_jobs": active,
+        "blocked_jobs": blocked,
         "completed_jobs": completed,
         "total_jobs": total,
     }

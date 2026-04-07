@@ -10,6 +10,7 @@ import {
   Rocket, FileCheck, Upload, Play, ExternalLink, CloudLightning
 } from 'lucide-react';
 import SpriteCutter from './SpriteCutter';
+import DependencyGraph from './DependencyGraph';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api/sla113`;
 
@@ -263,9 +264,12 @@ export default function SLA113Page() {
   const [deployRegion, setDeployRegion] = useState('us-west');
 
   // Worker State
-  const [workerStatus, setWorkerStatus] = useState({ running: false, active_jobs: 0, completed_jobs: 0, total_jobs: 0 });
+  const [workerStatus, setWorkerStatus] = useState({ running: false, active_jobs: 0, blocked_jobs: 0, completed_jobs: 0, total_jobs: 0 });
   const [newJobPreset, setNewJobPreset] = useState('ARCADE_40');
   const [newJobPriority, setNewJobPriority] = useState('normal');
+  const [newJobDeps, setNewJobDeps] = useState([]);
+  const [depGraph, setDepGraph] = useState({ nodes: [], edges: [] });
+  const [nightQueueView, setNightQueueView] = useState('list'); // 'list' | 'graph'
 
   // AI Terminal
   const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
@@ -319,8 +323,12 @@ export default function SLA113Page() {
     if (activeTab !== 'NIGHT QUEUE') return;
     const fetchWorker = async () => {
       try {
-        const res = await axios.get(`${API}/worker/status`);
-        setWorkerStatus(res.data);
+        const [wRes, gRes] = await Promise.all([
+          axios.get(`${API}/worker/status`),
+          axios.get(`${API}/jobs/graph`),
+        ]);
+        setWorkerStatus(wRes.data);
+        setDepGraph(gRes.data);
       } catch {}
     };
     fetchWorker();
@@ -1240,134 +1248,205 @@ export default function SLA113Page() {
 
             {/* VAULT: NIGHT QUEUE */}
             {partition === 'vault' && activeTab === 'NIGHT QUEUE' && (
-              <div className="grid grid-cols-12 gap-6 animate-in fade-in max-w-7xl mx-auto w-full" data-testid="night-queue-panel">
-                {/* Controls Sidebar */}
-                <div className="col-span-4 space-y-5">
-                  {/* Worker Status */}
-                  <div className="glass-panel border-red-500/20 p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-red-500 text-[10px] font-bold uppercase tracking-[3px] flex items-center gap-2"><Moon size={14}/> Worker Engine</h3>
-                      <span className={`w-2.5 h-2.5 rounded-full ${workerStatus.running ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-700'}`}></span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div className="border border-zinc-800 bg-black p-3">
-                        <div className="text-lg font-bold text-cyan-400">{workerStatus.active_jobs}</div>
-                        <div className="text-[8px] text-zinc-500 uppercase tracking-widest">Active</div>
-                      </div>
-                      <div className="border border-zinc-800 bg-black p-3">
-                        <div className="text-lg font-bold text-emerald-500">{workerStatus.completed_jobs}</div>
-                        <div className="text-[8px] text-zinc-500 uppercase tracking-widest">Done</div>
-                      </div>
-                      <div className="border border-zinc-800 bg-black p-3">
-                        <div className="text-lg font-bold text-zinc-400">{workerStatus.total_jobs}</div>
-                        <div className="text-[8px] text-zinc-500 uppercase tracking-widest">Total</div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={async () => { await axios.post(`${API}/worker/toggle`); const r = await axios.get(`${API}/worker/status`); setWorkerStatus(r.data); }}
-                      className={`w-full py-3 text-[10px] uppercase tracking-[3px] font-bold border transition-all ${
-                        workerStatus.running
-                          ? 'border-red-500 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-black'
-                          : 'border-emerald-500 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-black'
-                      }`}
-                      data-testid="toggle-worker-btn"
-                    >
-                      {workerStatus.running ? 'Stop Worker' : 'Start Worker'}
-                    </button>
-                  </div>
-
-                  {/* Queue New Job */}
-                  <div className="glass-panel border-red-500/20 p-6 space-y-4">
-                    <h3 className="text-red-500 text-[10px] font-bold uppercase tracking-[3px] flex items-center gap-2"><Plus size={14}/> Queue Job</h3>
-                    <div>
-                      <label className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Preset</label>
-                      <select
-                        value={newJobPreset} onChange={e => setNewJobPreset(e.target.value)}
-                        className="input-dark focus:border-red-500 uppercase tracking-widest text-[10px]"
-                        data-testid="job-preset-select"
-                      >
-                        {['ARCADE_40','ARCADE_60','SLOTS_20','OPEN_WORLD','CASINO_SUITE','CUSTOM_OS_BUILD','AAA_FISH_SLOT','GTA5_TYPE','COD_WARFARE','FANTASY_RPG'].map(p => (
-                          <option key={p} value={p}>{p.replace(/_/g,' ')}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Priority</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {['low','normal','high'].map(pr => (
-                          <button key={pr} onClick={() => setNewJobPriority(pr)} className={`py-1.5 text-[9px] uppercase tracking-widest border transition-all ${newJobPriority === pr ? 'border-red-500 bg-red-500/10 text-red-400' : 'border-zinc-800 text-zinc-600'}`}>
-                            {pr}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <button
-                      onClick={async () => { await axios.post(`${API}/jobs`, { preset: newJobPreset, priority: newJobPriority }); fetchData(); const r = await axios.get(`${API}/worker/status`); setWorkerStatus(r.data); }}
-                      className="w-full py-3 font-bold tracking-[3px] uppercase text-[10px] border border-red-500 text-black bg-red-500 hover:bg-red-400 transition-all"
-                      data-testid="queue-job-btn"
-                    >
-                      Queue Job
-                    </button>
-                  </div>
-                </div>
-
-                {/* Job Queue List */}
-                <div className="col-span-8 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-red-500 text-[10px] font-bold uppercase tracking-[3px]">Night Queue ({queue.length} jobs)</span>
+              <div className="animate-in fade-in max-w-7xl mx-auto w-full space-y-4" data-testid="night-queue-panel">
+                {/* View Toggle */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-red-500 text-[10px] font-bold uppercase tracking-[3px]">Night Queue ({queue.length})</span>
                     {workerStatus.running && <span className="text-[9px] text-emerald-500 uppercase tracking-widest flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Auto-Processing</span>}
+                    {workerStatus.blocked_jobs > 0 && <span className="text-[9px] text-amber-500 uppercase tracking-widest">{workerStatus.blocked_jobs} blocked</span>}
                   </div>
-                  <div className="space-y-3 max-h-[550px] overflow-y-auto custom-scrollbar">
-                    {queue.length === 0 && <div className="glass-panel border-red-500/10 p-12 text-center text-zinc-600 text-[10px] uppercase tracking-widest">Queue empty — add a job to begin.</div>}
-                    {queue.map(item => (
-                      <div key={item.id} className={`glass-panel p-4 space-y-3 ${
-                        item.status === 'completed' ? 'border-emerald-500/20' :
-                        item.status === 'processing' ? 'border-cyan-500/20' :
-                        'border-red-500/15'
-                      }`}>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <span className="text-zinc-200 text-xs font-bold">{item.id}</span>
-                            <span className="text-red-400 text-[9px] font-mono ml-3">{item.preset}</span>
-                            <span className={`text-[8px] ml-2 uppercase tracking-widest ${item.priority === 'high' ? 'text-amber-500' : item.priority === 'low' ? 'text-zinc-600' : 'text-zinc-500'}`}>{item.priority}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 text-[8px] uppercase tracking-widest border font-bold ${
-                              item.status === 'completed' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' :
-                              item.status === 'processing' ? 'border-cyan-500/30 text-cyan-400 bg-cyan-500/10' :
-                              item.status === 'failed' ? 'border-red-500/30 text-red-500 bg-red-500/10' :
-                              'border-zinc-700 text-zinc-400'
-                            }`}>{item.status}</span>
-                            <span className="text-[10px] font-mono text-zinc-500">{item.progress}%</span>
-                            <button onClick={() => removeQueueItem(item.id)} className="text-zinc-600 hover:text-red-500 transition-colors"><XCircle size={14}/></button>
-                          </div>
-                        </div>
-                        {/* Stage Progress */}
-                        {item.stages && item.stages.length > 0 && (
-                          <div className="space-y-1">
-                            {item.stages.map((s, i) => (
-                              <div key={i} className="flex items-center gap-3 text-[9px]">
-                                <span className={`w-12 uppercase tracking-widest truncate font-mono ${s.status === 'completed' ? 'text-emerald-500' : s.status === 'processing' ? 'text-cyan-400' : 'text-zinc-700'}`}>{s.status === 'completed' ? 'DONE' : s.status === 'processing' ? `${s.progress}%` : '---'}</span>
-                                <div className="flex-1 h-1 bg-black border border-zinc-900 overflow-hidden">
-                                  <div className={`h-full transition-all duration-500 ${s.status === 'completed' ? 'bg-emerald-500' : s.status === 'processing' ? 'bg-cyan-500' : 'bg-zinc-900'}`} style={{width: `${s.progress}%`}}/>
-                                </div>
-                                <span className="text-zinc-500 w-28 truncate text-right">{s.name}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {/* Overall progress bar for legacy jobs */}
-                        {(!item.stages || item.stages.length === 0) && (
-                          <div className="flex items-center gap-3">
-                            <div className="flex-1 h-1.5 bg-black border border-red-500/20 overflow-hidden">
-                              <div className={`h-full transition-all duration-500 ${item.status === 'completed' ? 'bg-emerald-500' : 'bg-cyan-500'}`} style={{width: `${item.progress}%`}}/>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                  <div className="flex gap-1">
+                    {['list','graph'].map(v => (
+                      <button key={v} onClick={() => setNightQueueView(v)} className={`px-4 py-1.5 text-[9px] uppercase tracking-widest border transition-all ${nightQueueView === v ? 'border-red-500 bg-red-500/10 text-red-400' : 'border-zinc-800 text-zinc-600 hover:text-zinc-300'}`} data-testid={`nq-view-${v}`}>
+                        {v}
+                      </button>
                     ))}
                   </div>
                 </div>
+
+                {nightQueueView === 'graph' ? (
+                  <div className="glass-panel border-red-500/20 h-[480px] overflow-hidden">
+                    <DependencyGraph
+                      nodes={depGraph.nodes}
+                      edges={depGraph.edges}
+                      onLink={async (childId, parentId) => {
+                        await axios.post(`${API}/jobs/${childId}/link?depends_on_id=${parentId}`);
+                        fetchData();
+                      }}
+                      onUnlink={async (childId, parentId) => {
+                        await axios.delete(`${API}/jobs/${childId}/link/${parentId}`);
+                        fetchData();
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-12 gap-6">
+                    {/* Controls Sidebar */}
+                    <div className="col-span-4 space-y-5">
+                      {/* Worker Status */}
+                      <div className="glass-panel border-red-500/20 p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-red-500 text-[10px] font-bold uppercase tracking-[3px] flex items-center gap-2"><Moon size={14}/> Worker Engine</h3>
+                          <span className={`w-2.5 h-2.5 rounded-full ${workerStatus.running ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-700'}`}></span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 text-center">
+                          <div className="border border-zinc-800 bg-black p-2">
+                            <div className="text-base font-bold text-cyan-400">{workerStatus.active_jobs}</div>
+                            <div className="text-[7px] text-zinc-500 uppercase tracking-widest">Active</div>
+                          </div>
+                          <div className="border border-zinc-800 bg-black p-2">
+                            <div className="text-base font-bold text-amber-500">{workerStatus.blocked_jobs || 0}</div>
+                            <div className="text-[7px] text-zinc-500 uppercase tracking-widest">Blocked</div>
+                          </div>
+                          <div className="border border-zinc-800 bg-black p-2">
+                            <div className="text-base font-bold text-emerald-500">{workerStatus.completed_jobs}</div>
+                            <div className="text-[7px] text-zinc-500 uppercase tracking-widest">Done</div>
+                          </div>
+                          <div className="border border-zinc-800 bg-black p-2">
+                            <div className="text-base font-bold text-zinc-400">{workerStatus.total_jobs}</div>
+                            <div className="text-[7px] text-zinc-500 uppercase tracking-widest">Total</div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={async () => { await axios.post(`${API}/worker/toggle`); const r = await axios.get(`${API}/worker/status`); setWorkerStatus(r.data); }}
+                          className={`w-full py-2.5 text-[10px] uppercase tracking-[3px] font-bold border transition-all ${
+                            workerStatus.running
+                              ? 'border-red-500 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-black'
+                              : 'border-emerald-500 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-black'
+                          }`}
+                          data-testid="toggle-worker-btn"
+                        >
+                          {workerStatus.running ? 'Stop Worker' : 'Start Worker'}
+                        </button>
+                      </div>
+
+                      {/* Queue New Job */}
+                      <div className="glass-panel border-red-500/20 p-6 space-y-4">
+                        <h3 className="text-red-500 text-[10px] font-bold uppercase tracking-[3px] flex items-center gap-2"><Plus size={14}/> Queue Job</h3>
+                        <div>
+                          <label className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Preset</label>
+                          <select
+                            value={newJobPreset} onChange={e => setNewJobPreset(e.target.value)}
+                            className="input-dark focus:border-red-500 uppercase tracking-widest text-[10px]"
+                            data-testid="job-preset-select"
+                          >
+                            {['ARCADE_40','ARCADE_60','SLOTS_20','OPEN_WORLD','CASINO_SUITE','CUSTOM_OS_BUILD','AAA_FISH_SLOT','GTA5_TYPE','COD_WARFARE','FANTASY_RPG'].map(p => (
+                              <option key={p} value={p}>{p.replace(/_/g,' ')}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Priority</label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {['low','normal','high'].map(pr => (
+                              <button key={pr} onClick={() => setNewJobPriority(pr)} className={`py-1.5 text-[9px] uppercase tracking-widest border transition-all ${newJobPriority === pr ? 'border-red-500 bg-red-500/10 text-red-400' : 'border-zinc-800 text-zinc-600'}`}>
+                                {pr}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {/* Dependency Picker */}
+                        <div>
+                          <label className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Depends On ({newJobDeps.length})</label>
+                          <div className="max-h-28 overflow-y-auto space-y-1 custom-scrollbar">
+                            {queue.filter(j => j.status !== 'completed').length === 0 && (
+                              <div className="text-[8px] text-zinc-700 py-2">No active jobs to depend on</div>
+                            )}
+                            {queue.filter(j => j.status !== 'completed').map(j => (
+                              <button
+                                key={j.id}
+                                onClick={() => setNewJobDeps(prev => prev.includes(j.id) ? prev.filter(d => d !== j.id) : [...prev, j.id])}
+                                className={`w-full text-left px-2 py-1 text-[9px] font-mono border transition-all flex items-center gap-2 ${
+                                  newJobDeps.includes(j.id) ? 'border-amber-500/50 bg-amber-500/10 text-amber-400' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                                }`}
+                                data-testid={`dep-pick-${j.id}`}
+                              >
+                                <Link2 size={8} className={newJobDeps.includes(j.id) ? 'text-amber-500' : 'text-zinc-700'} />
+                                {j.id} <span className="text-zinc-600 ml-auto">{j.preset}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            await axios.post(`${API}/jobs`, { preset: newJobPreset, priority: newJobPriority, depends_on: newJobDeps.length > 0 ? newJobDeps : null });
+                            setNewJobDeps([]);
+                            fetchData();
+                            const r = await axios.get(`${API}/worker/status`);
+                            setWorkerStatus(r.data);
+                          }}
+                          className="w-full py-3 font-bold tracking-[3px] uppercase text-[10px] border border-red-500 text-black bg-red-500 hover:bg-red-400 transition-all"
+                          data-testid="queue-job-btn"
+                        >
+                          Queue Job {newJobDeps.length > 0 ? `(${newJobDeps.length} deps)` : ''}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Job Queue List */}
+                    <div className="col-span-8 space-y-3 max-h-[550px] overflow-y-auto custom-scrollbar">
+                      {queue.length === 0 && <div className="glass-panel border-red-500/10 p-12 text-center text-zinc-600 text-[10px] uppercase tracking-widest">Queue empty — add a job to begin.</div>}
+                      {queue.map(item => (
+                        <div key={item.id} className={`glass-panel p-4 space-y-3 ${
+                          item.status === 'completed' ? 'border-emerald-500/20' :
+                          item.status === 'processing' ? 'border-cyan-500/20' :
+                          item.status === 'blocked' ? 'border-amber-500/20' :
+                          'border-red-500/15'
+                        }`}>
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-zinc-200 text-xs font-bold">{item.id}</span>
+                              <span className="text-red-400 text-[9px] font-mono">{item.preset}</span>
+                              <span className={`text-[8px] uppercase tracking-widest ${item.priority === 'high' ? 'text-amber-500' : item.priority === 'low' ? 'text-zinc-600' : 'text-zinc-500'}`}>{item.priority}</span>
+                              {item.depends_on?.length > 0 && (
+                                <span className="text-[8px] text-amber-500/70 flex items-center gap-1"><Link2 size={8}/> {item.depends_on.length} dep{item.depends_on.length > 1 ? 's' : ''}</span>
+                              )}
+                              {item.dependents?.length > 0 && (
+                                <span className="text-[8px] text-cyan-500/70 flex items-center gap-1">{item.dependents.length} child{item.dependents.length > 1 ? 'ren' : ''}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-0.5 text-[8px] uppercase tracking-widest border font-bold ${
+                                item.status === 'completed' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' :
+                                item.status === 'processing' ? 'border-cyan-500/30 text-cyan-400 bg-cyan-500/10' :
+                                item.status === 'blocked' ? 'border-amber-500/30 text-amber-500 bg-amber-500/10' :
+                                item.status === 'failed' ? 'border-red-500/30 text-red-500 bg-red-500/10' :
+                                'border-zinc-700 text-zinc-400'
+                              }`}>{item.status}</span>
+                              <span className="text-[10px] font-mono text-zinc-500">{item.progress}%</span>
+                              <button onClick={() => removeQueueItem(item.id)} className="text-zinc-600 hover:text-red-500 transition-colors"><XCircle size={14}/></button>
+                            </div>
+                          </div>
+                          {/* Blocked reason */}
+                          {item.status === 'blocked' && item.depends_on?.length > 0 && (
+                            <div className="text-[8px] text-amber-500/60 uppercase tracking-widest bg-amber-500/5 border border-amber-500/10 px-3 py-1.5">
+                              Waiting on: {item.depends_on.join(', ')}
+                            </div>
+                          )}
+                          {/* Stage Progress */}
+                          {item.stages && item.stages.length > 0 && item.status !== 'blocked' && (
+                            <div className="space-y-1">
+                              {item.stages.map((s, i) => (
+                                <div key={i} className="flex items-center gap-3 text-[9px]">
+                                  <span className={`w-12 uppercase tracking-widest truncate font-mono ${s.status === 'completed' ? 'text-emerald-500' : s.status === 'processing' ? 'text-cyan-400' : 'text-zinc-700'}`}>{s.status === 'completed' ? 'DONE' : s.status === 'processing' ? `${s.progress}%` : '---'}</span>
+                                  <div className="flex-1 h-1 bg-black border border-zinc-900 overflow-hidden">
+                                    <div className={`h-full transition-all duration-500 ${s.status === 'completed' ? 'bg-emerald-500' : s.status === 'processing' ? 'bg-cyan-500' : 'bg-zinc-900'}`} style={{width: `${s.progress}%`}}/>
+                                  </div>
+                                  <span className="text-zinc-500 w-28 truncate text-right">{s.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {/* Stages placeholder for blocked jobs */}
+                          {item.status === 'blocked' && (
+                            <div className="text-[9px] text-zinc-700 font-mono">— {item.stages?.length || 0} stages waiting —</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
