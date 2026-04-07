@@ -555,6 +555,290 @@ async def delete_pipeline(pipeline_id: str):
     return {"deleted": True}
 
 
+
+# ─── Collections for Build / Compliance / Deploy ───
+def builds_collection():
+    return get_database()["sla113_builds"]
+
+def compliance_collection():
+    return get_database()["sla113_compliance"]
+
+def deployments_collection():
+    return get_database()["sla113_deployments"]
+
+
+# ─── Build Pipeline Engine ───
+class CreateBuildRequest(BaseModel):
+    project_id: str
+    target: str = "webgl"  # webgl | apk | both
+    optimization: str = "balanced"  # speed | balanced | size
+    include_assets: bool = True
+    include_logic: bool = True
+
+
+@router.post("/builds")
+async def create_build(req: CreateBuildRequest):
+    """Initiate a game build pipeline."""
+    project = await projects_collection().find_one({"id": req.project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    now = datetime.now(timezone.utc).isoformat()
+    build = {
+        "id": f"BLD-{uuid.uuid4().hex[:8].upper()}",
+        "project_id": req.project_id,
+        "project_name": project.get("name", "Unknown"),
+        "game_type": project.get("game_type", "unknown"),
+        "target": req.target,
+        "optimization": req.optimization,
+        "include_assets": req.include_assets,
+        "include_logic": req.include_logic,
+        "status": "queued",
+        "progress": 0,
+        "stages": [
+            {"name": "Asset Compilation", "status": "pending", "progress": 0},
+            {"name": "Logic Binding", "status": "pending", "progress": 0},
+            {"name": "Shader Compilation", "status": "pending", "progress": 0},
+            {"name": "Bundle Packaging", "status": "pending", "progress": 0},
+            {"name": "Optimization Pass", "status": "pending", "progress": 0},
+        ],
+        "output": None,
+        "size_mb": None,
+        "logs": [f"[{now}] Build queued. Target: {req.target}, Optimization: {req.optimization}"],
+        "created_at": now,
+        "updated_at": now,
+    }
+    await builds_collection().insert_one(build)
+    build.pop("_id", None)
+    return build
+
+
+@router.get("/builds")
+async def list_builds():
+    """List all builds."""
+    cursor = builds_collection().find({}, {"_id": 0}).sort("created_at", -1)
+    builds = await cursor.to_list(100)
+    return {"builds": builds, "total": len(builds)}
+
+
+@router.post("/builds/{build_id}/advance")
+async def advance_build(build_id: str):
+    """Advance build through its stages (simulate compilation)."""
+    import random
+    build = await builds_collection().find_one({"id": build_id}, {"_id": 0})
+    if not build:
+        raise HTTPException(status_code=404, detail="Build not found")
+    if build["status"] == "completed":
+        return build
+
+    stages = build["stages"]
+    now = datetime.now(timezone.utc).isoformat()
+    current_stage_idx = next((i for i, s in enumerate(stages) if s["status"] != "completed"), len(stages))
+
+    if current_stage_idx < len(stages):
+        stage = stages[current_stage_idx]
+        new_progress = min(stage["progress"] + random.randint(30, 60), 100)
+        stage["progress"] = new_progress
+        if new_progress >= 100:
+            stage["status"] = "completed"
+            log_msg = f"[{now}] Stage '{stage['name']}' completed."
+        else:
+            stage["status"] = "processing"
+            log_msg = f"[{now}] Stage '{stage['name']}' at {new_progress}%..."
+    else:
+        log_msg = f"[{now}] All stages completed."
+
+    # Calculate overall progress
+    total_progress = sum(s["progress"] for s in stages) // len(stages)
+    all_done = all(s["status"] == "completed" for s in stages)
+    new_status = "completed" if all_done else "building"
+
+    output = None
+    size_mb = None
+    if all_done:
+        target = build["target"]
+        output = f"sla113_{build['project_name'].lower().replace(' ', '_')}_{build['id']}.{'apk' if target == 'apk' else 'zip'}"
+        size_mb = round(random.uniform(12.5, 185.0), 1)
+        log_msg += f"\n[{now}] Build artifact: {output} ({size_mb} MB)"
+
+    await builds_collection().update_one(
+        {"id": build_id},
+        {"$set": {"stages": stages, "progress": total_progress, "status": new_status,
+                  "output": output, "size_mb": size_mb, "updated_at": now},
+         "$push": {"logs": log_msg}}
+    )
+    build = await builds_collection().find_one({"id": build_id}, {"_id": 0})
+    return build
+
+
+@router.delete("/builds/{build_id}")
+async def delete_build(build_id: str):
+    result = await builds_collection().delete_one({"id": build_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Build not found")
+    return {"deleted": True}
+
+
+# ─── Compliance Engine ───
+class ComplianceCheckRequest(BaseModel):
+    project_id: str
+    jurisdiction: str = "GLI"  # GLI | MGA | UKGC | CURACAO | INTERNAL
+    check_type: str = "full"  # full | rtp_only | rng_only | fairness
+
+
+COMPLIANCE_CHECKS = {
+    "GLI": ["RTP Verification", "RNG Seed Audit", "Paytable Integrity", "Max Bet Limits", "Session Timeout Compliance", "Responsible Gaming Controls"],
+    "MGA": ["RTP Verification", "RNG Certification", "Player Protection", "Anti-Money Laundering", "Game History Logging"],
+    "UKGC": ["RTP Verification", "RNG Audit", "Fairness Testing", "Underage Prevention", "Self-Exclusion", "Advertising Compliance"],
+    "CURACAO": ["RTP Verification", "RNG Basics", "Fair Play Attestation"],
+    "INTERNAL": ["RTP Verification", "RNG Seed Audit", "Stress Test", "Edge Case Validation"],
+}
+
+
+@router.post("/compliance/check")
+async def run_compliance_check(req: ComplianceCheckRequest):
+    """Run compliance/certification checks on a project."""
+    import random
+    project = await projects_collection().find_one({"id": req.project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    checks = COMPLIANCE_CHECKS.get(req.jurisdiction, COMPLIANCE_CHECKS["INTERNAL"])
+    now = datetime.now(timezone.utc).isoformat()
+
+    results = []
+    all_passed = True
+    for check_name in checks:
+        passed = random.random() > 0.15  # 85% pass rate
+        severity = "critical" if "RTP" in check_name or "RNG" in check_name else "warning"
+        results.append({
+            "check": check_name,
+            "status": "PASS" if passed else "FAIL",
+            "severity": severity if not passed else "none",
+            "details": f"Verified against {req.jurisdiction} standards" if passed else f"Requires remediation per {req.jurisdiction} §4.2",
+            "value": f"{round(random.uniform(91.0, 96.5), 2)}%" if "RTP" in check_name else None,
+        })
+        if not passed:
+            all_passed = False
+
+    report = {
+        "id": f"CMP-{uuid.uuid4().hex[:8].upper()}",
+        "project_id": req.project_id,
+        "project_name": project.get("name", "Unknown"),
+        "jurisdiction": req.jurisdiction,
+        "check_type": req.check_type,
+        "status": "CERTIFIED" if all_passed else "NEEDS_REMEDIATION",
+        "pass_rate": f"{sum(1 for r in results if r['status'] == 'PASS')}/{len(results)}",
+        "results": results,
+        "created_at": now,
+    }
+    await compliance_collection().insert_one(report)
+    report.pop("_id", None)
+    return report
+
+
+@router.get("/compliance")
+async def list_compliance_reports():
+    cursor = compliance_collection().find({}, {"_id": 0}).sort("created_at", -1)
+    reports = await cursor.to_list(100)
+    return {"reports": reports, "total": len(reports)}
+
+
+@router.delete("/compliance/{report_id}")
+async def delete_compliance_report(report_id: str):
+    result = await compliance_collection().delete_one({"id": report_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return {"deleted": True}
+
+
+# ─── Deploy Engine ───
+class DeployRequest(BaseModel):
+    build_id: str
+    target_cdn: str = "cloudflare"  # cloudflare | aws | gcp | custom
+    region: str = "us-west"
+    auto_ssl: bool = True
+
+
+@router.post("/deploy")
+async def deploy_build(req: DeployRequest):
+    """Deploy a completed build to CDN."""
+    build = await builds_collection().find_one({"id": req.build_id}, {"_id": 0})
+    if not build:
+        raise HTTPException(status_code=404, detail="Build not found")
+    if build["status"] != "completed":
+        raise HTTPException(status_code=400, detail="Build must be completed before deployment")
+
+    now = datetime.now(timezone.utc).isoformat()
+    deployment = {
+        "id": f"DPL-{uuid.uuid4().hex[:8].upper()}",
+        "build_id": req.build_id,
+        "project_name": build.get("project_name", "Unknown"),
+        "target_cdn": req.target_cdn,
+        "region": req.region,
+        "auto_ssl": req.auto_ssl,
+        "status": "deploying",
+        "progress": 0,
+        "url": None,
+        "ssl_status": "pending" if req.auto_ssl else "disabled",
+        "logs": [f"[{now}] Deployment initiated. CDN: {req.target_cdn}, Region: {req.region}"],
+        "created_at": now,
+        "updated_at": now,
+    }
+    await deployments_collection().insert_one(deployment)
+    deployment.pop("_id", None)
+    return deployment
+
+
+@router.post("/deploy/{deploy_id}/advance")
+async def advance_deployment(deploy_id: str):
+    """Advance deployment progress (simulate CDN propagation)."""
+    import random
+    deploy = await deployments_collection().find_one({"id": deploy_id}, {"_id": 0})
+    if not deploy:
+        raise HTTPException(status_code=404, detail="Deployment not found")
+    if deploy["status"] == "live":
+        return deploy
+
+    now = datetime.now(timezone.utc).isoformat()
+    new_progress = min(deploy["progress"] + random.randint(25, 50), 100)
+    new_status = "live" if new_progress >= 100 else "propagating"
+
+    url = None
+    ssl_status = deploy.get("ssl_status", "pending")
+    if new_progress >= 100:
+        slug = deploy["project_name"].lower().replace(" ", "-")
+        cdn = deploy["target_cdn"]
+        url = f"https://{slug}.{'cdn.cloudflare.com' if cdn == 'cloudflare' else 'd2x.amazonaws.com' if cdn == 'aws' else 'storage.googleapis.com' if cdn == 'gcp' else 'custom-cdn.io'}"
+        ssl_status = "active" if deploy.get("auto_ssl") else "disabled"
+
+    log_msg = f"[{now}] {'LIVE — CDN propagation complete.' if new_progress >= 100 else f'Propagating... {new_progress}%'}"
+
+    await deployments_collection().update_one(
+        {"id": deploy_id},
+        {"$set": {"progress": new_progress, "status": new_status, "url": url,
+                  "ssl_status": ssl_status, "updated_at": now},
+         "$push": {"logs": log_msg}}
+    )
+    deploy = await deployments_collection().find_one({"id": deploy_id}, {"_id": 0})
+    return deploy
+
+
+@router.get("/deployments")
+async def list_deployments():
+    cursor = deployments_collection().find({}, {"_id": 0}).sort("created_at", -1)
+    deploys = await cursor.to_list(100)
+    return {"deployments": deploys, "total": len(deploys)}
+
+
+@router.delete("/deploy/{deploy_id}")
+async def delete_deployment(deploy_id: str):
+    result = await deployments_collection().delete_one({"id": deploy_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Deployment not found")
+    return {"deleted": True}
+
+
 # ─── Seed default pipelines if empty ───
 async def seed_default_pipelines():
     count = await pipelines_collection().count_documents({})

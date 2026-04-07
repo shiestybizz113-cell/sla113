@@ -6,7 +6,8 @@ import {
   CreditCard, Users, Terminal, AlertTriangle, ChevronRight, Plus, Minus, Trash2,
   HardDrive, Globe, Ghost, Layers, Factory, CheckCircle2, Moon, RefreshCw, XCircle,
   Settings, Server, Lock, SlidersHorizontal, Key, Network, ShieldCheck, Package,
-  BarChart3, Hammer, Code, Grid3X3, Mic, Archive, ChevronDown, Scan, Paintbrush, Scissors
+  BarChart3, Hammer, Code, Grid3X3, Mic, Archive, ChevronDown, Scan, Paintbrush, Scissors,
+  Rocket, FileCheck, Upload, Play, ExternalLink, CloudLightning
 } from 'lucide-react';
 import SpriteCutter from './SpriteCutter';
 
@@ -104,11 +105,14 @@ const THEMES = {
 const ALL_NAV_ITEMS = [
   { id: 'FRONTLINE', icon: Activity, partition: 'factory' },
   { id: 'WHITE LABEL MINT', icon: Hammer, partition: 'factory' },
+  { id: 'DEPLOY CENTER', icon: Upload, partition: 'factory' },
   { id: 'MINT LEDGER', icon: CreditCard, partition: 'empire' },
   { id: 'REVENUE PIPELINES', icon: BarChart3, partition: 'empire' },
   { id: 'OS BUILDER', icon: Layout, partition: 'foundry' },
   { id: 'VISION SMITH', icon: ImageIcon, partition: 'foundry' },
   { id: 'AUDIO FORGE', icon: Music, partition: 'foundry' },
+  { id: 'BUILD PIPELINE', icon: Rocket, partition: 'vault' },
+  { id: 'COMPLIANCE', icon: FileCheck, partition: 'vault' },
   { id: 'SYSTEM CORE', icon: ShieldCheck, partition: 'vault' },
   { id: 'NIGHT QUEUE', icon: Layers, partition: 'vault' },
 ];
@@ -244,6 +248,20 @@ export default function SLA113Page() {
   const [whiteLabelLogs, setWhiteLabelLogs] = useState([]);
   const [isForgingTenant, setIsForgingTenant] = useState(false);
 
+  // Build Pipeline State
+  const [builds, setBuilds] = useState([]);
+  const [buildTarget, setBuildTarget] = useState('webgl');
+  const [buildOptimization, setBuildOptimization] = useState('balanced');
+
+  // Compliance State
+  const [complianceReports, setComplianceReports] = useState([]);
+  const [complianceJurisdiction, setComplianceJurisdiction] = useState('GLI');
+
+  // Deploy State
+  const [deployments, setDeployments] = useState([]);
+  const [deployCdn, setDeployCdn] = useState('cloudflare');
+  const [deployRegion, setDeployRegion] = useState('us-west');
+
   // AI Terminal
   const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
   const [aiInput, setAiInput] = useState("");
@@ -264,13 +282,16 @@ export default function SLA113Page() {
   // Fetch backend data
   const fetchData = useCallback(async () => {
     try {
-      const [typesRes, projRes, statsRes, tenantsRes, jobsRes, pipelinesRes] = await Promise.all([
+      const [typesRes, projRes, statsRes, tenantsRes, jobsRes, pipelinesRes, buildsRes, compRes, deployRes] = await Promise.all([
         axios.get(`${API}/game-types`),
         axios.get(`${API}/projects`),
         axios.get(`${API}/stats`),
         axios.get(`${API}/tenants`).catch(() => ({ data: { tenants: [] } })),
         axios.get(`${API}/jobs`).catch(() => ({ data: { jobs: [] } })),
         axios.get(`${API}/pipelines`).catch(() => ({ data: { pipelines: [] } })),
+        axios.get(`${API}/builds`).catch(() => ({ data: { builds: [] } })),
+        axios.get(`${API}/compliance`).catch(() => ({ data: { reports: [] } })),
+        axios.get(`${API}/deployments`).catch(() => ({ data: { deployments: [] } })),
       ]);
       setGameTypes(typesRes.data.game_types || {});
       setProjects(projRes.data.projects || []);
@@ -278,6 +299,9 @@ export default function SLA113Page() {
       setAgents(tenantsRes.data.tenants || []);
       setQueue(jobsRes.data.jobs || []);
       setPipelines(pipelinesRes.data.pipelines || []);
+      setBuilds(buildsRes.data.builds || []);
+      setComplianceReports(compRes.data.reports || []);
+      setDeployments(deployRes.data.deployments || []);
     } catch (e) {
       console.error("SLA113 data fetch failed:", e);
     }
@@ -541,6 +565,103 @@ export default function SLA113Page() {
               </div>
             )}
 
+            {/* FACTORY: DEPLOY CENTER */}
+            {partition === 'factory' && activeTab === 'DEPLOY CENTER' && (
+              <div className="grid grid-cols-12 gap-6 animate-in fade-in max-w-7xl mx-auto w-full" data-testid="deploy-center-panel">
+                <div className="col-span-5 space-y-6">
+                  <div className="glass-panel border-cyan-500/20 p-8 space-y-6">
+                    <h3 className="text-cyan-400 text-xs font-black uppercase tracking-[4px] border-b border-cyan-500/20 pb-4 flex items-center gap-3"><Upload size={16}/> CDN Deploy</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Source Build</label>
+                        <select className="input-dark focus:border-cyan-500 uppercase tracking-widest" data-testid="deploy-build-select" id="deploy-build-select">
+                          {builds.filter(b => b.status === 'completed').map(b => <option key={b.id} value={b.id}>{b.id} — {b.project_name} ({b.target})</option>)}
+                          {builds.filter(b => b.status === 'completed').length === 0 && <option>No completed builds</option>}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">CDN Provider</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[{id:'cloudflare',label:'Cloudflare'},{id:'aws',label:'AWS'},{id:'gcp',label:'GCP'},{id:'custom',label:'Custom'}].map(c => (
+                            <button key={c.id} onClick={() => setDeployCdn(c.id)} className={`py-2 text-[9px] uppercase tracking-widest border transition-all ${deployCdn === c.id ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400' : 'border-zinc-800 text-zinc-600 hover:text-zinc-300'}`} data-testid={`cdn-${c.id}`}>
+                              {c.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Region</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {['us-west','us-east','eu-west','asia-east','global'].map(r => (
+                            <button key={r} onClick={() => setDeployRegion(r)} className={`py-1.5 text-[8px] uppercase tracking-widest border transition-all ${deployRegion === r ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400' : 'border-zinc-800 text-zinc-600 hover:text-zinc-300'}`}>
+                              {r}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const sel = document.getElementById('deploy-build-select');
+                        const bid = sel?.value;
+                        const completedBuilds = builds.filter(b => b.status === 'completed');
+                        if (!bid || completedBuilds.length === 0) return;
+                        await axios.post(`${API}/deploy`, { build_id: bid, target_cdn: deployCdn, region: deployRegion });
+                        fetchData();
+                      }}
+                      disabled={builds.filter(b => b.status === 'completed').length === 0}
+                      className="w-full py-4 font-bold tracking-[3px] uppercase text-[10px] border border-cyan-500 text-black bg-cyan-500 hover:bg-cyan-300 transition-all disabled:opacity-30"
+                      data-testid="deploy-btn"
+                    >
+                      Deploy to CDN
+                    </button>
+                  </div>
+                </div>
+                <div className="col-span-7 space-y-4">
+                  <span className="text-cyan-400 text-[10px] font-bold uppercase tracking-[3px]">Live Deployments ({deployments.length})</span>
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar">
+                    {deployments.length === 0 && <div className="glass-panel border-cyan-500/10 p-12 text-center text-zinc-600 text-[10px] uppercase tracking-widest">No deployments. Build a project first, then deploy.</div>}
+                    {deployments.map(d => (
+                      <div key={d.id} className="glass-panel border-cyan-500/20 p-5 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="text-zinc-200 text-xs font-bold">{d.id}</span>
+                            <span className="text-zinc-500 text-[9px] ml-3">{d.project_name} / {d.target_cdn.toUpperCase()} / {d.region}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 text-[8px] uppercase tracking-widest border font-bold ${
+                              d.status === 'live' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' :
+                              d.status === 'propagating' ? 'border-cyan-500/30 text-cyan-400 bg-cyan-500/10' :
+                              'border-zinc-700 text-zinc-400'
+                            }`}>{d.status}</span>
+                            {d.status !== 'live' && (
+                              <button onClick={async () => { await axios.post(`${API}/deploy/${d.id}/advance`); fetchData(); }} className="text-[9px] border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 px-2 py-1 hover:bg-cyan-500 hover:text-black transition-all" data-testid={`advance-deploy-${d.id}`}>
+                                Propagate
+                              </button>
+                            )}
+                            <button onClick={async () => { await axios.delete(`${API}/deploy/${d.id}`); fetchData(); }} className="text-zinc-600 hover:text-red-500 transition-colors"><XCircle size={14}/></button>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-1.5 bg-black border border-zinc-900 overflow-hidden">
+                            <div className={`h-full transition-all ${d.status === 'live' ? 'bg-emerald-500' : 'bg-cyan-500'}`} style={{width: `${d.progress}%`}}/>
+                          </div>
+                          <span className="text-[10px] font-mono text-zinc-500">{d.progress}%</span>
+                        </div>
+                        {d.url && (
+                          <a href={d.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-emerald-500/5 border border-emerald-500/20 p-3 text-emerald-400 text-[10px] font-mono hover:bg-emerald-500/10 transition-all" data-testid={`deploy-url-${d.id}`}>
+                            <ExternalLink size={12}/> {d.url}
+                            <span className={`ml-auto text-[8px] uppercase tracking-widest ${d.ssl_status === 'active' ? 'text-emerald-500' : 'text-zinc-600'}`}>SSL: {d.ssl_status}</span>
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+
             {/* EMPIRE: MINT LEDGER */}
             {partition === 'empire' && activeTab === 'MINT LEDGER' && (
               <div className="space-y-6 animate-in fade-in max-w-7xl mx-auto w-full" data-testid="mint-ledger-panel">
@@ -589,22 +710,42 @@ export default function SLA113Page() {
 
             {/* EMPIRE: REVENUE PIPELINES */}
             {partition === 'empire' && activeTab === 'REVENUE PIPELINES' && (
-              <div className="animate-in fade-in max-w-7xl mx-auto w-full" data-testid="revenue-pipelines-panel">
+              <div className="animate-in fade-in max-w-7xl mx-auto w-full space-y-6" data-testid="revenue-pipelines-panel">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <span className="text-indigo-400 text-[10px] font-bold uppercase tracking-[3px]">{pipelines.length} Pipelines</span>
+                    <span className="text-zinc-500 text-[10px]">Total Revenue: <span className="text-indigo-400 font-bold">${pipelines.reduce((s,p) => s + (p.revenue||0), 0).toLocaleString()}</span></span>
+                  </div>
+                  <button
+                    onClick={async () => { for (const p of pipelines) { await axios.put(`${API}/pipelines/${p.id}/pulse`).catch(() => {}); } fetchData(); }}
+                    className="px-4 py-2 border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-[9px] uppercase tracking-widest font-bold hover:bg-indigo-500 hover:text-black transition-all flex items-center gap-2"
+                    data-testid="pulse-all-pipelines"
+                  >
+                    <CloudLightning size={12} /> Pulse All
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {pipelines.map(p => {
                     const isActive = pipelineHeartbeats[p.id] === 'active';
                     return (
-                      <div key={p.id} className={`p-5 border transition-all relative overflow-hidden ${isActive ? 'bg-indigo-900/20 border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.1)]' : 'bg-black/50 border-zinc-900/80'}`}>
+                      <div key={p.id} className={`p-5 border transition-all relative overflow-hidden group ${isActive ? 'bg-indigo-900/20 border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.1)]' : 'bg-black/50 border-zinc-900/80 hover:border-zinc-700'}`}>
                         <div className="flex justify-between items-start mb-4 text-indigo-400">
                           {p.lane === 1 ? <Cpu size={16}/> : p.lane === 2 ? <Package size={16}/> : <ShieldCheck size={16}/>}
                           <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-indigo-400 animate-ping' : 'bg-zinc-800'}`}></span>
                         </div>
                         <h4 className="text-xs font-bold text-zinc-200 mb-1">{p.name}</h4>
                         <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-mono">Lane 0{p.lane} // {p.type}</p>
-                        <div className="mt-3 flex justify-between text-[9px]">
+                        <div className="mt-3 flex justify-between items-center text-[9px]">
                           <span className="text-zinc-500">{p.executions || 0} runs</span>
                           <span className="text-indigo-400 font-bold">${(p.revenue || 0).toLocaleString()}</span>
                         </div>
+                        <button
+                          onClick={async () => { await axios.put(`${API}/pipelines/${p.id}/pulse`); fetchData(); }}
+                          className="mt-3 w-full py-2 border border-indigo-500/20 bg-indigo-500/5 text-indigo-400 text-[9px] uppercase tracking-widest font-bold opacity-0 group-hover:opacity-100 hover:bg-indigo-500 hover:text-black transition-all flex items-center justify-center gap-2"
+                          data-testid={`pulse-pipeline-${p.id}`}
+                        >
+                          <Zap size={10} /> Pulse
+                        </button>
                       </div>
                     );
                   })}
@@ -842,6 +983,187 @@ export default function SLA113Page() {
                       </div>
                     </div>
                     <button className="w-full py-4 bg-[#D4AF37]/10 border border-[#D4AF37] text-[#D4AF37] font-bold uppercase text-[10px] tracking-[2px] hover:bg-[#D4AF37] hover:text-black transition-all mt-8">Export Bank (.bank)</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+
+            {/* VAULT: BUILD PIPELINE */}
+            {partition === 'vault' && activeTab === 'BUILD PIPELINE' && (
+              <div className="grid grid-cols-12 gap-6 animate-in fade-in max-w-7xl mx-auto w-full" data-testid="build-pipeline-panel">
+                <div className="col-span-5 space-y-6">
+                  <div className="glass-panel border-red-500/20 p-8 space-y-6 tech-border-red">
+                    <h3 className="text-red-500 text-xs font-black uppercase tracking-[4px] border-b border-red-500/20 pb-4 flex items-center gap-3"><Rocket size={16}/> Compile Engine</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Source Project</label>
+                        <select className="input-dark focus:border-red-500 uppercase tracking-widest" data-testid="build-project-select" id="build-project-select">
+                          {projects.map(p => <option key={p.id} value={p.id}>{p.name} ({p.game_type})</option>)}
+                          {projects.length === 0 && <option>No projects — create one first</option>}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Target Format</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {['webgl', 'apk', 'both'].map(t => (
+                            <button key={t} onClick={() => setBuildTarget(t)} className={`py-2 text-[9px] uppercase tracking-widest border transition-all ${buildTarget === t ? 'border-red-500 bg-red-500/10 text-red-400' : 'border-zinc-800 text-zinc-600 hover:text-zinc-300'}`} data-testid={`build-target-${t}`}>
+                              {t === 'webgl' ? 'WebGL' : t === 'apk' ? 'APK' : 'Both'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Optimization</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {['speed', 'balanced', 'size'].map(o => (
+                            <button key={o} onClick={() => setBuildOptimization(o)} className={`py-2 text-[9px] uppercase tracking-widest border transition-all ${buildOptimization === o ? 'border-red-500 bg-red-500/10 text-red-400' : 'border-zinc-800 text-zinc-600 hover:text-zinc-300'}`}>
+                              {o}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const sel = document.getElementById('build-project-select');
+                        const pid = sel?.value;
+                        if (!pid || projects.length === 0) return;
+                        await axios.post(`${API}/builds`, { project_id: pid, target: buildTarget, optimization: buildOptimization });
+                        fetchData();
+                      }}
+                      disabled={projects.length === 0}
+                      className="w-full py-4 font-bold tracking-[3px] uppercase text-[10px] border border-red-500 text-black bg-red-500 hover:bg-red-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      data-testid="start-build-btn"
+                    >
+                      Initialize Build
+                    </button>
+                  </div>
+                </div>
+                <div className="col-span-7 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-red-500 text-[10px] font-bold uppercase tracking-[3px]">Build Queue ({builds.length})</span>
+                  </div>
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar">
+                    {builds.length === 0 && <div className="glass-panel border-red-500/10 p-12 text-center text-zinc-600 text-[10px] uppercase tracking-widest">No builds yet</div>}
+                    {builds.map(b => (
+                      <div key={b.id} className="glass-panel border-red-500/20 p-5 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="text-zinc-200 text-xs font-bold">{b.id}</span>
+                            <span className="text-zinc-500 text-[9px] ml-3">{b.project_name} / {b.target.toUpperCase()}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 text-[8px] uppercase tracking-widest border font-bold ${
+                              b.status === 'completed' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' :
+                              b.status === 'building' ? 'border-cyan-500/30 text-cyan-400 bg-cyan-500/10' :
+                              'border-zinc-700 text-zinc-400 bg-zinc-800/50'
+                            }`}>{b.status}</span>
+                            {b.status !== 'completed' && (
+                              <button onClick={async () => { await axios.post(`${API}/builds/${b.id}/advance`); fetchData(); }} className="text-[9px] border border-red-500/30 bg-red-500/10 text-red-400 px-2 py-1 hover:bg-red-500 hover:text-black transition-all" data-testid={`advance-build-${b.id}`}>
+                                Advance
+                              </button>
+                            )}
+                            <button onClick={async () => { await axios.delete(`${API}/builds/${b.id}`); fetchData(); }} className="text-zinc-600 hover:text-red-500 transition-colors"><XCircle size={14}/></button>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          {b.stages?.map((s, i) => (
+                            <div key={i} className="flex items-center gap-3 text-[9px]">
+                              <span className={`w-16 uppercase tracking-widest truncate ${s.status === 'completed' ? 'text-emerald-500' : s.status === 'processing' ? 'text-cyan-400' : 'text-zinc-600'}`}>{s.status === 'completed' ? 'DONE' : s.status === 'processing' ? `${s.progress}%` : 'WAIT'}</span>
+                              <div className="flex-1 h-1 bg-black border border-zinc-900 overflow-hidden">
+                                <div className={`h-full transition-all ${s.status === 'completed' ? 'bg-emerald-500' : s.status === 'processing' ? 'bg-cyan-500' : 'bg-zinc-900'}`} style={{width: `${s.progress}%`}}/>
+                              </div>
+                              <span className="text-zinc-500 w-32 truncate">{s.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {b.output && (
+                          <div className="flex items-center justify-between bg-emerald-500/5 border border-emerald-500/20 p-3 mt-2">
+                            <span className="text-emerald-400 text-[10px] font-mono">{b.output}</span>
+                            <span className="text-zinc-500 text-[9px]">{b.size_mb} MB</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* VAULT: COMPLIANCE */}
+            {partition === 'vault' && activeTab === 'COMPLIANCE' && (
+              <div className="grid grid-cols-12 gap-6 animate-in fade-in max-w-7xl mx-auto w-full" data-testid="compliance-panel">
+                <div className="col-span-4 space-y-6">
+                  <div className="glass-panel border-red-500/20 p-8 space-y-6 tech-border-red">
+                    <h3 className="text-red-500 text-xs font-black uppercase tracking-[4px] border-b border-red-500/20 pb-4 flex items-center gap-3"><FileCheck size={16}/> Certification Scan</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Target Project</label>
+                        <select className="input-dark focus:border-red-500 uppercase tracking-widest" data-testid="compliance-project-select" id="compliance-project-select">
+                          {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                          {projects.length === 0 && <option>No projects</option>}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Jurisdiction</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {['GLI', 'MGA', 'UKGC', 'CURACAO'].map(j => (
+                            <button key={j} onClick={() => setComplianceJurisdiction(j)} className={`py-2 text-[9px] uppercase tracking-widest border transition-all ${complianceJurisdiction === j ? 'border-red-500 bg-red-500/10 text-red-400' : 'border-zinc-800 text-zinc-600 hover:text-zinc-300'}`} data-testid={`jurisdiction-${j}`}>
+                              {j}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const sel = document.getElementById('compliance-project-select');
+                        const pid = sel?.value;
+                        if (!pid || projects.length === 0) return;
+                        await axios.post(`${API}/compliance/check`, { project_id: pid, jurisdiction: complianceJurisdiction });
+                        fetchData();
+                      }}
+                      disabled={projects.length === 0}
+                      className="w-full py-4 font-bold tracking-[3px] uppercase text-[10px] border border-red-500 text-black bg-red-500 hover:bg-red-400 transition-all disabled:opacity-30"
+                      data-testid="run-compliance-btn"
+                    >
+                      Run Certification Scan
+                    </button>
+                  </div>
+                </div>
+                <div className="col-span-8 space-y-4">
+                  <span className="text-red-500 text-[10px] font-bold uppercase tracking-[3px]">Compliance Reports ({complianceReports.length})</span>
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar">
+                    {complianceReports.length === 0 && <div className="glass-panel border-red-500/10 p-12 text-center text-zinc-600 text-[10px] uppercase tracking-widest">No compliance reports</div>}
+                    {complianceReports.map(r => (
+                      <div key={r.id} className="glass-panel border-red-500/20 p-5 space-y-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="text-zinc-200 text-xs font-bold">{r.id}</span>
+                            <span className="text-zinc-500 text-[9px] ml-3">{r.project_name} / {r.jurisdiction}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-3 py-1 text-[9px] uppercase tracking-widest border font-bold ${
+                              r.status === 'CERTIFIED' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : 'border-amber-500/30 text-amber-500 bg-amber-500/10'
+                            }`}>{r.status}</span>
+                            <span className="text-zinc-500 text-[9px] font-mono">{r.pass_rate}</span>
+                            <button onClick={async () => { await axios.delete(`${API}/compliance/${r.id}`); fetchData(); }} className="text-zinc-600 hover:text-red-500 transition-colors"><XCircle size={14}/></button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {r.results?.map((c, i) => (
+                            <div key={i} className={`p-3 border text-[10px] ${c.status === 'PASS' ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
+                              <div className="flex justify-between items-center">
+                                <span className={c.status === 'PASS' ? 'text-emerald-400' : 'text-red-400'}>{c.check}</span>
+                                <span className={`font-bold ${c.status === 'PASS' ? 'text-emerald-500' : 'text-red-500'}`}>{c.status}</span>
+                              </div>
+                              {c.value && <span className="text-zinc-500 text-[9px] font-mono">{c.value}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
