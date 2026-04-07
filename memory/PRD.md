@@ -63,17 +63,20 @@ SLA113 is a sovereign AI-powered game creation platform that generates complete 
 - `DELETE /api/sla113/pipelines/{id}` — Delete pipeline
 
 ## What's Implemented (Apr 2026)
-- [x] Full multi-partition UI (Factory, Empire 1, Foundry, Vault)
-- [x] 9 panels across 4 partitions
+- [x] Full multi-partition UI (Factory, Empire 1, Foundry, Vault) — 12 tabs across 4 partitions
 - [x] Backend CRUD for game projects
-- [x] Backend CRUD for tenants, jobs, pipelines
+- [x] Backend CRUD for tenants, jobs, pipelines, builds, compliance, deployments
 - [x] AI Vision Engine (real LLM calls)
 - [x] AI Logic Engine (real LLM calls)
 - [x] AI Composer Engine (real LLM calls)
 - [x] AI Terminal — Sovereign Overseer (real GPT with platform context + session persistence)
 - [x] Vision Smith — GPT Image 1 real image generation
 - [x] **Sprite Cutter Tool** — Canvas-based sprite sheet slicing with grid overlay, cell selection, cut/download
-- [x] **Sprite Animation Preview** — Frame-by-frame playback (play/pause, FPS control, forward/reverse/pingpong), auto-highlights active frame in sprite grid
+- [x] **Sprite Animation Preview** — Frame-by-frame playback (play/pause, FPS control, forward/reverse/pingpong)
+- [x] **Revenue Pipeline Pulse** — Individual + Pulse All triggers, real revenue generation ($50-500 per pulse)
+- [x] **Build Pipeline** — Compile Engine with WebGL/APK/Both targets, 5-stage build process, optimization modes
+- [x] **Compliance Engine** — Certification scans for GLI, MGA, UKGC, CURACAO jurisdictions with pass/fail results
+- [x] **Deploy Engine** — CDN deployment (Cloudflare/AWS/GCP/Custom) with region selection, SSL, live URLs
 - [x] Critical Drift overlay
 - [x] Daemon Uplink heartbeat
 - [x] 16 game types (casino + AAA)
@@ -85,10 +88,6 @@ SLA113 is a sovereign AI-powered game creation platform that generates complete 
 ## Backlog
 - [ ] Audio Forge — wire to real audio generation API (Vertex API later)
 - [ ] Night Queue — persistent background job workers (currently CRUD-only)
-- [ ] Revenue Pipelines — add pulse trigger on pipeline cards
-- [ ] Build Pipeline — export to APK/WebGL
-- [ ] Compliance Engine — certification automation
-- [ ] Deploy Engine — CDN distribution
 - [ ] Real-time Frontline via WebSocket
 
 ## Key Files
