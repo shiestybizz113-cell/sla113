@@ -278,3 +278,299 @@ RULES:
     except Exception as e:
         logger.error(f"Terminal error: {e}")
         return {"response": f"> [ERROR] Overseer fault: {str(e)}", "session_id": session_id}
+
+
+# ─── Collections ───
+def tenants_collection():
+    return get_database()["sla113_tenants"]
+
+def jobs_collection():
+    return get_database()["sla113_jobs"]
+
+def pipelines_collection():
+    return get_database()["sla113_pipelines"]
+
+
+# ─── Image Generation (Vision Smith) ───
+class ImageGenRequest(BaseModel):
+    prompt: str
+    style: str = "pixel_art"
+    size: str = "1024x1024"
+
+
+@router.post("/vision/generate-image")
+async def generate_image(req: ImageGenRequest):
+    """Generate actual game art image using GPT Image 1."""
+    import base64
+    from emergentintegrations.llm.openai.image_generation import OpenAIImageGeneration
+
+    api_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="EMERGENT_LLM_KEY not configured")
+
+    style_map = {
+        "pixel_art": "16-bit pixel art style, limited color palette, retro game aesthetic",
+        "vector": "clean vector illustration, flat colors, sharp edges, game asset",
+        "3d_render": "3D rendered, realistic lighting, game-ready asset",
+        "hand_drawn": "hand-drawn illustration, ink outlines, watercolor fills",
+        "anime": "Japanese anime art style, cel shading, vibrant colors",
+        "neon": "neon-lit cyberpunk style, glowing edges, dark background",
+        "retro": "retro 80s arcade style, bold colors, scanline effects",
+    }
+    style_desc = style_map.get(req.style, req.style)
+    full_prompt = f"{req.prompt}. Style: {style_desc}. Game asset on transparent/dark background, high detail."
+
+    try:
+        image_gen = OpenAIImageGeneration(api_key=api_key)
+        images = await image_gen.generate_images(
+            prompt=full_prompt,
+            model="gpt-image-1",
+            number_of_images=1,
+        )
+        if images and len(images) > 0:
+            image_base64 = base64.b64encode(images[0]).decode("utf-8")
+            return {"image_base64": image_base64, "prompt": req.prompt, "style": req.style}
+        raise HTTPException(status_code=500, detail="No image generated")
+    except Exception as e:
+        logger.error(f"Image generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")
+
+
+# ─── White Label Tenants ───
+class CreateTenantRequest(BaseModel):
+    name: str
+    subdomain: str
+    config: Optional[dict] = None
+
+
+@router.post("/tenants")
+async def create_tenant(req: CreateTenantRequest):
+    """Mint a new white-label tenant instance."""
+    now = datetime.now(timezone.utc).isoformat()
+    existing = await tenants_collection().find_one({"subdomain": req.subdomain}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=409, detail=f"Subdomain '{req.subdomain}' already exists")
+
+    tenant = {
+        "id": str(uuid.uuid4()),
+        "name": req.name,
+        "subdomain": req.subdomain,
+        "status": "provisioning",
+        "credits": 0,
+        "rtp_mode": 92,
+        "config": req.config or {},
+        "created_at": now,
+        "updated_at": now,
+    }
+    await tenants_collection().insert_one(tenant)
+    tenant.pop("_id", None)
+
+    # Simulate provisioning steps
+    await tenants_collection().update_one(
+        {"id": tenant["id"]},
+        {"$set": {"status": "active", "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    tenant["status"] = "active"
+    return tenant
+
+
+@router.get("/tenants")
+async def list_tenants():
+    """List all white-label tenants."""
+    cursor = tenants_collection().find({}, {"_id": 0})
+    tenants = await cursor.to_list(100)
+    return {"tenants": tenants, "total": len(tenants)}
+
+
+@router.delete("/tenants/{tenant_id}")
+async def delete_tenant(tenant_id: str):
+    result = await tenants_collection().delete_one({"id": tenant_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    return {"deleted": True}
+
+
+@router.put("/tenants/{tenant_id}/credits")
+async def update_tenant_credits(tenant_id: str, amount: int):
+    """Load credits to a tenant."""
+    result = await tenants_collection().update_one(
+        {"id": tenant_id},
+        {"$inc": {"credits": amount}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    tenant = await tenants_collection().find_one({"id": tenant_id}, {"_id": 0})
+    return tenant
+
+
+@router.put("/tenants/{tenant_id}/rtp")
+async def update_tenant_rtp(tenant_id: str, rtp: int):
+    """Set tenant RTP mode."""
+    if rtp < 80 or rtp > 99:
+        raise HTTPException(status_code=400, detail="RTP must be between 80 and 99")
+    await tenants_collection().update_one(
+        {"id": tenant_id},
+        {"$set": {"rtp_mode": rtp, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    tenant = await tenants_collection().find_one({"id": tenant_id}, {"_id": 0})
+    return tenant
+
+
+# ─── Night Queue (Persistent Jobs) ───
+class CreateJobRequest(BaseModel):
+    preset: str
+    config: Optional[dict] = None
+    priority: str = "normal"
+
+
+@router.post("/jobs")
+async def create_job(req: CreateJobRequest):
+    """Queue a new build job."""
+    now = datetime.now(timezone.utc).isoformat()
+    job = {
+        "id": f"JOB-{uuid.uuid4().hex[:6].upper()}",
+        "preset": req.preset,
+        "status": "pending",
+        "progress": 0,
+        "priority": req.priority,
+        "config": req.config or {},
+        "logs": [f"[{now}] Job created. Preset: {req.preset}"],
+        "created_at": now,
+        "updated_at": now,
+    }
+    await jobs_collection().insert_one(job)
+    job.pop("_id", None)
+    return job
+
+
+@router.get("/jobs")
+async def list_jobs():
+    """List all queued jobs."""
+    cursor = jobs_collection().find({}, {"_id": 0}).sort("created_at", -1)
+    jobs = await cursor.to_list(100)
+    return {"jobs": jobs, "total": len(jobs)}
+
+
+@router.put("/jobs/{job_id}/progress")
+async def update_job_progress(job_id: str, progress: int, status: Optional[str] = None):
+    """Update job progress."""
+    update = {"progress": progress, "updated_at": datetime.now(timezone.utc).isoformat()}
+    if status:
+        update["status"] = status
+    if progress >= 100:
+        update["status"] = "completed"
+    result = await jobs_collection().update_one({"id": job_id}, {"$set": update})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Job not found")
+    job = await jobs_collection().find_one({"id": job_id}, {"_id": 0})
+    return job
+
+
+@router.delete("/jobs/{job_id}")
+async def delete_job(job_id: str):
+    result = await jobs_collection().delete_one({"id": job_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return {"deleted": True}
+
+
+@router.post("/jobs/{job_id}/process")
+async def process_job(job_id: str):
+    """Simulate processing a job (advances progress)."""
+    job = await jobs_collection().find_one({"id": job_id}, {"_id": 0})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job["status"] == "completed":
+        return job
+
+    new_progress = min(job["progress"] + 25, 100)
+    new_status = "completed" if new_progress >= 100 else "processing"
+    now = datetime.now(timezone.utc).isoformat()
+    log_msg = f"[{now}] Progress: {new_progress}% — {'Build complete.' if new_status == 'completed' else 'Compiling...'}"
+
+    await jobs_collection().update_one(
+        {"id": job_id},
+        {"$set": {"progress": new_progress, "status": new_status, "updated_at": now}, "$push": {"logs": log_msg}}
+    )
+    job = await jobs_collection().find_one({"id": job_id}, {"_id": 0})
+    return job
+
+
+# ─── Revenue Pipelines ───
+class CreatePipelineRequest(BaseModel):
+    name: str
+    type: str = "Automation"
+    lane: int = 1
+
+
+@router.post("/pipelines")
+async def create_pipeline(req: CreatePipelineRequest):
+    now = datetime.now(timezone.utc).isoformat()
+    pipeline = {
+        "id": str(uuid.uuid4()),
+        "name": req.name,
+        "type": req.type,
+        "lane": req.lane,
+        "status": "active",
+        "heartbeat": "idle",
+        "executions": 0,
+        "revenue": 0,
+        "created_at": now,
+        "updated_at": now,
+    }
+    await pipelines_collection().insert_one(pipeline)
+    pipeline.pop("_id", None)
+    return pipeline
+
+
+@router.get("/pipelines")
+async def list_pipelines():
+    cursor = pipelines_collection().find({}, {"_id": 0})
+    pipelines = await cursor.to_list(100)
+    total_revenue = sum(p.get("revenue", 0) for p in pipelines)
+    return {"pipelines": pipelines, "total": len(pipelines), "total_revenue": total_revenue}
+
+
+@router.put("/pipelines/{pipeline_id}/pulse")
+async def pulse_pipeline(pipeline_id: str):
+    """Trigger a pipeline heartbeat (simulates execution)."""
+    import random
+    rev = random.randint(50, 500)
+    now = datetime.now(timezone.utc).isoformat()
+    result = await pipelines_collection().update_one(
+        {"id": pipeline_id},
+        {"$set": {"heartbeat": "active", "updated_at": now}, "$inc": {"executions": 1, "revenue": rev}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+    pipeline = await pipelines_collection().find_one({"id": pipeline_id}, {"_id": 0})
+    return pipeline
+
+
+@router.delete("/pipelines/{pipeline_id}")
+async def delete_pipeline(pipeline_id: str):
+    result = await pipelines_collection().delete_one({"id": pipeline_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+    return {"deleted": True}
+
+
+# ─── Seed default pipelines if empty ───
+async def seed_default_pipelines():
+    count = await pipelines_collection().count_documents({})
+    if count == 0:
+        defaults = [
+            {"name": "Lead Qualification Engine", "type": "Automation", "lane": 1},
+            {"name": "CRM Syncing Logic", "type": "Automation", "lane": 1},
+            {"name": "Pro Voice Over (SaaS)", "type": "Utility", "lane": 2},
+            {"name": "SMS/Email Gateway", "type": "Utility", "lane": 2},
+            {"name": "White-Label Instance", "type": "Sovereign", "lane": 3},
+            {"name": "Managed Sovereignty", "type": "Sovereign", "lane": 3},
+        ]
+        now = datetime.now(timezone.utc).isoformat()
+        for d in defaults:
+            await pipelines_collection().insert_one({
+                "id": str(uuid.uuid4()), **d, "status": "active", "heartbeat": "idle",
+                "executions": 0, "revenue": 0, "created_at": now, "updated_at": now,
+            })
+        logger.info("Seeded 6 default pipelines")

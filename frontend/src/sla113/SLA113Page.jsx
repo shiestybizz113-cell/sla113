@@ -210,27 +210,25 @@ export default function SLA113Page() {
   const [selectedPreset, setSelectedPreset] = useState('AAA_FISH_SLOT');
   const [visionResult, setVisionResult] = useState(null);
   const [visionLoading, setVisionLoading] = useState(false);
+  const [generatedImages, setGeneratedImages] = useState([]);
 
   // Mint Ledger State
-  const [agents] = useState(AGENT_NODES);
+  const [agents, setAgents] = useState([]);
 
-  // Pipeline heartbeats
+  // Pipeline heartbeats — real pipelines from API
+  const [pipelines, setPipelines] = useState([]);
   const [pipelineHeartbeats, setPipelineHeartbeats] = useState({});
   useEffect(() => {
     const interval = setInterval(() => {
       const newHeartbeats = {};
-      EMPIRE_PIPELINES.forEach(p => { newHeartbeats[p.id] = Math.random() > 0.7 ? 'active' : 'idle'; });
+      pipelines.forEach(p => { newHeartbeats[p.id] = Math.random() > 0.7 ? 'active' : 'idle'; });
       setPipelineHeartbeats(newHeartbeats);
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [pipelines]);
 
-  // Night Queue State
-  const [queue, setQueue] = useState([
-    { id: 'JOB-9921', status: 'processing', preset: 'RPG_OPEN_WORLD', progress: 68 },
-    { id: 'JOB-9922', status: 'pending', preset: 'CASINO_SLOTS', progress: 0 },
-    { id: 'JOB-9923', status: 'completed', preset: 'ARCADE_CLASSIC', progress: 100 },
-  ]);
+  // Night Queue State — real jobs from API
+  const [queue, setQueue] = useState([]);
 
   // System Core State
   const [firewallStrength, setFirewallStrength] = useState(85);
@@ -264,14 +262,20 @@ export default function SLA113Page() {
   // Fetch backend data
   const fetchData = useCallback(async () => {
     try {
-      const [typesRes, projRes, statsRes] = await Promise.all([
+      const [typesRes, projRes, statsRes, tenantsRes, jobsRes, pipelinesRes] = await Promise.all([
         axios.get(`${API}/game-types`),
         axios.get(`${API}/projects`),
         axios.get(`${API}/stats`),
+        axios.get(`${API}/tenants`).catch(() => ({ data: { tenants: [] } })),
+        axios.get(`${API}/jobs`).catch(() => ({ data: { jobs: [] } })),
+        axios.get(`${API}/pipelines`).catch(() => ({ data: { pipelines: [] } })),
       ]);
       setGameTypes(typesRes.data.game_types || {});
       setProjects(projRes.data.projects || []);
       setStats(statsRes.data || {});
+      setAgents(tenantsRes.data.tenants || []);
+      setQueue(jobsRes.data.jobs || []);
+      setPipelines(pipelinesRes.data.pipelines || []);
     } catch (e) {
       console.error("SLA113 data fetch failed:", e);
     }
@@ -287,25 +291,12 @@ export default function SLA113Page() {
 
   const handleForgeOS = async () => {
     setIsBuilding(true);
-    // Create a real project via API
     try {
       const gameType = osPartitions[0]?.type === 'OPEN_WORLD' ? 'open_world' : osPartitions[0]?.type === 'SLOTS_20' ? 'slot_machine' : 'fish_shooter';
-      await axios.post(`${API}/projects`, {
-        name: `OS_BUILD_${Date.now()}`,
-        game_type: gameType,
-        theme: 'sovereign',
-        target_platform: 'both',
-      });
-      setQueue([{
-        id: `JOB-${Math.floor(Math.random() * 10000)}`,
-        status: 'pending',
-        preset: osPartitions[0]?.type || 'CUSTOM_OS_BUILD',
-        progress: 0
-      }, ...queue]);
+      await axios.post(`${API}/projects`, { name: `OS_BUILD_${Date.now()}`, game_type: gameType, theme: 'sovereign', target_platform: 'both' });
+      await axios.post(`${API}/jobs`, { preset: osPartitions[0]?.type || 'CUSTOM_OS_BUILD', priority: 'high' });
       await fetchData();
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
     setIsBuilding(false);
     handlePartitionChange('vault');
     setActiveTab('NIGHT QUEUE');
@@ -315,51 +306,58 @@ export default function SLA113Page() {
     if (!prompt) return;
     setVisionLoading(true);
     try {
-      // Use an existing project or create one
-      let projectId = projects[0]?.id;
-      if (!projectId) {
-        const preset = ENGINE_PRESETS.find(p => p.id === selectedPreset);
-        const gameType = selectedPreset === 'GTA5_TYPE' ? 'open_world' : selectedPreset === 'COD_WARFARE' ? 'tactical_fps' : selectedPreset === 'FANTASY_RPG' ? 'fantasy_rpg' : 'fish_shooter';
-        const res = await axios.post(`${API}/projects`, {
-          name: preset?.name || 'Vision Project',
-          game_type: gameType,
-          theme: 'sovereign',
-          target_platform: 'web',
-        });
-        projectId = res.data.id;
-        await fetchData();
-      }
-      const res = await axios.post(`${API}/vision/generate`, {
-        project_id: projectId,
-        asset_type: 'sprites',
-        style: 'neon',
-        count: 5,
-        custom_prompt: prompt,
+      // Generate real image via GPT Image 1
+      const imgRes = await axios.post(`${API}/vision/generate-image`, {
+        prompt,
+        style: selectedPreset === 'GTA5_TYPE' ? 'neon' : selectedPreset === 'COD_WARFARE' ? '3d_render' : selectedPreset === 'FANTASY_RPG' ? 'hand_drawn' : 'pixel_art',
+        size: '1024x1024',
       });
-      setVisionResult(res.data);
+      if (imgRes.data.image_base64) {
+        setGeneratedImages(prev => [{ base64: imgRes.data.image_base64, prompt: imgRes.data.prompt, style: imgRes.data.style, id: Date.now() }, ...prev]);
+      }
+
+      // Also generate asset specs if project exists
+      let projectId = projects[0]?.id;
+      if (projectId) {
+        const res = await axios.post(`${API}/vision/generate`, {
+          project_id: projectId, asset_type: 'sprites', style: 'neon', count: 5, custom_prompt: prompt,
+        });
+        setVisionResult(res.data);
+      }
     } catch (e) {
       console.error("Vision generation failed:", e);
+      setVisionResult({ error: e.response?.data?.detail || e.message });
     }
     setVisionLoading(false);
   };
 
-  const handleMintWhiteLabel = () => {
+  const handleMintWhiteLabel = async () => {
     if (!whiteLabelName || isForgingTenant) return;
     setIsForgingTenant(true);
     setWhiteLabelLogs([`> Initiating Sovereign Mint for: ${whiteLabelName.toUpperCase()}`]);
-    const steps = [
-      `> Validating Root Authority... [OK]`,
-      `> Cloning SLA113 core foundries...`,
-      `> Securing dedicated tenant boundary...`,
-      `> Done. Sovereign Instance deployed.`
-    ];
-    steps.forEach((s, i) => setTimeout(() => {
-      setWhiteLabelLogs(p => [...p, s]);
-      if (i === steps.length - 1) setIsForgingTenant(false);
-    }, (i + 1) * 800));
+    try {
+      const subdomain = whiteLabelName.toLowerCase().replace(/\s+/g, '-') + '.empire1.cloud';
+      setWhiteLabelLogs(p => [...p, `> Validating Root Authority... [OK]`]);
+      await new Promise(r => setTimeout(r, 600));
+      setWhiteLabelLogs(p => [...p, `> Cloning SLA113 core foundries...`]);
+      const res = await axios.post(`${API}/tenants`, { name: whiteLabelName.toUpperCase(), subdomain });
+      await new Promise(r => setTimeout(r, 400));
+      setWhiteLabelLogs(p => [...p, `> Securing dedicated tenant boundary...`]);
+      await new Promise(r => setTimeout(r, 400));
+      setWhiteLabelLogs(p => [...p, `> Done. Instance: ${res.data.subdomain} [${res.data.status.toUpperCase()}]`]);
+      await fetchData();
+    } catch (e) {
+      setWhiteLabelLogs(p => [...p, `> [ERROR] ${e.response?.data?.detail || e.message}`]);
+    }
+    setIsForgingTenant(false);
   };
 
-  const removeQueueItem = (id) => setQueue(queue.filter(item => item.id !== id));
+  const removeQueueItem = async (id) => {
+    try {
+      await axios.delete(`${API}/jobs/${id}`);
+      setQueue(queue.filter(item => item.id !== id));
+    } catch (e) { console.error(e); }
+  };
 
   const askAI = async () => {
     if (!aiInput.trim()) return;
@@ -550,36 +548,37 @@ export default function SLA113Page() {
                     <Database size={32} className="text-indigo-400 opacity-20" />
                   </div>
                   <div className="glass-panel border-indigo-500/20 p-6 flex items-center justify-between">
-                    <div><span className="text-[9px] text-zinc-500 uppercase tracking-[0.2em]">Total Agent Credits</span><h4 className="text-2xl font-bold text-[#00C8FF] mt-1 font-mono">16,850.00</h4></div>
+                    <div><span className="text-[9px] text-zinc-500 uppercase tracking-[0.2em]">Total Agent Credits</span><h4 className="text-2xl font-bold text-[#00C8FF] mt-1 font-mono">{agents.reduce((s,a) => s + (a.credits||0), 0).toLocaleString()}.00</h4></div>
                     <Users size={32} className="text-[#00C8FF] opacity-20" />
                   </div>
                   <div className="glass-panel border-indigo-500/20 p-6 flex items-center justify-between">
-                    <div><span className="text-[9px] text-zinc-500 uppercase tracking-[0.2em]">24H Network Volume</span><h4 className="text-2xl font-bold text-zinc-200 mt-1 font-mono">842,110</h4></div>
+                    <div><span className="text-[9px] text-zinc-500 uppercase tracking-[0.2em]">Active Tenants</span><h4 className="text-2xl font-bold text-zinc-200 mt-1 font-mono">{agents.length}</h4></div>
                     <Zap size={32} className="text-zinc-500 opacity-20" />
                   </div>
                 </div>
                 <div className="glass-panel border-indigo-500/20 overflow-hidden">
                   <table className="w-full text-left">
                     <thead className="bg-indigo-500/5 border-b border-indigo-500/20 text-[10px] uppercase tracking-widest text-zinc-500 font-normal">
-                      <tr><th className="p-4">Agent ID</th><th className="p-4">Subdomain</th><th className="p-4">Credit Balance</th><th className="p-4">RTP Mode</th><th className="p-4 text-right">Actions</th></tr>
+                      <tr><th className="p-4">Tenant</th><th className="p-4">Subdomain</th><th className="p-4">Credit Balance</th><th className="p-4">RTP Mode</th><th className="p-4 text-right">Actions</th></tr>
                     </thead>
                     <tbody className="text-xs font-mono">
                       {agents.map((agent) => (
                         <tr key={agent.id} className="border-b border-zinc-900/50 hover:bg-white/5 transition-all">
-                          <td className="p-4 text-indigo-400 font-bold">{agent.id}</td>
+                          <td className="p-4 text-indigo-400 font-bold">{agent.name || agent.id}</td>
                           <td className="p-4 text-zinc-400">{agent.subdomain}</td>
-                          <td className="p-4 text-zinc-300">{agent.credits.toLocaleString()}.00</td>
+                          <td className="p-4 text-zinc-300">{(agent.credits||0).toLocaleString()}.00</td>
                           <td className="p-4">
-                            <span className={`px-2 py-0.5 border text-[9px] ${agent.rtp === 94 ? 'border-emerald-500/50 text-emerald-500 bg-emerald-500/10' : agent.rtp === 92 ? 'border-amber-500/50 text-amber-500 bg-amber-500/10' : 'border-red-500/50 text-red-500 bg-red-500/10'}`}>
-                              {agent.rtp === 94 ? 'EASY' : agent.rtp === 92 ? 'MEDIUM' : 'HARD'} ({agent.rtp}%)
+                            <span className={`px-2 py-0.5 border text-[9px] ${(agent.rtp_mode||92) >= 94 ? 'border-emerald-500/50 text-emerald-500 bg-emerald-500/10' : (agent.rtp_mode||92) >= 92 ? 'border-amber-500/50 text-amber-500 bg-amber-500/10' : 'border-red-500/50 text-red-500 bg-red-500/10'}`}>
+                              {(agent.rtp_mode||92) >= 94 ? 'EASY' : (agent.rtp_mode||92) >= 92 ? 'MEDIUM' : 'HARD'} ({agent.rtp_mode||92}%)
                             </span>
                           </td>
                           <td className="p-4 text-right space-x-2">
-                            <button className="text-[9px] border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-indigo-400 hover:bg-indigo-500 hover:text-black transition-all">LOAD</button>
-                            <button className="text-[9px] border border-zinc-700 bg-black px-3 py-1.5 text-zinc-400 hover:bg-zinc-800 transition-all">RTP</button>
+                            <button onClick={async () => { await axios.put(`${API}/tenants/${agent.id}/credits?amount=1000`); fetchData(); }} className="text-[9px] border border-indigo-500/30 bg-indigo-500/10 px-3 py-1.5 text-indigo-400 hover:bg-indigo-500 hover:text-black transition-all">+1K</button>
+                            <button onClick={async () => { const rtp = prompt('Set RTP (80-99):', agent.rtp_mode||92); if(rtp) { await axios.put(`${API}/tenants/${agent.id}/rtp?rtp=${rtp}`); fetchData(); }}} className="text-[9px] border border-zinc-700 bg-black px-3 py-1.5 text-zinc-400 hover:bg-zinc-800 transition-all">RTP</button>
                           </td>
                         </tr>
                       ))}
+                      {agents.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-zinc-500 text-[10px] uppercase tracking-widest">No tenants minted. Use FACTORY &gt; WHITE LABEL MINT.</td></tr>}
                     </tbody>
                   </table>
                 </div>
@@ -590,7 +589,7 @@ export default function SLA113Page() {
             {partition === 'empire' && activeTab === 'REVENUE PIPELINES' && (
               <div className="animate-in fade-in max-w-7xl mx-auto w-full" data-testid="revenue-pipelines-panel">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {EMPIRE_PIPELINES.map(p => {
+                  {pipelines.map(p => {
                     const isActive = pipelineHeartbeats[p.id] === 'active';
                     return (
                       <div key={p.id} className={`p-5 border transition-all relative overflow-hidden ${isActive ? 'bg-indigo-900/20 border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.1)]' : 'bg-black/50 border-zinc-900/80'}`}>
@@ -600,9 +599,14 @@ export default function SLA113Page() {
                         </div>
                         <h4 className="text-xs font-bold text-zinc-200 mb-1">{p.name}</h4>
                         <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-mono">Lane 0{p.lane} // {p.type}</p>
+                        <div className="mt-3 flex justify-between text-[9px]">
+                          <span className="text-zinc-500">{p.executions || 0} runs</span>
+                          <span className="text-indigo-400 font-bold">${(p.revenue || 0).toLocaleString()}</span>
+                        </div>
                       </div>
                     );
                   })}
+                  {pipelines.length === 0 && <div className="col-span-4 text-center text-zinc-500 text-[10px] uppercase tracking-widest py-12">No pipelines configured</div>}
                 </div>
               </div>
             )}
@@ -737,23 +741,47 @@ export default function SLA113Page() {
                 </div>
                 <div className="col-span-8 flex flex-col gap-6">
                   <div className="flex-1 glass-panel border-[#D4AF37]/20 flex flex-col overflow-hidden relative min-h-[500px]">
-                    {visionResult ? (
+                    {(generatedImages.length > 0 || visionResult) ? (
                       <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
-                        <div className="flex items-center gap-3 mb-4">
-                          <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest border border-emerald-500/30 bg-emerald-500/10 px-3 py-1">GENERATED</span>
-                          <span className="text-zinc-500 text-[10px]">{visionResult.generation_time}s</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          {visionResult.assets?.map((asset, i) => (
-                            <div key={i} className="p-4 border border-zinc-800 bg-black/50">
-                              <h4 className="text-[#D4AF37] font-bold text-xs mb-2">{asset.name || `Asset ${i+1}`}</h4>
-                              <p className="text-zinc-400 text-[10px] leading-relaxed">{asset.description}</p>
-                              {asset.color_palette && (
-                                <div className="flex gap-1 mt-2">{asset.color_palette.map((c, j) => <span key={j} className="w-4 h-4 border border-zinc-700" style={{background: c}} />)}</div>
-                              )}
+                        {generatedImages.length > 0 && (
+                          <>
+                            <div className="flex items-center gap-3 mb-4">
+                              <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest border border-emerald-500/30 bg-emerald-500/10 px-3 py-1">IMAGE GENERATED</span>
+                              <span className="text-zinc-500 text-[10px]">{generatedImages.length} image(s)</span>
                             </div>
-                          ))}
-                        </div>
+                            <div className="grid grid-cols-2 gap-3 mb-6">
+                              {generatedImages.map((img) => (
+                                <div key={img.id} className="border border-zinc-800 bg-black/50 overflow-hidden group relative">
+                                  <img src={`data:image/png;base64,${img.base64}`} alt={img.prompt} className="w-full h-auto" />
+                                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 to-transparent">
+                                    <p className="text-[10px] text-zinc-300 truncate">{img.prompt}</p>
+                                    <a href={`data:image/png;base64,${img.base64}`} download={`sla113_${img.id}.png`} className="text-[9px] text-[#D4AF37] uppercase tracking-widest hover:text-white transition-colors">Download</a>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                        {visionResult && !visionResult.error && (
+                          <>
+                            <div className="flex items-center gap-3 mb-4">
+                              <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest border border-emerald-500/30 bg-emerald-500/10 px-3 py-1">ASSET SPECS</span>
+                              <span className="text-zinc-500 text-[10px]">{visionResult.generation_time}s</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              {visionResult.assets?.map((asset, i) => (
+                                <div key={i} className="p-4 border border-zinc-800 bg-black/50">
+                                  <h4 className="text-[#D4AF37] font-bold text-xs mb-2">{asset.name || `Asset ${i+1}`}</h4>
+                                  <p className="text-zinc-400 text-[10px] leading-relaxed">{asset.description}</p>
+                                  {asset.color_palette && (
+                                    <div className="flex gap-1 mt-2">{asset.color_palette.map((c, j) => <span key={j} className="w-4 h-4 border border-zinc-700" style={{background: c}} />)}</div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                        {visionResult?.error && <div className="p-4 border border-red-500/30 bg-red-500/5 text-red-400 text-[11px] font-mono">{visionResult.error}</div>}
                       </div>
                     ) : (
                       <div className="flex-1 flex items-center justify-center opacity-20">
@@ -766,8 +794,10 @@ export default function SLA113Page() {
                     <div className="h-32 bg-black/80 backdrop-blur-md border-t border-[#D4AF37]/20 p-6 font-mono text-[11px] text-zinc-500 overflow-y-auto leading-relaxed">
                       <p>{'>'} SYSTEM READY. PALETTE LOCK: <span className="text-zinc-300">#050505, #D4AF37, #00C8FF</span></p>
                       <p>{'>'} STYLE ENFORCEMENT: <span className="text-[#D4AF37]">CHICANO MURAL / AZTEC GEOMETRY</span></p>
-                      {visionResult && <p className="text-emerald-400">{'>'} GENERATION COMPLETE. {visionResult.assets?.length || 0} ASSETS FORGED.</p>}
-                      {!visionResult && <p className="animate-pulse mt-4">{'>'} STANDING BY FOR OPERATOR INPUT...</p>}
+                      {generatedImages.length > 0 && <p className="text-emerald-400">{'>'} GPT IMAGE 1: {generatedImages.length} IMAGE(S) FORGED.</p>}
+                      {visionResult && !visionResult.error && <p className="text-emerald-400">{'>'} ASSET SPECS: {visionResult.assets?.length || 0} GENERATED.</p>}
+                      {visionLoading && <p className="text-[#D4AF37] animate-pulse">{'>'} ENGAGING SMITH... GENERATING...</p>}
+                      {!visionResult && !visionLoading && generatedImages.length === 0 && <p className="animate-pulse mt-4">{'>'} STANDING BY FOR OPERATOR INPUT...</p>}
                     </div>
                   </div>
                 </div>

@@ -16,6 +16,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 # Import database connection
 from database import connect_to_database, close_database_connection, get_database
+from routers.sla113 import seed_default_pipelines
 
 # Lifespan context manager for startup/shutdown
 @asynccontextmanager
@@ -23,6 +24,7 @@ async def lifespan(app: FastAPI):
     # Startup: Connect to database
     await connect_to_database()
     logging.info("Database connected on startup")
+    await seed_default_pipelines()
     yield
     # Shutdown: Close database connection
     await close_database_connection()
