@@ -71,6 +71,7 @@ SLA113 is a sovereign AI-powered game creation platform that generates complete 
 - [x] AI Logic Engine (real LLM calls)
 - [x] AI Composer Engine (real LLM calls)
 - [x] AI Terminal — Sovereign Overseer (real GPT with platform context + session persistence)
+- [x] **Bestiary** — Boss roster (3 bosses: Xochipilli, Lobo Negro, La Reina), hero image display, HP/credits/RTP, attack kits, weakness/theme/lore, sprite sheet viewer, game backgrounds gallery
 - [x] **Vision Smith v2** — 8 asset types (concept art, character, boss, sprite sheet, tileset, background, UI kit, VFX), 10 art styles, 3 resolutions, pro-level prompt engineering per asset type
 - [x] **Sprite Cutter Tool** — Canvas-based sprite sheet slicing with grid overlay, cell selection, cut/download
 - [x] **Sprite Animation Preview** — Frame-by-frame playback (play/pause, FPS control, forward/reverse/pingpong)

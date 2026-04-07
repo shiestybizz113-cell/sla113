@@ -7,7 +7,7 @@ import {
   HardDrive, Globe, Ghost, Layers, Factory, CheckCircle2, Moon, RefreshCw, XCircle,
   Settings, Server, Lock, SlidersHorizontal, Key, Network, ShieldCheck, Package,
   BarChart3, Hammer, Code, Grid3X3, Mic, Archive, ChevronDown, Scan, Paintbrush, Scissors,
-  Rocket, FileCheck, Upload, Play, ExternalLink, CloudLightning, Link2
+  Rocket, FileCheck, Upload, Play, ExternalLink, CloudLightning, Link2, Skull, Heart, Swords
 } from 'lucide-react';
 import SpriteCutter from './SpriteCutter';
 import DependencyGraph from './DependencyGraph';
@@ -109,6 +109,7 @@ const ALL_NAV_ITEMS = [
   { id: 'DEPLOY CENTER', icon: Upload, partition: 'factory' },
   { id: 'MINT LEDGER', icon: CreditCard, partition: 'empire' },
   { id: 'REVENUE PIPELINES', icon: BarChart3, partition: 'empire' },
+  { id: 'BESTIARY', icon: Skull, partition: 'empire' },
   { id: 'OS BUILDER', icon: Layout, partition: 'foundry' },
   { id: 'VISION SMITH', icon: ImageIcon, partition: 'foundry' },
   { id: 'AUDIO FORGE', icon: Music, partition: 'foundry' },
@@ -116,6 +117,65 @@ const ALL_NAV_ITEMS = [
   { id: 'COMPLIANCE', icon: FileCheck, partition: 'vault' },
   { id: 'SYSTEM CORE', icon: ShieldCheck, partition: 'vault' },
   { id: 'NIGHT QUEUE', icon: Layers, partition: 'vault' },
+];
+
+const BOSS_BESTIARY = [
+  {
+    id: 'XOCHIPILLI',
+    name: 'Xochipilli Scathed',
+    title: 'Sun Priest of the Burning Codex',
+    tier: 'MYTHIC',
+    hp: 850000,
+    credits: { left: 3500, right: 2400 },
+    image: 'https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/7v5cck22_boss.jpg',
+    spriteSheet: null,
+    attacks: ['Solar Flare Staff', 'Calendar Shield Bash', 'Obsidian Cannon Barrage', 'Flower of Fire'],
+    weakness: 'Water / Ice',
+    lore: 'Once the god of flowers, art and song — now a skeletal harbinger wielding the burning codex of the Fifth Sun. His Aztec armor cracks with lava, each flower on his body a trapped soul.',
+    rtp: '94.2%',
+    theme: 'Aztec / Mesoamerican',
+  },
+  {
+    id: 'LOBO_NEGRO',
+    name: 'Lobo Negro',
+    title: 'Spirit Wolf of the Golden Spiral',
+    tier: 'LEGENDARY',
+    hp: 620000,
+    credits: { left: 2800, right: 1900 },
+    image: 'https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/row23xof_bossf.png',
+    spriteSheet: 'https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/g7h5sjnl_spritesheet1%20%281%29.jpg',
+    attacks: ['Shadow Lunge', 'Gold Glyph Howl', 'Spiral Mark Drain', 'Pack Summon'],
+    weakness: 'Lightning / Holy',
+    lore: 'A massive black wolf branded with ancient golden Aztec glyphs. Each spiral burned into his fur is a pact with the underworld. His amber eyes see through walls and into the spirit realm.',
+    rtp: '93.8%',
+    theme: 'Aztec / Spirit Animal',
+  },
+  {
+    id: 'LA_REINA',
+    name: 'La Reina Oscura',
+    title: 'Queen of the Obsidian Court',
+    tier: 'MYTHIC',
+    hp: 780000,
+    credits: { left: 4200, right: 3100 },
+    image: 'https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/row23xof_bossf.png',
+    spriteSheet: null,
+    attacks: ['Obsidian Blade Dance', 'Shadow Crown Pulse', 'Spirit Chain Bind', 'Eclipse Judgment'],
+    weakness: 'Fire / Light',
+    lore: 'The warrior queen who rose from the streets of East Los to command the obsidian throne. Her blade drinks shadows and her crown channels the spirits of fallen warriors.',
+    rtp: '95.1%',
+    theme: 'Aztec / Urban Warrior',
+  },
+];
+
+const GAME_BACKGROUNDS = [
+  {
+    id: 'BG_AZTEC_LA',
+    name: 'Aztec Ruins x East LA',
+    image: 'https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/l1atothu_background1.png.png',
+    type: 'Parallax Background',
+    resolution: '1024x1024',
+    theme: 'Mesoamerican / Urban',
+  },
 ];
 
 const ENGINE_PRESETS = [
@@ -221,6 +281,9 @@ export default function SLA113Page() {
   const [visionAssetType, setVisionAssetType] = useState('concept_art');
   const [visionStyle, setVisionStyle] = useState('pixel_art');
   const [visionSize, setVisionSize] = useState('1024x1024');
+
+  // Bestiary
+  const [selectedBoss, setSelectedBoss] = useState(BOSS_BESTIARY[0]);
 
   // Mint Ledger State
   const [agents, setAgents] = useState([]);
@@ -788,6 +851,167 @@ export default function SLA113Page() {
                     );
                   })}
                   {pipelines.length === 0 && <div className="col-span-4 text-center text-zinc-500 text-[10px] uppercase tracking-widest py-12">No pipelines configured</div>}
+                </div>
+              </div>
+            )}
+
+            {/* EMPIRE: BESTIARY */}
+            {partition === 'empire' && activeTab === 'BESTIARY' && (
+              <div className="animate-in fade-in max-w-7xl mx-auto w-full" data-testid="bestiary-panel">
+                <div className="grid grid-cols-12 gap-6">
+                  {/* Boss Roster */}
+                  <div className="col-span-3 space-y-3">
+                    <h3 className="text-indigo-400 text-[10px] font-bold uppercase tracking-[3px] border-b border-indigo-500/20 pb-3 flex items-center gap-2">
+                      <Skull size={14} /> Boss Roster ({BOSS_BESTIARY.length})
+                    </h3>
+                    {BOSS_BESTIARY.map(boss => (
+                      <button
+                        key={boss.id}
+                        onClick={() => setSelectedBoss(boss)}
+                        className={`w-full text-left border transition-all overflow-hidden group ${
+                          selectedBoss?.id === boss.id
+                            ? 'border-indigo-500/60 bg-indigo-500/10 shadow-[0_0_15px_rgba(99,102,241,0.15)]'
+                            : 'border-zinc-800 bg-black/50 hover:border-zinc-700'
+                        }`}
+                        data-testid={`boss-select-${boss.id}`}
+                      >
+                        <div className="flex items-center gap-3 p-3">
+                          <img src={boss.image} alt={boss.name} className="w-14 h-14 object-cover border border-zinc-800 shrink-0" />
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-zinc-200 truncate">{boss.name}</div>
+                            <div className="text-[8px] text-zinc-500 uppercase tracking-widest">{boss.tier}</div>
+                            <div className="text-[8px] text-indigo-400 font-mono mt-0.5">HP: {(boss.hp / 1000).toFixed(0)}K</div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                    <div className="border border-dashed border-zinc-800 p-4 text-center text-zinc-700 text-[9px] uppercase tracking-widest hover:border-[#D4AF37]/30 hover:text-[#D4AF37]/50 transition-all cursor-pointer">
+                      <Plus size={14} className="inline mr-2" /> Add Boss via Vision Smith
+                    </div>
+                  </div>
+
+                  {/* Boss Detail */}
+                  {selectedBoss && (
+                    <div className="col-span-9 space-y-4">
+                      {/* Hero Image */}
+                      <div className="relative overflow-hidden border border-indigo-500/20 bg-black group">
+                        <img
+                          src={selectedBoss.image}
+                          alt={selectedBoss.name}
+                          className="w-full h-[300px] object-cover object-center"
+                          style={{ filter: 'contrast(1.05) brightness(0.95)' }}
+                          data-testid="boss-hero-image"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent" />
+
+                        {/* Boss Info Overlay */}
+                        <div className="absolute bottom-0 left-0 right-0 p-6 space-y-2">
+                          <div className="flex items-end justify-between">
+                            <div>
+                              <span className={`px-3 py-1 text-[8px] uppercase tracking-[3px] font-bold border ${
+                                selectedBoss.tier === 'MYTHIC' ? 'border-amber-500/50 bg-amber-500/10 text-amber-400' : 'border-purple-500/50 bg-purple-500/10 text-purple-400'
+                              }`}>{selectedBoss.tier}</span>
+                              <h2 className="text-2xl font-black text-white tracking-widest uppercase mt-3">{selectedBoss.name}</h2>
+                              <p className="text-[10px] text-indigo-400 tracking-[4px] uppercase">{selectedBoss.title}</p>
+                            </div>
+                            <div className="text-right space-y-1">
+                              <div className="text-[9px] text-zinc-500 uppercase tracking-widest">Credit Values</div>
+                              <div className="flex gap-3">
+                                <span className="text-[#D4AF37] font-bold text-lg">{selectedBoss.credits.left}</span>
+                                <span className="text-zinc-600">/</span>
+                                <span className="text-indigo-400 font-bold text-lg">{selectedBoss.credits.right}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* HP Bar */}
+                          <div className="mt-2">
+                            <div className="flex justify-between text-[8px] mb-1">
+                              <span className="text-red-400 uppercase tracking-widest flex items-center gap-1"><Heart size={8} /> {selectedBoss.hp.toLocaleString()} HP</span>
+                              <span className="text-zinc-600">RTP: {selectedBoss.rtp}</span>
+                            </div>
+                            <div className="h-2 bg-black/80 border border-red-500/20 overflow-hidden">
+                              <div className="h-full bg-gradient-to-r from-red-700 via-red-500 to-red-400 w-full" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Stats Grid */}
+                      <div className="grid grid-cols-3 gap-3">
+                        {/* Attacks */}
+                        <div className="border border-zinc-800 bg-black/50 p-4 space-y-2">
+                          <h4 className="text-red-400 text-[9px] font-bold uppercase tracking-[3px] flex items-center gap-2"><Swords size={12} /> Attack Kit</h4>
+                          <div className="space-y-1.5">
+                            {selectedBoss.attacks.map((atk, i) => (
+                              <div key={i} className="flex items-center gap-2 text-[10px]">
+                                <span className="w-4 h-4 border border-red-500/30 bg-red-500/10 flex items-center justify-center text-red-400 text-[7px] font-bold shrink-0">{i + 1}</span>
+                                <span className="text-zinc-300">{atk}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Weakness & Theme */}
+                        <div className="border border-zinc-800 bg-black/50 p-4 space-y-3">
+                          <div>
+                            <h4 className="text-cyan-400 text-[9px] font-bold uppercase tracking-[3px] mb-1">Weakness</h4>
+                            <span className="text-cyan-300 text-sm font-bold">{selectedBoss.weakness}</span>
+                          </div>
+                          <div>
+                            <h4 className="text-[#D4AF37] text-[9px] font-bold uppercase tracking-[3px] mb-1">Art Theme</h4>
+                            <span className="text-[#D4AF37] text-sm font-bold">{selectedBoss.theme}</span>
+                          </div>
+                          <div>
+                            <h4 className="text-indigo-400 text-[9px] font-bold uppercase tracking-[3px] mb-1">Boss ID</h4>
+                            <span className="text-indigo-300 text-[10px] font-mono">{selectedBoss.id}</span>
+                          </div>
+                        </div>
+
+                        {/* Lore */}
+                        <div className="border border-zinc-800 bg-black/50 p-4 space-y-2">
+                          <h4 className="text-amber-400 text-[9px] font-bold uppercase tracking-[3px]">Lore</h4>
+                          <p className="text-zinc-400 text-[10px] leading-relaxed">{selectedBoss.lore}</p>
+                        </div>
+                      </div>
+
+                      {/* Sprite Sheet */}
+                      {selectedBoss.spriteSheet && (
+                        <div className="border border-indigo-500/20 bg-black/50 p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-indigo-400 text-[9px] font-bold uppercase tracking-[3px] flex items-center gap-2"><Grid3X3 size={12} /> Sprite Sheet</h4>
+                            <span className="text-[8px] text-zinc-600 uppercase tracking-widest">2x2 Grid — 4 Poses</span>
+                          </div>
+                          <img
+                            src={selectedBoss.spriteSheet}
+                            alt={`${selectedBoss.name} sprites`}
+                            className="w-full max-h-[200px] object-contain border border-zinc-800"
+                            style={{ imageRendering: 'auto', background: 'repeating-conic-gradient(#111 0% 25%, #0a0a0a 0% 50%) 0 0 / 16px 16px' }}
+                            data-testid="boss-sprite-sheet"
+                          />
+                        </div>
+                      )}
+
+                      {/* Game Backgrounds */}
+                      {GAME_BACKGROUNDS.length > 0 && (
+                        <div className="border border-[#D4AF37]/20 bg-black/50 p-4 space-y-3">
+                          <h4 className="text-[#D4AF37] text-[9px] font-bold uppercase tracking-[3px] flex items-center gap-2"><ImageIcon size={12} /> Game Backgrounds ({GAME_BACKGROUNDS.length})</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                            {GAME_BACKGROUNDS.map(bg => (
+                              <div key={bg.id} className="relative group overflow-hidden border border-zinc-800 hover:border-[#D4AF37]/30 transition-all">
+                                <img src={bg.image} alt={bg.name} className="w-full h-32 object-cover" />
+                                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black to-transparent">
+                                  <div className="text-[9px] text-zinc-200 font-bold">{bg.name}</div>
+                                  <div className="text-[8px] text-zinc-500">{bg.type} / {bg.resolution}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
