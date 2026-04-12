@@ -1,106 +1,69 @@
-# SLA113 — Universal AI Game Studio
+# SLA113 — Universal AI Game Studio Operator OS
 
 ## Product Overview
-SLA113 is a sovereign AI-powered game creation platform that generates complete game packages — from AAA titles (COD, GTA, Mortal Kombat style) to casino/arcade games — using AI engines for vision, logic, and composition. It sits alongside "Empire 1" (the existing Hybrid Intelligence Core SaaS) as its own domain page.
+SLA113 is the **sovereign root OS** for AI-powered game creation. All universes (Empire1, Southern, Soulfire/Lyrica 3 Pro) are routers/modules under SLA113.
 
-## Architecture
-- **Frontend**: React + Tailwind CSS + lucide-react, isolated micro-frontend at `/sla113/*`
-- **SLA113 has its own app shell** (`/app/frontend/src/sla113/`) — zero Empire 1 bleed, no shared AuthProvider, own CSS scope
-- **Backend**: FastAPI, routes at `/api/sla113/*`
-- **Database**: MongoDB (`sla113_projects`, `sla113_tenants`, `sla113_jobs`, `sla113_pipelines` collections)
-- **AI**: Emergent LLM Key via `emergentintegrations` pip package (OpenAI GPT-4o-mini for terminal, GPT Image 1 for Vision Smith)
+## Architecture Decision
+- SLA113 = sovereign root (owns everything)
+- Empire 1 = universe router under SLA113
+- Southern = universe router under SLA113  
+- Soulfire Ecosystem (ASW + El Coro + Sentinel + SL Universal) = single domain, powers Lyrica 3 Pro
 
-## Partitions (UI)
-| Partition | Theme | Tabs |
-|-----------|-------|------|
-| FACTORY | Cyan (#00C8FF) | Frontline (live feed), White Label Mint |
-| EMPIRE 1 | Indigo (#6366f1) | Mint Ledger, Revenue Pipelines |
-| FOUNDRY | Gold (#D4AF37) | OS Builder, Vision Smith, Audio Forge |
-| VAULT | Deep Red (#8B0000) | System Core, Night Queue |
+## Core Engines
+1. **Vision Smith v2** — Gemini 3 Pro image generation (user API key, no proxy watermarks)
+2. **Logic Engine** — AI game math, RTP, paytables, RNG (Emergent LLM Key)
+3. **Composer Engine** — Game bundle assembly (Emergent LLM Key)
+4. **AI Terminal** — Sovereign Overseer command interface
+5. **Night Queue** — Background asyncio worker with job dependencies
+6. **Build Pipeline** — Simulated APK/WebGL builds
+7. **Compliance Engine** — Simulated regulatory checks (GLI, MGA, UKGC, etc.)
+8. **Deploy Engine** — Simulated CDN deployment
+9. **Sprite Cutter** — Canvas-based sprite sheet slicing with animation preview
+10. **Boss Bestiary** — Gallery of boss benchmark assets
 
-## Supported Game Types (16)
-### Casino/Arcade
-- Fish Shooter, Slot Machine, Crash Game, Card Game
+## Completed Features
+- [x] Micro-frontend architecture (Empire 1 on `/`, SLA113 on `/sla113`)
+- [x] SLA113 removed from Empire's public nav (decontaminated)
+- [x] Vision Smith v2 with Gemini 3 Pro direct API
+- [x] Night Queue with asyncio background worker
+- [x] Job dependency graph (visual node graph)
+- [x] Build/Compliance/Deploy engine panels (simulated)
+- [x] Sprite Cutter + Animation Preview
+- [x] Boss Bestiary gallery
+- [x] Cinematic splash loading screen
+- [x] Revenue Pipeline Pulse
+- [x] **Standalone SLA113 project export** matching production layout
 
-### AAA / Universal
-- Open World (GTA Style), Tactical FPS (COD Style), Fighting Game (MK Style), Fantasy RPG, Survival Horror
+## Standalone Export Structure
+```
+sla113_standalone/
+├── backend/app/
+│   ├── main.py (FastAPI entrypoint — 13 routers, 46 endpoints)
+│   ├── core/ (config, database, constants)
+│   ├── models/ (Pydantic schemas)
+│   ├── routers/
+│   │   ├── sla113_admin.py, sla113_billing.py, sla113_dashboard_context.py
+│   │   ├── sla113_engine_dashboard.py, sla113_factory.py, sla113_foundry.py
+│   │   ├── sla113_health.py, sla113_orchestration.py, sla113_regulatory.py
+│   │   ├── sla113/factory.py (deploy engine)
+│   │   ├── empire1.py, southern.py, soulfire.py (universe stubs)
+│   ├── services/ (vision, logic, composer engines)
+│   └── vertexai/ (music_client placeholder)
+├── frontend/src/ (SLA113 React components)
+├── Dockerfile, docker-compose.yml, requirements.txt
+└── split_repo.sh
+```
 
-### Action/Casual
-- Platformer, Puzzle, Tower Defense, Endless Runner, Battle Royale, Racing, Sports
-
-## AI Engines
-1. **Vision Engine** (`/api/sla113/vision/generate`) — Generates sprite/asset specs
-2. **Vision Smith Image Gen** (`/api/sla113/vision/generate-image`) — Generates actual game art via GPT Image 1
-3. **Logic Engine** (`/api/sla113/logic/generate`) — Generates game math, mechanics, RTP, paytables
-4. **Composer Engine** (`/api/sla113/compose`) — Assembles game bundles
-5. **AI Terminal** (`/api/sla113/terminal`) — Sovereign Overseer with platform context + session persistence
-
-## API Endpoints
-- `GET /api/sla113/game-types` — List all 16 game types
-- `GET /api/sla113/stats` — Platform stats
-- `POST /api/sla113/projects` — Create game project
-- `GET /api/sla113/projects` — List projects
-- `GET /api/sla113/projects/{id}` — Get project
-- `DELETE /api/sla113/projects/{id}` — Delete project
-- `POST /api/sla113/vision/generate` — Generate visual asset specs
-- `POST /api/sla113/vision/generate-image` — Generate real image via GPT Image 1
-- `POST /api/sla113/logic/generate` — Generate game logic
-- `POST /api/sla113/compose` — Compose game bundle
-- `POST /api/sla113/terminal` — AI Terminal command
-- `GET /api/sla113/tenants` — List tenants
-- `POST /api/sla113/tenants` — Create tenant
-- `DELETE /api/sla113/tenants/{id}` — Delete tenant
-- `PUT /api/sla113/tenants/{id}/credits` — Update tenant credits
-- `PUT /api/sla113/tenants/{id}/rtp` — Set tenant RTP mode
-- `GET /api/sla113/jobs` — List jobs
-- `POST /api/sla113/jobs` — Create job
-- [x] **Night Queue Background Worker** — Auto-processes jobs through named stages every 3s, worker start/stop toggle, 10 game presets with unique stage sequences, frontend auto-polls
-- `PUT /api/sla113/jobs/{id}/progress` — Update job progress
-- `POST /api/sla113/jobs/{id}/process` — Advance job (simulate)
-- `DELETE /api/sla113/jobs/{id}` — Delete job
-- `GET /api/sla113/pipelines` — List pipelines
-- `POST /api/sla113/pipelines` — Create pipeline
-- `PUT /api/sla113/pipelines/{id}/pulse` — Trigger pipeline heartbeat
-- `DELETE /api/sla113/pipelines/{id}` — Delete pipeline
-
-## What's Implemented (Apr 2026)
-- [x] Full multi-partition UI (Factory, Empire 1, Foundry, Vault) — 12 tabs across 4 partitions
-- [x] Backend CRUD for game projects
-- [x] Backend CRUD for tenants, jobs, pipelines, builds, compliance, deployments
-- [x] AI Vision Engine (real LLM calls)
-- [x] AI Logic Engine (real LLM calls)
-- [x] AI Composer Engine (real LLM calls)
-- [x] AI Terminal — Sovereign Overseer (real GPT with platform context + session persistence)
-- [x] **Bestiary** — Boss roster (3 bosses: Xochipilli, Lobo Negro, La Reina), hero image display, HP/credits/RTP, attack kits, weakness/theme/lore, sprite sheet viewer, game backgrounds gallery
-- [x] **Vision Smith v2** — 8 asset types (concept art, character, boss, sprite sheet, tileset, background, UI kit, VFX), 10 art styles, 3 resolutions, pro-level prompt engineering per asset type
-- [x] **Sprite Cutter Tool** — Canvas-based sprite sheet slicing with grid overlay, cell selection, cut/download
-- [x] **Sprite Animation Preview** — Frame-by-frame playback (play/pause, FPS control, forward/reverse/pingpong)
-- [x] **Revenue Pipeline Pulse** — Individual + Pulse All triggers, real revenue generation ($50-500 per pulse)
-- [x] **Build Pipeline** — Compile Engine with WebGL/APK/Both targets, 5-stage build process, optimization modes
-- [x] **Compliance Engine** — Certification scans for GLI, MGA, UKGC, CURACAO jurisdictions with pass/fail results
-- [x] **Deploy Engine** — CDN deployment (Cloudflare/AWS/GCP/Custom) with region selection, SSL, live URLs
-- [x] **Job Dependencies Graph** — dependency picker, blocked/auto-unblock, SVG graph visualization with list/graph view toggle
-- [x] Critical Drift overlay
-- [x] Daemon Uplink heartbeat
-- [x] 16 game types (casino + AAA)
-- [x] LLM integration (emergentintegrations pip package)
-- [x] 6 seeded revenue pipelines
-- [x] White Label Mint tenant creation
-- [x] Night Queue job management
+## Environment Variables
+| Variable | Used By |
+|----------|---------|
+| MONGO_URL | Database |
+| DB_NAME | Database |
+| EMERGENT_LLM_KEY | Logic, Composer, Terminal |
+| GEMINI_API_KEY | Vision Smith |
 
 ## Backlog
-- [ ] Audio Forge — wire to real audio generation API (Vertex API later)
-- [ ] Real-time Frontline via WebSocket
-
-## Key Files
-- `/app/frontend/src/sla113/SLA113App.jsx` — Standalone micro-frontend shell
-- `/app/frontend/src/sla113/SLA113Page.jsx` — Main SLA113 UI (all partitions)
-- `/app/frontend/src/sla113/SpriteCutter.jsx` — Canvas-based sprite slicing tool
-- `/app/frontend/src/App.js` — Root router (splits traffic: /sla113 -> SLA113App, else -> Empire 1)
-- `/app/backend/routers/sla113.py` — API router (all endpoints)
-- `/app/backend/sla113/` — Engine modules (vision, logic, composer)
-- `/app/backend/sla113/models.py` — Data models
-
-## Credentials
-- Test user (Empire 1): `newuser@example.com` / `NewPass123!`
-- SLA113: No auth required
+- [ ] Wire Audio Forge to Vertex AI (user to provide API later)
+- [ ] Upgrade Build/Compliance/Deploy from simulated to real
+- [ ] Real-time Frontline data via WebSocket
+- [ ] Refactor SLA113Page.jsx (~1800 lines → sub-components)

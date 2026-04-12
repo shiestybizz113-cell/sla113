@@ -26,7 +26,8 @@ import PipelineComposerPage from "./pages/PipelineComposerPage";
 import ExecutionHistoryPage from "./pages/ExecutionHistoryPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 
-// SLA113 — Isolated Micro-Frontend (own app shell, own state, zero Empire 1 bleed)
+// SLA113 — Fully isolated sovereign OS (separate project/repo)
+// SLA113 runs on its own domain/port — NOT embedded in Empire 1
 import SLA113App from "./sla113/SLA113App";
 
 /**
