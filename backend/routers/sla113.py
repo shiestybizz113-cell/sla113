@@ -9,6 +9,7 @@ import os
 import json
 import asyncio
 import random as _random
+import base64
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 from database import get_database
@@ -20,10 +21,12 @@ from sla113.models import (
     VisionGenerateRequest,
     LogicGenerateRequest,
     ComposeRequest,
+    AudioForgeRequest,
 )
 from sla113.vision_engine import generate_vision_assets
 from sla113.logic_engine import generate_logic
 from sla113.composer_engine import compose_game_bundle
+from sla113.audio_forge import generate_audio_asset
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/sla113", tags=["sla113"])
@@ -104,6 +107,62 @@ async def sla113_status():
         "engines": ["vision", "logic", "composer"],
         "universes_registered": len(_universe_registry),
         "version": "1.0.0",
+    }
+
+
+# ─── ArtTech Nexus Generator & Matrix Parameters ───
+@router.get("/nexus/pipelines")
+async def get_arttech_pipelines():
+    """ArtTech Nexus Generator — pipeline archetypes with sub-categories."""
+    return {
+        "pipelines": [
+            {"id": "arcade", "name": "Arcade Pipeline", "tags": ["Lounge", "Fish", "Slots"], "color": "#00C8FF", "status": "active"},
+            {"id": "open_world", "name": "Open World", "tags": ["Urban", "Vehicles", "Grit"], "color": "#D4AF37", "status": "active"},
+            {"id": "tactical_fps", "name": "Tactical FPS", "tags": ["Mil-Spec", "Polymer"], "color": "#FF4444", "status": "active"},
+            {"id": "epic_rpg", "name": "Epic RPG", "tags": ["Mythic", "Boss", "Canon"], "color": "#9966FF", "status": "active"},
+            {"id": "pano_arte", "name": "Paño Arte", "tags": ["Paño", "Chicano"], "color": "#FF6600", "status": "active"},
+            {"id": "casino_suite", "name": "Casino Suite", "tags": ["Slots", "Poker", "Bingo", "Sportsbook"], "color": "#44FF44", "status": "active"},
+            {"id": "horror", "name": "Horror / Survival", "tags": ["Atmosphere", "Tension", "Jump"], "color": "#CC0033", "status": "active"},
+            {"id": "racing", "name": "Racing Sim", "tags": ["Physics", "Tuning", "Multiplayer"], "color": "#00FF88", "status": "active"},
+        ]
+    }
+
+
+@router.get("/nexus/matrix")
+async def get_matrix_parameters():
+    """Matrix Parameters — engine configuration for AAA asset compilation."""
+    return {
+        "parameters": {
+            "physics_engine": {"value": "Unity 6 // DOTS", "status": "active", "icon": "cpu"},
+            "audio_middleware": {"value": "FMOD Studio", "status": "active", "icon": "volume-2"},
+            "render_pipeline": {"value": "Lumen RTX", "status": "active", "icon": "monitor"},
+            "biome": {"value": "Abyssal Wastes", "status": "active", "icon": "globe"},
+            "archetype": {"value": "Mecha Deity", "status": "active", "icon": "shield"},
+        },
+        "fmodel_utility": {
+            "texture_link": "ACTIVE",
+            "mesh_buffer": "READY",
+            "operator_environment": "v2.0.4",
+            "admin_id": "ADMIN_OVERRIDE",
+            "system_status": "STABLE",
+        }
+    }
+
+
+@router.get("/nexus/os-modules")
+async def get_os_module_map():
+    """OS Module Functional Map — FModel utility → functional output mapping."""
+    return {
+        "modules": [
+            {"os_module": "Lounge", "fmodel_utility": "Texture Extraction", "functional_output": "UI Skins: High-end gold/rose textures applied to Slot machines."},
+            {"os_module": "Abyssal Wastes", "fmodel_utility": "Static Mesh Extraction", "functional_output": "Environment Kit: Modular urban ruins from El Monte/SGV used as the tactical map."},
+            {"os_module": "Southern Foundry", "fmodel_utility": "Material Logic", "functional_output": "Shader Tool: Auto-applies the 'Gold Foil' PBR to any new asset imported into the OS."},
+            {"os_module": "Fish Shooting", "fmodel_utility": "Sprite Extraction", "functional_output": "Boss Sprites: Animated fish/boss sprite sheets with hit-box data."},
+            {"os_module": "Tactical FPS", "fmodel_utility": "Weapon Mesh Pack", "functional_output": "Weapon Kit: Mil-spec weapon models with attachment points and LOD variants."},
+            {"os_module": "Epic RPG", "fmodel_utility": "Character Rig", "functional_output": "Character Pack: Rigged mythic characters with animation blend trees."},
+            {"os_module": "Paño Arte", "fmodel_utility": "Texture Atlas", "functional_output": "Cultural Art Pack: Chicano-style paño textures for UI overlays and card backs."},
+            {"os_module": "Casino Suite", "fmodel_utility": "Animation Extraction", "functional_output": "Reel Animations: Slot reel spin/stop/win celebration sequences."},
+        ]
     }
 
 
@@ -1090,6 +1149,117 @@ def deployments_collection():
     return get_database()["sla113_deployments"]
 
 
+# ─── HTML5/PixiJS Game Shell Generators ───
+def _generate_html5_shell(game_name, game_type, game_desc, game_config, asset_manifest, is_casino):
+    """Generate a playable HTML5 game shell."""
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{game_name} — SLA113 Build</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+<style>
+* {{ margin:0; padding:0; box-sizing:border-box; }}
+body {{ background:#0a0a0a; overflow:hidden; font-family:'Courier New',monospace; }}
+canvas {{ display:block; }}
+#hud {{ position:fixed; top:16px; left:16px; color:#00c8ff; font-size:11px; z-index:100; text-transform:uppercase; letter-spacing:2px; }}
+#hud .label {{ color:#666; font-size:9px; }}
+#hud .value {{ color:#fff; font-size:14px; font-weight:bold; }}
+#hud .row {{ margin-bottom:8px; }}
+#loading {{ position:fixed; inset:0; background:#0a0a0a; display:flex; align-items:center; justify-content:center; flex-direction:column; z-index:1000; }}
+#loading h1 {{ color:#00c8ff; font-size:24px; letter-spacing:6px; text-transform:uppercase; }}
+#loading p {{ color:#444; font-size:10px; letter-spacing:3px; margin-top:8px; text-transform:uppercase; }}
+</style>
+</head>
+<body>
+<div id="loading"><h1>{game_name}</h1><p>SLA113 Engine — {game_type.replace('_',' ').title()}</p></div>
+<div id="hud">
+  <div class="row"><span class="label">Game</span><br><span class="value">{game_name}</span></div>
+  <div class="row"><span class="label">Type</span><br><span class="value">{game_type.replace('_',' ').upper()}</span></div>
+  <div class="row"><span class="label">Assets</span><br><span class="value" id="asset-count">{len(asset_manifest)}</span></div>
+  <div class="row"><span class="label">{'RTP' if is_casino else 'Score'}</span><br><span class="value" id="score">{'96.5%' if is_casino else '0'}</span></div>
+  <div class="row"><span class="label">Engine</span><br><span class="value">SLA113 v1.0</span></div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>"""
+
+
+def _generate_game_js(game_name, game_type, game_config, asset_manifest, is_casino):
+    """Generate a functional PixiJS game engine."""
+    config_json = json.dumps(game_config, default=str, indent=2)
+    manifest_json = json.dumps(asset_manifest, default=str, indent=2)
+    score_increment = 'Math.floor(Math.random() * 100) + 10' if is_casino else '100'
+    score_display = 'score.toFixed(1) + "%"' if is_casino else 'score'
+
+    return (
+        f"// SLA113 Game Engine — {game_name}\n"
+        f"// Auto-generated by SLA113 Build Pipeline\n"
+        f"// Game Type: {game_type}\n\n"
+        f"const GAME_CONFIG = {config_json};\n"
+        f"const ASSET_MANIFEST = {manifest_json};\n\n"
+        "(async () => {\n"
+        "  const app = new PIXI.Application({ width: window.innerWidth, height: window.innerHeight, backgroundColor: 0x0a0a0a, antialias: true });\n"
+        "  document.body.appendChild(app.view);\n"
+        "  document.getElementById('loading').style.display = 'none';\n\n"
+        "  window.addEventListener('resize', () => { app.renderer.resize(window.innerWidth, window.innerHeight); });\n\n"
+        "  let score = 0;\n"
+        "  let entities = [];\n"
+        "  const W = app.screen.width, H = app.screen.height;\n\n"
+        "  const grid = new PIXI.Graphics();\n"
+        "  grid.lineStyle(1, 0x111111);\n"
+        "  for (let x = 0; x < W; x += 40) grid.moveTo(x, 0).lineTo(x, H);\n"
+        "  for (let y = 0; y < H; y += 40) grid.moveTo(0, y).lineTo(W, y);\n"
+        "  app.stage.addChild(grid);\n\n"
+        "  function spawnEntity(asset, x, y) {\n"
+        "    const g = new PIXI.Graphics();\n"
+        "    const size = (asset.dimensions?.width || 48) * 0.5;\n"
+        "    const colors = [0x00c8ff, 0xd4af37, 0xff4444, 0x44ff44, 0x9966ff, 0xff6600];\n"
+        "    const color = colors[Math.floor(Math.random() * colors.length)];\n"
+        "    g.beginFill(color, 0.8).drawRoundedRect(-size/2, -size/2, size, size, 4).endFill();\n"
+        "    g.lineStyle(1, color).drawRoundedRect(-size/2-2, -size/2-2, size+4, size+4, 6);\n"
+        "    g.x = x; g.y = y;\n"
+        "    g.vx = (Math.random() - 0.5) * 2;\n"
+        "    g.vy = (Math.random() - 0.5) * 2;\n"
+        "    g.interactive = true;\n"
+        "    g.cursor = 'pointer';\n"
+        "    g.on('pointerdown', () => {\n"
+        f"      score += {score_increment};\n"
+        f"      document.getElementById('score').textContent = {score_display};\n"
+        "      g.alpha = 0.3;\n"
+        "      setTimeout(() => { g.alpha = 0.8; g.x = Math.random() * W; g.y = Math.random() * H; }, 300);\n"
+        "    });\n"
+        "    app.stage.addChild(g);\n"
+        "    entities.push(g);\n"
+        "    const txt = new PIXI.Text(asset.name?.substring(0, 8) || 'entity', { fontSize: 8, fill: 0x666666, fontFamily: 'monospace' });\n"
+        "    txt.anchor.set(0.5);\n"
+        "    txt.y = size/2 + 8;\n"
+        "    g.addChild(txt);\n"
+        "  }\n\n"
+        "  if (ASSET_MANIFEST.length > 0) {\n"
+        "    ASSET_MANIFEST.forEach((a, i) => {\n"
+        "      spawnEntity(a, 200 + (i % 8) * 120, 100 + Math.floor(i / 8) * 100);\n"
+        "    });\n"
+        "  } else {\n"
+        "    for (let i = 0; i < 12; i++) {\n"
+        "      spawnEntity({ name: 'entity_' + i, dimensions: { width: 48 + Math.random() * 32 } }, Math.random() * W * 0.7 + W * 0.15, Math.random() * H * 0.7 + H * 0.15);\n"
+        "    }\n"
+        "  }\n\n"
+        "  app.ticker.add(() => {\n"
+        "    entities.forEach(e => {\n"
+        "      e.x += e.vx;\n"
+        "      e.y += e.vy;\n"
+        "      if (e.x < 20 || e.x > W - 20) e.vx *= -1;\n"
+        "      if (e.y < 20 || e.y > H - 20) e.vy *= -1;\n"
+        "      e.rotation += 0.005;\n"
+        "    });\n"
+        "  });\n\n"
+        "  console.log('[SLA113] Game initialized:', GAME_CONFIG.name, '| Assets:', ASSET_MANIFEST.length);\n"
+        "})();\n"
+    )
+
+
 # ─── Build Pipeline Engine ───
 class CreateBuildRequest(BaseModel):
     project_id: str
@@ -1101,7 +1271,7 @@ class CreateBuildRequest(BaseModel):
 
 @router.post("/builds")
 async def create_build(req: CreateBuildRequest):
-    """Initiate a game build pipeline."""
+    """Initiate a real game build pipeline — produces a downloadable HTML5/PixiJS bundle."""
     project = await projects_collection().find_one({"id": req.project_id}, {"_id": 0})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -1126,6 +1296,7 @@ async def create_build(req: CreateBuildRequest):
             {"name": "Optimization Pass", "status": "pending", "progress": 0},
         ],
         "output": None,
+        "download_url": None,
         "size_mb": None,
         "logs": [f"[{now}] Build queued. Target: {req.target}, Optimization: {req.optimization}"],
         "created_at": now,
@@ -1138,17 +1309,208 @@ async def create_build(req: CreateBuildRequest):
 
 @router.get("/builds")
 async def list_builds():
-    """List all builds."""
     cursor = builds_collection().find({}, {"_id": 0}).sort("created_at", -1)
     builds = await cursor.to_list(100)
     return {"builds": builds, "total": len(builds)}
 
 
+@router.post("/builds/{build_id}/compile")
+async def compile_build(build_id: str):
+    """Real compilation: pulls project assets + logic, generates a playable HTML5/PixiJS bundle."""
+    build = await builds_collection().find_one({"id": build_id}, {"_id": 0})
+    if not build:
+        raise HTTPException(status_code=404, detail="Build not found")
+    if build.get("download_url"):
+        return build  # Already compiled
+
+    project = await projects_collection().find_one({"id": build["project_id"]}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    now = datetime.now(timezone.utc).isoformat()
+    await builds_collection().update_one(
+        {"id": build_id},
+        {"$set": {"status": "building", "progress": 10}, "$push": {"logs": f"[{now}] Compilation started..."}}
+    )
+
+    import tempfile, zipfile, base64, shutil
+
+    game_type = project.get("game_type", "unknown")
+    game_name = project.get("name", "SLA113 Game")
+    vision_assets = project.get("vision_assets", [])
+    logic_specs = project.get("logic_specs", [])
+    compositions = project.get("compositions", [])
+
+    # Build the game config from logic specs
+    game_config = {"type": game_type, "name": game_name, "version": "1.0.0", "built_by": "SLA113"}
+    for spec in logic_specs:
+        game_config[spec.get("logic_type", "unknown")] = spec.get("specs", {})
+
+    # Asset manifest - handle various data structures from vision engine
+    asset_manifest = []
+    for va in vision_assets:
+        assets_data = va.get("assets", [])
+        # Handle case where assets is a dict instead of list
+        if isinstance(assets_data, dict):
+            assets_data = [assets_data] if assets_data else []
+        # Handle case where assets is not iterable
+        if not isinstance(assets_data, list):
+            continue
+        for asset in assets_data:
+            # Skip if asset is not a dict (e.g., string or None)
+            if not isinstance(asset, dict):
+                continue
+            # Skip error objects
+            if "error" in asset and len(asset) == 1:
+                continue
+            # Handle nested asset structure ({"asset": {...}})
+            if "asset" in asset and isinstance(asset["asset"], dict):
+                asset = asset["asset"]
+            # Only add if we have valid asset data
+            if "id" in asset or "name" in asset:
+                asset_manifest.append({
+                    "id": asset.get("id", f"asset_{len(asset_manifest)}"),
+                    "name": asset.get("name", "asset"),
+                    "type": asset.get("type", "sprite"),
+                    "dimensions": asset.get("dimensions", {"width": 64, "height": 64}),
+                })
+
+    try:
+        build_dir = tempfile.mkdtemp(prefix="sla113_build_")
+        os.makedirs(os.path.join(build_dir, "assets"), exist_ok=True)
+        os.makedirs(os.path.join(build_dir, "logic"), exist_ok=True)
+
+        await builds_collection().update_one(
+            {"id": build_id},
+            {"$set": {"progress": 30}, "$push": {"logs": f"[{now}] Stage: Asset Compilation"}}
+        )
+
+        # Write game config
+        with open(os.path.join(build_dir, "game.json"), "w") as f:
+            json.dump(game_config, f, indent=2, default=str)
+
+        # Write asset manifest
+        with open(os.path.join(build_dir, "assets", "manifest.json"), "w") as f:
+            json.dump({"assets": asset_manifest, "total": len(asset_manifest)}, f, indent=2)
+
+        # Write logic specs as individual files
+        for spec in logic_specs:
+            fname = f"{spec.get('logic_type', 'unknown')}.json"
+            with open(os.path.join(build_dir, "logic", fname), "w") as f:
+                json.dump(spec.get("specs", {}), f, indent=2, default=str)
+
+        await builds_collection().update_one(
+            {"id": build_id},
+            {"$set": {"progress": 50}, "$push": {"logs": f"[{now}] Stage: Logic Binding"}}
+        )
+
+        # Write composition bundle if available
+        if compositions:
+            with open(os.path.join(build_dir, "bundle.json"), "w") as f:
+                json.dump(compositions[-1].get("bundle", {}), f, indent=2, default=str)
+
+        await builds_collection().update_one(
+            {"id": build_id},
+            {"$set": {"progress": 70}, "$push": {"logs": f"[{now}] Stage: Bundle Packaging"}}
+        )
+
+        # Generate the HTML5/PixiJS game shell
+        category = GAME_TYPES.get(game_type, {}).get("category", "arcade")
+        is_casino = category == "casino"
+        game_desc = GAME_TYPES.get(game_type, {}).get("description", "Game")
+
+        html_content = _generate_html5_shell(game_name, game_type, game_desc, game_config, asset_manifest, is_casino)
+
+        with open(os.path.join(build_dir, "index.html"), "w") as f:
+            f.write(html_content)
+
+        # Write a basic game.js engine
+        js_content = _generate_game_js(game_name, game_type, game_config, asset_manifest, is_casino)
+        with open(os.path.join(build_dir, "game.js"), "w") as f:
+            f.write(js_content)
+
+        await builds_collection().update_one(
+            {"id": build_id},
+            {"$set": {"progress": 90}, "$push": {"logs": f"[{now}] Stage: Optimization Pass"}}
+        )
+
+        # Package into zip
+        zip_filename = f"sla113_{game_name.lower().replace(' ', '_')}_{build_id}.zip"
+        zip_path = os.path.join("/tmp", zip_filename)
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for root, dirs, files in os.walk(build_dir):
+                for file in files:
+                    full_path = os.path.join(root, file)
+                    arcname = os.path.relpath(full_path, build_dir)
+                    zf.write(full_path, arcname)
+
+        size_mb = round(os.path.getsize(zip_path) / (1024 * 1024), 2)
+
+        # Store zip in MongoDB for download
+        with open(zip_path, "rb") as f:
+            zip_data = base64.b64encode(f.read()).decode()
+
+        download_url = f"/api/sla113/builds/{build_id}/download"
+
+        # Update stages to completed
+        stages = [{"name": s["name"], "status": "completed", "progress": 100} for s in build["stages"]]
+
+        await builds_collection().update_one(
+            {"id": build_id},
+            {"$set": {
+                "status": "completed", "progress": 100, "stages": stages,
+                "output": zip_filename, "download_url": download_url,
+                "size_mb": size_mb, "zip_data": zip_data,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "files_included": {
+                    "index.html": True, "game.js": True, "game.json": True,
+                    "assets/manifest.json": len(asset_manifest) > 0,
+                    "logic_specs": len(logic_specs),
+                    "bundle.json": len(compositions) > 0,
+                },
+            }, "$push": {"logs": f"[{datetime.now(timezone.utc).isoformat()}] BUILD COMPLETE: {zip_filename} ({size_mb} MB). {len(asset_manifest)} assets, {len(logic_specs)} logic specs."}}
+        )
+
+        # Cleanup
+        shutil.rmtree(build_dir, ignore_errors=True)
+        os.remove(zip_path) if os.path.exists(zip_path) else None
+
+        build = await builds_collection().find_one({"id": build_id}, {"_id": 0, "zip_data": 0})
+        return build
+
+    except Exception as e:
+        logger.error(f"Build compilation failed: {e}")
+        await builds_collection().update_one(
+            {"id": build_id},
+            {"$set": {"status": "failed", "updated_at": datetime.now(timezone.utc).isoformat()},
+             "$push": {"logs": f"[{datetime.now(timezone.utc).isoformat()}] BUILD FAILED: {str(e)}"}}
+        )
+        raise HTTPException(status_code=500, detail=f"Build failed: {str(e)}")
+
+
+@router.get("/builds/{build_id}/download")
+async def download_build(build_id: str):
+    """Download a compiled game build as a zip file."""
+    from fastapi.responses import Response
+    build = await builds_collection().find_one({"id": build_id})
+    if not build:
+        raise HTTPException(status_code=404, detail="Build not found")
+    if not build.get("zip_data"):
+        raise HTTPException(status_code=400, detail="Build not compiled yet. Call /builds/{id}/compile first.")
+
+    zip_bytes = base64.b64decode(build["zip_data"])
+    filename = build.get("output", f"sla113_build_{build_id}.zip")
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
 @router.post("/builds/{build_id}/advance")
 async def advance_build(build_id: str):
-    """Advance build through its stages (simulate compilation)."""
-    import random
-    build = await builds_collection().find_one({"id": build_id}, {"_id": 0})
+    """Legacy: advance build one step (for UI progress animation)."""
+    build = await builds_collection().find_one({"id": build_id}, {"_id": 0, "zip_data": 0})
     if not build:
         raise HTTPException(status_code=404, detail="Build not found")
     if build["status"] == "completed":
@@ -1160,7 +1522,7 @@ async def advance_build(build_id: str):
 
     if current_stage_idx < len(stages):
         stage = stages[current_stage_idx]
-        new_progress = min(stage["progress"] + random.randint(30, 60), 100)
+        new_progress = min(stage["progress"] + _random.randint(30, 60), 100)
         stage["progress"] = new_progress
         if new_progress >= 100:
             stage["status"] = "completed"
@@ -1171,27 +1533,16 @@ async def advance_build(build_id: str):
     else:
         log_msg = f"[{now}] All stages completed."
 
-    # Calculate overall progress
     total_progress = sum(s["progress"] for s in stages) // len(stages)
     all_done = all(s["status"] == "completed" for s in stages)
     new_status = "completed" if all_done else "building"
 
-    output = None
-    size_mb = None
-    if all_done:
-        target = build["target"]
-        output = f"sla113_{build['project_name'].lower().replace(' ', '_')}_{build['id']}.{'apk' if target == 'apk' else 'zip'}"
-        size_mb = round(random.uniform(12.5, 185.0), 1)
-        log_msg += f"\n[{now}] Build artifact: {output} ({size_mb} MB)"
-
     await builds_collection().update_one(
         {"id": build_id},
-        {"$set": {"stages": stages, "progress": total_progress, "status": new_status,
-                  "output": output, "size_mb": size_mb, "updated_at": now},
+        {"$set": {"stages": stages, "progress": total_progress, "status": new_status, "updated_at": now},
          "$push": {"logs": log_msg}}
     )
-    build = await builds_collection().find_one({"id": build_id}, {"_id": 0})
-    return build
+    return await builds_collection().find_one({"id": build_id}, {"_id": 0, "zip_data": 0})
 
 
 @router.delete("/builds/{build_id}")
@@ -1559,6 +1910,73 @@ async def delete_deployment(deploy_id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Deployment not found")
     return {"deleted": True}
+
+
+# ─── Audio Forge Collection ───
+def audio_collection():
+    return get_database()["sla113_audio_assets"]
+
+
+# ─── Audio Forge Engine ───
+@router.post("/audio/generate")
+async def generate_audio(req: AudioForgeRequest):
+    """Generate a game audio asset with physical modeling and AI-enhanced DSP."""
+    valid_types = ["sfx", "ambience", "foley", "music_cues", "stems", "loops", "tts", "voice_routing"]
+    if req.audio_type not in valid_types:
+        raise HTTPException(status_code=400, detail=f"Invalid audio type. Valid: {valid_types}")
+
+    try:
+        result = await generate_audio_asset(
+            audio_type=req.audio_type,
+            title=req.title,
+            game_type=req.game_type,
+            custom_params=req.custom_params,
+            engine=req.engine,
+        )
+
+        await audio_collection().insert_one({**result})
+        result.pop("_id", None)
+        return result
+    except Exception as e:
+        logger.error(f"Audio generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Audio generation failed: {str(e)}")
+
+
+@router.get("/audio/assets")
+async def list_audio_assets():
+    """List all generated audio assets."""
+    cursor = audio_collection().find({}, {"_id": 0}).sort("created_at", -1)
+    assets = await cursor.to_list(100)
+    return {"assets": assets, "total": len(assets)}
+
+
+@router.get("/audio/assets/{asset_id}")
+async def get_audio_asset(asset_id: str):
+    """Get a specific audio asset by ID."""
+    asset = await audio_collection().find_one({"id": asset_id}, {"_id": 0})
+    if not asset:
+        raise HTTPException(status_code=404, detail="Audio asset not found")
+    return asset
+
+
+@router.delete("/audio/assets/{asset_id}")
+async def delete_audio_asset(asset_id: str):
+    """Delete an audio asset."""
+    result = await audio_collection().delete_one({"id": asset_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Audio asset not found")
+    return {"deleted": True}
+
+
+@router.get("/audio/templates")
+async def list_audio_templates():
+    """List available audio type templates with their default DSP parameters."""
+    from sla113.audio_forge import SFX_TEMPLATES
+    return {
+        "templates": SFX_TEMPLATES,
+        "audio_types": list(SFX_TEMPLATES.keys()),
+        "engines": AUDIO_ENGINES,
+    }
 
 
 # ─── Seed default pipelines if empty ───

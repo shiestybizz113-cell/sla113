@@ -262,3 +262,11 @@ class DeployRequest(BaseModel):
     target_cdn: str = "cloudflare"
     region: str = "us-west"
     auto_ssl: bool = True
+
+
+class AudioForgeRequest(BaseModel):
+    audio_type: str = Field(default="sfx", description="sfx, ambience, foley, music_cues, stems, loops, tts, voice_routing")
+    title: str = Field(..., min_length=1, max_length=200)
+    game_type: str = Field(default="generic")
+    engine: str = Field(default="FMOD")
+    custom_params: Optional[dict] = None
