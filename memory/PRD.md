@@ -20,7 +20,7 @@ SLA113 is the **sovereign root OS** for AI-powered game creation. All universes 
 - [x] Night Queue (asyncio background worker + dependencies)
 - [x] Build Pipeline — Real HTML5/PixiJS compilation + downloadable ZIP bundles
 - [x] Real Compliance Engine + Auto-Certify
-- [x] Deploy Engine — Real static file hosting with playable live game preview URLs
+- [x] Deploy Engine — Real static file hosting with playable live game preview URLs + inline iframe preview
 - [x] Sprite Cutter + Animation Preview
 - [x] Boss Bestiary
 - [x] Universe Registry (auto-discovery, interactive cards)

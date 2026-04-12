@@ -381,6 +381,7 @@ export default function SLA113Page() {
   const [deployments, setDeployments] = useState([]);
   const [deployCdn, setDeployCdn] = useState('cloudflare');
   const [deployRegion, setDeployRegion] = useState('us-west');
+  const [previewDeployId, setPreviewDeployId] = useState(null);
 
   // Universe Registry
   const [universes, setUniverses] = useState([]);
@@ -753,6 +754,31 @@ export default function SLA113Page() {
                 </div>
                 <div className="col-span-7 space-y-4">
                   <span className="text-cyan-400 text-[10px] font-bold uppercase tracking-[3px]">Live Deployments ({deployments.length})</span>
+
+                  {/* Inline Game Preview */}
+                  {previewDeployId && (
+                    <div className="border border-emerald-500/30 bg-black overflow-hidden" data-testid="game-preview-container">
+                      <div className="flex items-center justify-between bg-emerald-500/5 border-b border-emerald-500/20 px-4 py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span className="text-emerald-400 text-[9px] font-bold uppercase tracking-[3px]">Live Preview — {previewDeployId}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <a href={`${process.env.REACT_APP_BACKEND_URL}/api/sla113/live/${previewDeployId}/index.html`} target="_blank" rel="noopener noreferrer" className="text-[8px] text-cyan-400 border border-cyan-500/30 px-2 py-1 hover:bg-cyan-500/10 transition-all uppercase tracking-widest" data-testid="preview-fullscreen-btn">
+                            Fullscreen
+                          </a>
+                          <button onClick={() => setPreviewDeployId(null)} className="text-zinc-500 hover:text-red-500 transition-colors" data-testid="close-preview-btn"><XCircle size={14}/></button>
+                        </div>
+                      </div>
+                      <iframe
+                        src={`${process.env.REACT_APP_BACKEND_URL}/api/sla113/live/${previewDeployId}/index.html`}
+                        className="w-full h-[400px] border-0"
+                        title="SLA113 Game Preview"
+                        data-testid="game-preview-iframe"
+                      />
+                    </div>
+                  )}
+
                   <div className="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar">
                     {deployments.length === 0 && <div className="glass-panel border-cyan-500/10 p-12 text-center text-zinc-600 text-[10px] uppercase tracking-widest">No deployments. Build a project first, then deploy.</div>}
                     {deployments.map(d => (
@@ -773,7 +799,7 @@ export default function SLA113Page() {
                                 Propagate
                               </button>
                             )}
-                            <button onClick={async () => { await axios.delete(`${API}/deploy/${d.id}`); fetchData(); }} className="text-zinc-600 hover:text-red-500 transition-colors"><XCircle size={14}/></button>
+                            <button onClick={async () => { await axios.delete(`${API}/deploy/${d.id}`); if (previewDeployId === d.id) setPreviewDeployId(null); fetchData(); }} className="text-zinc-600 hover:text-red-500 transition-colors"><XCircle size={14}/></button>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -782,12 +808,26 @@ export default function SLA113Page() {
                           </div>
                           <span className="text-[10px] font-mono text-zinc-500">{d.progress}%</span>
                         </div>
-                        {d.url && (
-                          <a href={`${process.env.REACT_APP_BACKEND_URL}${d.url}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-emerald-500/5 border border-emerald-500/20 p-3 text-emerald-400 text-[10px] font-mono hover:bg-emerald-500/10 transition-all" data-testid={`deploy-url-${d.id}`}>
-                            <Play size={12}/> Play Live Game
-                            <span className="text-zinc-500 mx-2">{d.url}</span>
-                            <span className={`ml-auto text-[8px] uppercase tracking-widest ${d.ssl_status === 'active' ? 'text-emerald-500' : 'text-zinc-600'}`}>SSL: {d.ssl_status}</span>
-                          </a>
+                        {d.url && d.status === 'live' && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setPreviewDeployId(previewDeployId === d.id ? null : d.id)}
+                              className={`flex-1 flex items-center justify-center gap-2 p-3 text-[10px] font-bold uppercase tracking-widest border transition-all ${
+                                previewDeployId === d.id
+                                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
+                                  : 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10'
+                              }`}
+                              data-testid={`preview-game-${d.id}`}
+                            >
+                              <Play size={12}/> {previewDeployId === d.id ? 'Hide Preview' : 'Play In Dashboard'}
+                            </button>
+                            <a href={`${process.env.REACT_APP_BACKEND_URL}${d.url}`} target="_blank" rel="noopener noreferrer"
+                              className="px-4 flex items-center gap-2 border border-cyan-500/20 bg-black text-cyan-400 text-[10px] font-bold uppercase tracking-widest hover:bg-cyan-500/10 transition-all"
+                              data-testid={`deploy-url-${d.id}`}
+                            >
+                              <ExternalLink size={12}/> New Tab
+                            </a>
+                          </div>
                         )}
                       </div>
                     ))}
