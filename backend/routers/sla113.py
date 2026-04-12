@@ -90,6 +90,21 @@ async def deregister_universe(universe_id: str):
     return {"deregistered": True, "universe": removed}
 
 
+@router.get("/status")
+async def sla113_status():
+    """SLA113 universe status endpoint (for registry health checks)."""
+    total_projects = await projects_collection().count_documents({})
+    return {
+        "universe": "sla113",
+        "status": "online",
+        "description": "Sovereign Operator OS — Game Studio Platform",
+        "total_projects": total_projects,
+        "engines": ["vision", "logic", "composer"],
+        "universes_registered": len(_universe_registry),
+        "version": "1.0.0",
+    }
+
+
 class TerminalRequest(BaseModel):
     command: str
     session_id: Optional[str] = "default"

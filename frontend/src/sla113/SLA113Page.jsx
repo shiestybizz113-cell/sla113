@@ -338,6 +338,10 @@ export default function SLA113Page() {
   const [autoCertifying, setAutoCertifying] = useState(false);
   const [certifySteps, setCertifySteps] = useState([]);
 
+  // Universe Expand State
+  const [expandedUniverse, setExpandedUniverse] = useState(null);
+  const [universeStatus, setUniverseStatus] = useState(null);
+
   // Worker State
   const [workerStatus, setWorkerStatus] = useState({ running: false, active_jobs: 0, blocked_jobs: 0, completed_jobs: 0, total_jobs: 0 });
   const [newJobPreset, setNewJobPreset] = useState('ARCADE_40');
@@ -742,51 +746,110 @@ export default function SLA113Page() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {universes.map(u => {
                     const engineColors = {
-                      'fastapi+mongodb': { border: 'border-cyan-500/40', bg: 'bg-cyan-500/5', text: 'text-cyan-400', dot: 'bg-cyan-500' },
-                      'emergent-llm': { border: 'border-indigo-500/40', bg: 'bg-indigo-500/5', text: 'text-indigo-400', dot: 'bg-indigo-500' },
-                      'vertex-ai': { border: 'border-amber-500/40', bg: 'bg-amber-500/5', text: 'text-amber-400', dot: 'bg-amber-500' },
-                      'internal': { border: 'border-zinc-600/40', bg: 'bg-zinc-800/30', text: 'text-zinc-400', dot: 'bg-zinc-500' },
-                      'cocos2d': { border: 'border-emerald-500/40', bg: 'bg-emerald-500/5', text: 'text-emerald-400', dot: 'bg-emerald-500' },
+                      'fastapi+mongodb': { border: 'border-cyan-500/40', bg: 'bg-cyan-500/5', text: 'text-cyan-400', dot: 'bg-cyan-500', glow: 'shadow-[0_0_20px_rgba(0,200,255,0.08)]' },
+                      'emergent-llm': { border: 'border-indigo-500/40', bg: 'bg-indigo-500/5', text: 'text-indigo-400', dot: 'bg-indigo-500', glow: 'shadow-[0_0_20px_rgba(99,102,241,0.08)]' },
+                      'vertex-ai': { border: 'border-amber-500/40', bg: 'bg-amber-500/5', text: 'text-amber-400', dot: 'bg-amber-500', glow: 'shadow-[0_0_20px_rgba(245,158,11,0.08)]' },
+                      'internal': { border: 'border-zinc-600/40', bg: 'bg-zinc-800/30', text: 'text-zinc-400', dot: 'bg-zinc-500', glow: '' },
+                      'cocos2d': { border: 'border-emerald-500/40', bg: 'bg-emerald-500/5', text: 'text-emerald-400', dot: 'bg-emerald-500', glow: 'shadow-[0_0_20px_rgba(16,185,129,0.08)]' },
                     };
                     const ec = engineColors[u.engine] || engineColors['internal'];
+                    const isExpanded = expandedUniverse === u.id;
                     return (
-                      <div key={u.id} className={`glass-panel ${ec.border} ${ec.bg} p-6 space-y-4 hover:scale-[1.01] transition-all`} data-testid={`universe-${u.id}`}>
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full ${ec.dot} ${u.status === 'online' ? 'animate-pulse' : ''}`}></span>
-                              <span className="text-zinc-100 text-sm font-bold tracking-wider uppercase">{u.name}</span>
+                      <div key={u.id} className={`glass-panel ${ec.border} ${ec.bg} ${ec.glow} transition-all duration-300 ${isExpanded ? 'ring-1 ring-white/10' : 'hover:scale-[1.01]'}`} data-testid={`universe-${u.id}`}>
+                        {/* Clickable Header */}
+                        <button
+                          onClick={async () => {
+                            if (isExpanded) { setExpandedUniverse(null); setUniverseStatus(null); return; }
+                            setExpandedUniverse(u.id);
+                            try {
+                              const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}${u.prefix}/status`);
+                              setUniverseStatus(res.data);
+                            } catch { setUniverseStatus({ error: 'Endpoint not reachable' }); }
+                          }}
+                          className="w-full p-6 text-left space-y-3"
+                          data-testid={`universe-toggle-${u.id}`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className={`w-2.5 h-2.5 rounded-full ${ec.dot} ${u.status === 'online' ? 'animate-pulse' : ''}`}></span>
+                                <span className="text-zinc-100 text-sm font-bold tracking-wider uppercase">{u.name}</span>
+                                <ChevronDown size={12} className={`text-zinc-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                              </div>
+                              <p className="text-zinc-500 text-[9px] uppercase tracking-widest leading-relaxed">{u.description}</p>
                             </div>
-                            <p className="text-zinc-500 text-[9px] uppercase tracking-widest leading-relaxed">{u.description}</p>
+                            <span className={`px-2 py-0.5 text-[7px] uppercase tracking-widest border font-bold ${
+                              u.status === 'online' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : 'border-red-500/30 text-red-500 bg-red-500/10'
+                            }`}>{u.status}</span>
                           </div>
-                          <span className={`px-2 py-0.5 text-[7px] uppercase tracking-widest border font-bold ${
-                            u.status === 'online' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : 'border-red-500/30 text-red-500 bg-red-500/10'
-                          }`}>{u.status}</span>
-                        </div>
-                        {u.product && (
-                          <div className="bg-black/50 border border-zinc-800 p-3">
-                            <span className="text-[8px] text-zinc-600 uppercase tracking-widest block mb-1">Product</span>
-                            <span className={`text-xs font-bold ${ec.text}`}>{u.product}</span>
+                          {u.product && (
+                            <div className="bg-black/50 border border-zinc-800 p-3">
+                              <span className="text-[8px] text-zinc-600 uppercase tracking-widest block mb-1">Product</span>
+                              <span className={`text-xs font-bold ${ec.text}`}>{u.product}</span>
+                            </div>
+                          )}
+                          <div className="flex gap-3">
+                            <div className="flex-1 bg-black/50 border border-zinc-800 p-3">
+                              <span className="text-[8px] text-zinc-600 uppercase tracking-widest block mb-1">Prefix</span>
+                              <code className="text-zinc-300 text-[10px] font-mono">{u.prefix}</code>
+                            </div>
+                            <div className="flex-1 bg-black/50 border border-zinc-800 p-3">
+                              <span className="text-[8px] text-zinc-600 uppercase tracking-widest block mb-1">Engine</span>
+                              <span className={`text-[10px] font-bold uppercase tracking-wider ${ec.text}`}>{u.engine}</span>
+                            </div>
                           </div>
-                        )}
-                        <div className="flex gap-3">
-                          <div className="flex-1 bg-black/50 border border-zinc-800 p-3">
-                            <span className="text-[8px] text-zinc-600 uppercase tracking-widest block mb-1">Prefix</span>
-                            <code className="text-zinc-300 text-[10px] font-mono">{u.prefix}</code>
+                        </button>
+
+                        {/* Expanded Status Panel */}
+                        {isExpanded && (
+                          <div className="px-6 pb-6 space-y-4 border-t border-zinc-800 pt-4 animate-in slide-in-from-top-2">
+                            {/* Live Status */}
+                            <div>
+                              <span className="text-[8px] text-zinc-600 uppercase tracking-widest block mb-2">Live API Response</span>
+                              <pre className="bg-black/80 border border-zinc-800 p-4 text-[10px] font-mono text-zinc-400 overflow-x-auto max-h-40 overflow-y-auto" data-testid={`universe-status-${u.id}`}>
+                                {universeStatus ? JSON.stringify(universeStatus, null, 2) : 'Loading...'}
+                              </pre>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-2">
+                              <a
+                                href={`${process.env.REACT_APP_BACKEND_URL}${u.prefix}/status`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`flex-1 py-3 text-center text-[9px] uppercase tracking-widest font-bold border ${ec.border} ${ec.text} hover:bg-white/5 transition-all`}
+                                data-testid={`universe-api-${u.id}`}
+                              >
+                                Open API
+                              </a>
+                              {u.id === 'empire1' && (
+                                <a
+                                  href="/"
+                                  className="flex-1 py-3 text-center text-[9px] uppercase tracking-widest font-bold border border-indigo-500/40 text-indigo-400 hover:bg-indigo-500/10 transition-all"
+                                  data-testid="launch-empire1"
+                                >
+                                  Launch Empire 1
+                                </a>
+                              )}
+                              {u.id === 'sla113' && (
+                                <button
+                                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                                  className="flex-1 py-3 text-[9px] uppercase tracking-widest font-bold border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 transition-all"
+                                >
+                                  You Are Here
+                                </button>
+                              )}
+                              {u.id !== 'sla113' && (
+                                <button
+                                  onClick={async () => { await axios.delete(`${API}/universes/${u.id}`); setExpandedUniverse(null); fetchData(); }}
+                                  className="px-4 py-3 text-[9px] uppercase tracking-widest font-bold border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-all"
+                                  data-testid={`deregister-${u.id}`}
+                                >
+                                  Deregister
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex-1 bg-black/50 border border-zinc-800 p-3">
-                            <span className="text-[8px] text-zinc-600 uppercase tracking-widest block mb-1">Engine</span>
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${ec.text}`}>{u.engine}</span>
-                          </div>
-                        </div>
-                        {u.id !== 'sla113' && (
-                          <button
-                            onClick={async () => { await axios.delete(`${API}/universes/${u.id}`); fetchData(); }}
-                            className="text-[8px] text-zinc-700 hover:text-red-500 uppercase tracking-widest transition-colors flex items-center gap-1"
-                            data-testid={`deregister-${u.id}`}
-                          >
-                            <XCircle size={10}/> Deregister
-                          </button>
                         )}
                       </div>
                     );

@@ -185,3 +185,17 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+# ─── Universe Status Stubs (for SLA113 Registry health checks) ───
+@app.get("/api/empire1/status")
+async def empire1_status():
+    return {"universe": "empire1", "status": "online", "description": "Hybrid Intelligence Core — 19 AI Engines", "product": "Hybrid Intelligence SaaS"}
+
+@app.get("/api/southern/status")
+async def southern_status():
+    return {"universe": "southern", "status": "online", "description": "SouthernLifestyle Game OS", "product": "Southern Game OS"}
+
+@app.get("/api/soulfire/status")
+async def soulfire_status():
+    return {"universe": "soulfire", "status": "online", "description": "Soulfire Ecosystem Blueprint (ASW, El Coro, Sentinel, SL Universal)", "product": "Lyrica 3 Pro — AI Music Creation", "engine": "Vertex AI"}
