@@ -107,6 +107,7 @@ const ALL_NAV_ITEMS = [
   { id: 'FRONTLINE', icon: Activity, partition: 'factory' },
   { id: 'WHITE LABEL MINT', icon: Hammer, partition: 'factory' },
   { id: 'DEPLOY CENTER', icon: Upload, partition: 'factory' },
+  { id: 'UNIVERSES', icon: Globe, partition: 'factory' },
   { id: 'MINT LEDGER', icon: CreditCard, partition: 'empire' },
   { id: 'REVENUE PIPELINES', icon: BarChart3, partition: 'empire' },
   { id: 'BESTIARY', icon: Skull, partition: 'empire' },
@@ -329,6 +330,9 @@ export default function SLA113Page() {
   const [deployCdn, setDeployCdn] = useState('cloudflare');
   const [deployRegion, setDeployRegion] = useState('us-west');
 
+  // Universe Registry
+  const [universes, setUniverses] = useState([]);
+
   // Worker State
   const [workerStatus, setWorkerStatus] = useState({ running: false, active_jobs: 0, blocked_jobs: 0, completed_jobs: 0, total_jobs: 0 });
   const [newJobPreset, setNewJobPreset] = useState('ARCADE_40');
@@ -357,7 +361,7 @@ export default function SLA113Page() {
   // Fetch backend data
   const fetchData = useCallback(async () => {
     try {
-      const [typesRes, projRes, statsRes, tenantsRes, jobsRes, pipelinesRes, buildsRes, compRes, deployRes] = await Promise.all([
+      const [typesRes, projRes, statsRes, tenantsRes, jobsRes, pipelinesRes, buildsRes, compRes, deployRes, universesRes] = await Promise.all([
         axios.get(`${API}/game-types`),
         axios.get(`${API}/projects`),
         axios.get(`${API}/stats`),
@@ -367,6 +371,7 @@ export default function SLA113Page() {
         axios.get(`${API}/builds`).catch(() => ({ data: { builds: [] } })),
         axios.get(`${API}/compliance`).catch(() => ({ data: { reports: [] } })),
         axios.get(`${API}/deployments`).catch(() => ({ data: { deployments: [] } })),
+        axios.get(`${API}/universes`).catch(() => ({ data: { universes: [] } })),
       ]);
       setGameTypes(typesRes.data.game_types || {});
       setProjects(projRes.data.projects || []);
@@ -377,6 +382,7 @@ export default function SLA113Page() {
       setBuilds(buildsRes.data.builds || []);
       setComplianceReports(compRes.data.reports || []);
       setDeployments(deployRes.data.deployments || []);
+      setUniverses(universesRes.data.universes || []);
     } catch (e) {
       console.error("SLA113 data fetch failed:", e);
     }
@@ -762,6 +768,75 @@ export default function SLA113Page() {
               </div>
             )}
 
+
+            {/* FACTORY: UNIVERSE REGISTRY */}
+            {partition === 'factory' && activeTab === 'UNIVERSES' && (
+              <div className="animate-in fade-in max-w-7xl mx-auto w-full space-y-6" data-testid="universe-registry-panel">
+                <div className="flex items-center justify-between">
+                  <span className="text-cyan-400 text-[10px] font-bold uppercase tracking-[3px] flex items-center gap-2"><Globe size={14}/> Sovereign Universe Registry ({universes.length})</span>
+                  <span className="text-[8px] text-zinc-600 uppercase tracking-widest">Auto-Discovery Active</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {universes.map(u => {
+                    const engineColors = {
+                      'fastapi+mongodb': { border: 'border-cyan-500/40', bg: 'bg-cyan-500/5', text: 'text-cyan-400', dot: 'bg-cyan-500' },
+                      'emergent-llm': { border: 'border-indigo-500/40', bg: 'bg-indigo-500/5', text: 'text-indigo-400', dot: 'bg-indigo-500' },
+                      'vertex-ai': { border: 'border-amber-500/40', bg: 'bg-amber-500/5', text: 'text-amber-400', dot: 'bg-amber-500' },
+                      'internal': { border: 'border-zinc-600/40', bg: 'bg-zinc-800/30', text: 'text-zinc-400', dot: 'bg-zinc-500' },
+                      'cocos2d': { border: 'border-emerald-500/40', bg: 'bg-emerald-500/5', text: 'text-emerald-400', dot: 'bg-emerald-500' },
+                    };
+                    const ec = engineColors[u.engine] || engineColors['internal'];
+                    return (
+                      <div key={u.id} className={`glass-panel ${ec.border} ${ec.bg} p-6 space-y-4 hover:scale-[1.01] transition-all`} data-testid={`universe-${u.id}`}>
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${ec.dot} ${u.status === 'online' ? 'animate-pulse' : ''}`}></span>
+                              <span className="text-zinc-100 text-sm font-bold tracking-wider uppercase">{u.name}</span>
+                            </div>
+                            <p className="text-zinc-500 text-[9px] uppercase tracking-widest leading-relaxed">{u.description}</p>
+                          </div>
+                          <span className={`px-2 py-0.5 text-[7px] uppercase tracking-widest border font-bold ${
+                            u.status === 'online' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : 'border-red-500/30 text-red-500 bg-red-500/10'
+                          }`}>{u.status}</span>
+                        </div>
+                        {u.product && (
+                          <div className="bg-black/50 border border-zinc-800 p-3">
+                            <span className="text-[8px] text-zinc-600 uppercase tracking-widest block mb-1">Product</span>
+                            <span className={`text-xs font-bold ${ec.text}`}>{u.product}</span>
+                          </div>
+                        )}
+                        <div className="flex gap-3">
+                          <div className="flex-1 bg-black/50 border border-zinc-800 p-3">
+                            <span className="text-[8px] text-zinc-600 uppercase tracking-widest block mb-1">Prefix</span>
+                            <code className="text-zinc-300 text-[10px] font-mono">{u.prefix}</code>
+                          </div>
+                          <div className="flex-1 bg-black/50 border border-zinc-800 p-3">
+                            <span className="text-[8px] text-zinc-600 uppercase tracking-widest block mb-1">Engine</span>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${ec.text}`}>{u.engine}</span>
+                          </div>
+                        </div>
+                        {u.id !== 'sla113' && (
+                          <button
+                            onClick={async () => { await axios.delete(`${API}/universes/${u.id}`); fetchData(); }}
+                            className="text-[8px] text-zinc-700 hover:text-red-500 uppercase tracking-widest transition-colors flex items-center gap-1"
+                            data-testid={`deregister-${u.id}`}
+                          >
+                            <XCircle size={10}/> Deregister
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {universes.length === 0 && (
+                  <div className="glass-panel border-cyan-500/10 p-16 text-center">
+                    <Globe size={32} className="text-zinc-700 mx-auto mb-4"/>
+                    <p className="text-zinc-600 text-[10px] uppercase tracking-widest">No universes registered. They auto-register on server boot.</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* EMPIRE: MINT LEDGER */}
             {partition === 'empire' && activeTab === 'MINT LEDGER' && (

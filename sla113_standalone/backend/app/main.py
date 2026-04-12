@@ -38,6 +38,7 @@ from app.routers.sla113_health import router as sla113_health_router
 from app.routers.sla113_orchestration import router as sla113_orchestration_router, start_worker, stop_worker
 from app.routers.sla113_regulatory import router as sla113_regulatory_router
 from app.routers.sla113.factory import router as sla113_deploy_router
+from app.routers.sla113_universe import router as sla113_universe_router
 
 # ─── Universe Routers ───
 from app.routers.empire1 import router as empire1_router
@@ -91,6 +92,7 @@ app.include_router(sla113_health_router)
 app.include_router(sla113_orchestration_router)
 app.include_router(sla113_regulatory_router)
 app.include_router(sla113_deploy_router)
+app.include_router(sla113_universe_router)
 
 # ─── Universes ───
 app.include_router(empire1_router)

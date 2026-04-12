@@ -20,6 +20,7 @@ SLA113 is the **sovereign root OS** for AI-powered game creation. All universes 
 8. **Deploy Engine** — Simulated CDN deployment
 9. **Sprite Cutter** — Canvas-based sprite sheet slicing with animation preview
 10. **Boss Bestiary** — Gallery of boss benchmark assets
+11. **Universe Registry** — Auto-discovery of all mounted universe routers with dynamic registration
 
 ## Completed Features
 - [x] Micro-frontend architecture (Empire 1 on `/`, SLA113 on `/sla113`)
@@ -32,19 +33,21 @@ SLA113 is the **sovereign root OS** for AI-powered game creation. All universes 
 - [x] Boss Bestiary gallery
 - [x] Cinematic splash loading screen
 - [x] Revenue Pipeline Pulse
-- [x] **Standalone SLA113 project export** matching production layout
+- [x] Standalone SLA113 project export matching production layout
+- [x] **Universe Registry** with auto-discovery, dynamic registration/deregistration, and visual dashboard
 
 ## Standalone Export Structure
 ```
 sla113_standalone/
 ├── backend/app/
-│   ├── main.py (FastAPI entrypoint — 13 routers, 46 endpoints)
+│   ├── main.py (FastAPI entrypoint — 14 routers, 50+ endpoints)
 │   ├── core/ (config, database, constants)
 │   ├── models/ (Pydantic schemas)
 │   ├── routers/
 │   │   ├── sla113_admin.py, sla113_billing.py, sla113_dashboard_context.py
 │   │   ├── sla113_engine_dashboard.py, sla113_factory.py, sla113_foundry.py
 │   │   ├── sla113_health.py, sla113_orchestration.py, sla113_regulatory.py
+│   │   ├── sla113_universe.py (Universe Registry — auto-discovery)
 │   │   ├── sla113/factory.py (deploy engine)
 │   │   ├── empire1.py, southern.py, soulfire.py (universe stubs)
 │   ├── services/ (vision, logic, composer engines)
@@ -54,16 +57,8 @@ sla113_standalone/
 └── split_repo.sh
 ```
 
-## Environment Variables
-| Variable | Used By |
-|----------|---------|
-| MONGO_URL | Database |
-| DB_NAME | Database |
-| EMERGENT_LLM_KEY | Logic, Composer, Terminal |
-| GEMINI_API_KEY | Vision Smith |
-
 ## Backlog
 - [ ] Wire Audio Forge to Vertex AI (user to provide API later)
 - [ ] Upgrade Build/Compliance/Deploy from simulated to real
 - [ ] Real-time Frontline data via WebSocket
-- [ ] Refactor SLA113Page.jsx (~1800 lines → sub-components)
+- [ ] Refactor SLA113Page.jsx into sub-components
