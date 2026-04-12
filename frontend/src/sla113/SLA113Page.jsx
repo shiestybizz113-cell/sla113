@@ -334,6 +334,10 @@ export default function SLA113Page() {
   // Universe Registry
   const [universes, setUniverses] = useState([]);
 
+  // Auto-Certify State
+  const [autoCertifying, setAutoCertifying] = useState(false);
+  const [certifySteps, setCertifySteps] = useState([]);
+
   // Worker State
   const [workerStatus, setWorkerStatus] = useState({ running: false, active_jobs: 0, blocked_jobs: 0, completed_jobs: 0, total_jobs: 0 });
   const [newJobPreset, setNewJobPreset] = useState('ARCADE_40');
@@ -1512,6 +1516,60 @@ export default function SLA113Page() {
                     >
                       Run Certification Scan
                     </button>
+
+                    <div className="relative">
+                      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
+                      <button
+                        onClick={async () => {
+                          const sel = document.getElementById('compliance-project-select');
+                          const pid = sel?.value;
+                          if (!pid || projects.length === 0) return;
+                          setAutoCertifying(true);
+                          setCertifySteps([{ step: 'INIT', detail: 'Starting Auto-Certify pipeline...', status: 'running' }]);
+                          try {
+                            const res = await axios.post(`${API}/compliance/auto-certify`, { project_id: pid, jurisdiction: complianceJurisdiction });
+                            setCertifySteps(res.data.steps || []);
+                            fetchData();
+                          } catch (e) {
+                            setCertifySteps(prev => [...prev, { step: 'ERROR', detail: e.response?.data?.detail || e.message, status: 'error' }]);
+                          }
+                          setAutoCertifying(false);
+                        }}
+                        disabled={projects.length === 0 || autoCertifying}
+                        className="w-full py-4 mt-3 font-bold tracking-[3px] uppercase text-[10px] border border-emerald-500 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500 hover:text-black transition-all disabled:opacity-30 flex items-center justify-center gap-2"
+                        data-testid="auto-certify-btn"
+                      >
+                        {autoCertifying ? (
+                          <><RefreshCw size={12} className="animate-spin" /> Certifying...</>
+                        ) : (
+                          <><ShieldCheck size={12} /> Auto-Certify</>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Auto-Certify Step Log */}
+                    {certifySteps.length > 0 && (
+                      <div className="space-y-2 mt-4" data-testid="certify-steps">
+                        <span className="text-[8px] text-zinc-600 uppercase tracking-widest">Certification Pipeline</span>
+                        {certifySteps.map((s, i) => (
+                          <div key={i} className={`p-3 border text-[10px] font-mono ${
+                            s.status === 'done' ? 'border-emerald-500/20 bg-emerald-500/5' :
+                            s.status === 'running' ? 'border-cyan-500/20 bg-cyan-500/5' :
+                            'border-red-500/20 bg-red-500/5'
+                          }`}>
+                            <div className="flex items-center gap-2">
+                              {s.status === 'done' && <CheckCircle2 size={10} className="text-emerald-400" />}
+                              {s.status === 'running' && <RefreshCw size={10} className="text-cyan-400 animate-spin" />}
+                              {s.status === 'error' && <XCircle size={10} className="text-red-400" />}
+                              <span className={`font-bold uppercase tracking-wider ${
+                                s.status === 'done' ? 'text-emerald-400' : s.status === 'running' ? 'text-cyan-400' : 'text-red-400'
+                              }`}>{s.step}</span>
+                            </div>
+                            <p className="text-zinc-400 mt-1 text-[9px]">{s.detail}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="col-span-8 space-y-4">

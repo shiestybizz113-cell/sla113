@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import SpriteCutter from './SpriteCutter';
 import DependencyGraph from './DependencyGraph';
+import FrontlinePanel from './FrontlinePanel';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api/sla113`;
 
@@ -107,6 +108,7 @@ const ALL_NAV_ITEMS = [
   { id: 'FRONTLINE', icon: Activity, partition: 'factory' },
   { id: 'WHITE LABEL MINT', icon: Hammer, partition: 'factory' },
   { id: 'DEPLOY CENTER', icon: Upload, partition: 'factory' },
+  { id: 'UNIVERSES', icon: Globe, partition: 'factory' },
   { id: 'MINT LEDGER', icon: CreditCard, partition: 'empire' },
   { id: 'REVENUE PIPELINES', icon: BarChart3, partition: 'empire' },
   { id: 'BESTIARY', icon: Skull, partition: 'empire' },
@@ -329,6 +331,13 @@ export default function SLA113Page() {
   const [deployCdn, setDeployCdn] = useState('cloudflare');
   const [deployRegion, setDeployRegion] = useState('us-west');
 
+  // Universe Registry
+  const [universes, setUniverses] = useState([]);
+
+  // Auto-Certify State
+  const [autoCertifying, setAutoCertifying] = useState(false);
+  const [certifySteps, setCertifySteps] = useState([]);
+
   // Worker State
   const [workerStatus, setWorkerStatus] = useState({ running: false, active_jobs: 0, blocked_jobs: 0, completed_jobs: 0, total_jobs: 0 });
   const [newJobPreset, setNewJobPreset] = useState('ARCADE_40');
@@ -357,7 +366,7 @@ export default function SLA113Page() {
   // Fetch backend data
   const fetchData = useCallback(async () => {
     try {
-      const [typesRes, projRes, statsRes, tenantsRes, jobsRes, pipelinesRes, buildsRes, compRes, deployRes] = await Promise.all([
+      const [typesRes, projRes, statsRes, tenantsRes, jobsRes, pipelinesRes, buildsRes, compRes, deployRes, universesRes] = await Promise.all([
         axios.get(`${API}/game-types`),
         axios.get(`${API}/projects`),
         axios.get(`${API}/stats`),
@@ -367,6 +376,7 @@ export default function SLA113Page() {
         axios.get(`${API}/builds`).catch(() => ({ data: { builds: [] } })),
         axios.get(`${API}/compliance`).catch(() => ({ data: { reports: [] } })),
         axios.get(`${API}/deployments`).catch(() => ({ data: { deployments: [] } })),
+        axios.get(`${API}/universes`).catch(() => ({ data: { universes: [] } })),
       ]);
       setGameTypes(typesRes.data.game_types || {});
       setProjects(projRes.data.projects || []);
@@ -377,6 +387,7 @@ export default function SLA113Page() {
       setBuilds(buildsRes.data.builds || []);
       setComplianceReports(compRes.data.reports || []);
       setDeployments(deployRes.data.deployments || []);
+      setUniverses(universesRes.data.universes || []);
     } catch (e) {
       console.error("SLA113 data fetch failed:", e);
     }
@@ -595,51 +606,9 @@ export default function SLA113Page() {
           <main className="flex-1 overflow-y-auto p-8 custom-scrollbar relative flex flex-col">
             <div className="scanline"></div>
 
-            {/* FACTORY: FRONTLINE */}
+            {/* FACTORY: FRONTLINE — REAL-TIME WEBSOCKET */}
             {partition === 'factory' && activeTab === 'FRONTLINE' && (
-              <div className="grid grid-cols-12 gap-6 h-full animate-in fade-in" data-testid="frontline-panel">
-                <div className="col-span-8 flex flex-col gap-6">
-                  <div className="flex-1 glass-panel border-cyan-500/20 flex flex-col">
-                    <div className="p-4 border-b border-cyan-500/20 bg-cyan-900/10 flex justify-between items-center text-[10px] uppercase tracking-widest">
-                      <span className="flex items-center gap-2 text-cyan-400"><Zap size={12} fill="currentColor" /> Live Ritual Feed</span>
-                      <span className="text-zinc-500">Node: SGV_ELA_WEST</span>
-                    </div>
-                    <div className="flex-1 p-6 font-mono text-[11px] space-y-3 overflow-y-auto">
-                      <p className="text-zinc-600">[02:44:01] Ritual Initialized. Boss: TONATIUH.</p>
-                      <p className="text-zinc-400">[02:44:12] Shot detected from Subdomain: shop-alpha.</p>
-                      <p className="text-zinc-400">[02:44:15] Credit Debit: 0.50 (SLA113_LEDGER).</p>
-                      <p className="text-cyan-400">[02:44:20] Boss Phase Transition: SOLAR_FLARE_INJECTED.</p>
-                      <p className="text-[#D4AF37]">[02:44:30] Jackpot Probability: Clamped at 0.00042%.</p>
-                      {projects.map((p, i) => (
-                        <p key={i} className="text-zinc-400">[LIVE] Project: {p.name} | Type: {p.game_type} | Status: {p.status}</p>
-                      ))}
-                    </div>
-                    <div className="p-4 border-t border-cyan-500/20 flex gap-4 bg-black/50">
-                      <input type="text" placeholder="Inject Owner Intelligence..." className="input-dark focus:border-cyan-500" data-testid="frontline-input" />
-                      <button className="px-6 py-2 bg-cyan-500/20 border border-cyan-500 text-cyan-400 font-bold uppercase text-[10px] tracking-widest hover:bg-cyan-500 hover:text-black transition-all" data-testid="frontline-execute">Execute</button>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-span-4 space-y-6">
-                  <div className="glass-panel border-cyan-500/20 p-6 space-y-6">
-                    <h3 className="text-cyan-400 text-xs font-bold uppercase tracking-widest border-b border-cyan-500/20 pb-4">Cinematic Engine</h3>
-                    <div className="flex justify-center py-6">
-                      <div className="w-32 h-32 rounded-full bg-cyan-500/5 border border-cyan-500/30 flex items-center justify-center relative shadow-[0_0_40px_rgba(0,200,255,0.1)]">
-                        <div className="w-24 h-24 rounded-full border-2 border-t-cyan-400 border-r-transparent border-b-transparent border-l-transparent animate-spin" />
-                        <div className="absolute flex flex-col items-center">
-                          <span className="text-cyan-400 font-bold text-xl">94%</span>
-                          <span className="text-[9px] text-zinc-500 uppercase">RTP Hold</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2 text-[10px] text-zinc-400">
-                      <div className="flex justify-between"><span>Total Projects</span><span className="text-cyan-400 font-bold">{stats.total_projects || 0}</span></div>
-                      <div className="flex justify-between"><span>Game Types</span><span className="text-cyan-400 font-bold">{stats.supported_game_types || 0}</span></div>
-                      <div className="flex justify-between"><span>AI Engines</span><span className="text-cyan-400 font-bold">{stats.engines?.length || 0}</span></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <FrontlinePanel API={API} projects={projects} stats={stats} />
             )}
 
             {/* FACTORY: WHITE LABEL MINT */}
@@ -762,6 +731,75 @@ export default function SLA113Page() {
               </div>
             )}
 
+
+            {/* FACTORY: UNIVERSE REGISTRY */}
+            {partition === 'factory' && activeTab === 'UNIVERSES' && (
+              <div className="animate-in fade-in max-w-7xl mx-auto w-full space-y-6" data-testid="universe-registry-panel">
+                <div className="flex items-center justify-between">
+                  <span className="text-cyan-400 text-[10px] font-bold uppercase tracking-[3px] flex items-center gap-2"><Globe size={14}/> Sovereign Universe Registry ({universes.length})</span>
+                  <span className="text-[8px] text-zinc-600 uppercase tracking-widest">Auto-Discovery Active</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {universes.map(u => {
+                    const engineColors = {
+                      'fastapi+mongodb': { border: 'border-cyan-500/40', bg: 'bg-cyan-500/5', text: 'text-cyan-400', dot: 'bg-cyan-500' },
+                      'emergent-llm': { border: 'border-indigo-500/40', bg: 'bg-indigo-500/5', text: 'text-indigo-400', dot: 'bg-indigo-500' },
+                      'vertex-ai': { border: 'border-amber-500/40', bg: 'bg-amber-500/5', text: 'text-amber-400', dot: 'bg-amber-500' },
+                      'internal': { border: 'border-zinc-600/40', bg: 'bg-zinc-800/30', text: 'text-zinc-400', dot: 'bg-zinc-500' },
+                      'cocos2d': { border: 'border-emerald-500/40', bg: 'bg-emerald-500/5', text: 'text-emerald-400', dot: 'bg-emerald-500' },
+                    };
+                    const ec = engineColors[u.engine] || engineColors['internal'];
+                    return (
+                      <div key={u.id} className={`glass-panel ${ec.border} ${ec.bg} p-6 space-y-4 hover:scale-[1.01] transition-all`} data-testid={`universe-${u.id}`}>
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${ec.dot} ${u.status === 'online' ? 'animate-pulse' : ''}`}></span>
+                              <span className="text-zinc-100 text-sm font-bold tracking-wider uppercase">{u.name}</span>
+                            </div>
+                            <p className="text-zinc-500 text-[9px] uppercase tracking-widest leading-relaxed">{u.description}</p>
+                          </div>
+                          <span className={`px-2 py-0.5 text-[7px] uppercase tracking-widest border font-bold ${
+                            u.status === 'online' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : 'border-red-500/30 text-red-500 bg-red-500/10'
+                          }`}>{u.status}</span>
+                        </div>
+                        {u.product && (
+                          <div className="bg-black/50 border border-zinc-800 p-3">
+                            <span className="text-[8px] text-zinc-600 uppercase tracking-widest block mb-1">Product</span>
+                            <span className={`text-xs font-bold ${ec.text}`}>{u.product}</span>
+                          </div>
+                        )}
+                        <div className="flex gap-3">
+                          <div className="flex-1 bg-black/50 border border-zinc-800 p-3">
+                            <span className="text-[8px] text-zinc-600 uppercase tracking-widest block mb-1">Prefix</span>
+                            <code className="text-zinc-300 text-[10px] font-mono">{u.prefix}</code>
+                          </div>
+                          <div className="flex-1 bg-black/50 border border-zinc-800 p-3">
+                            <span className="text-[8px] text-zinc-600 uppercase tracking-widest block mb-1">Engine</span>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${ec.text}`}>{u.engine}</span>
+                          </div>
+                        </div>
+                        {u.id !== 'sla113' && (
+                          <button
+                            onClick={async () => { await axios.delete(`${API}/universes/${u.id}`); fetchData(); }}
+                            className="text-[8px] text-zinc-700 hover:text-red-500 uppercase tracking-widest transition-colors flex items-center gap-1"
+                            data-testid={`deregister-${u.id}`}
+                          >
+                            <XCircle size={10}/> Deregister
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {universes.length === 0 && (
+                  <div className="glass-panel border-cyan-500/10 p-16 text-center">
+                    <Globe size={32} className="text-zinc-700 mx-auto mb-4"/>
+                    <p className="text-zinc-600 text-[10px] uppercase tracking-widest">No universes registered. They auto-register on server boot.</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* EMPIRE: MINT LEDGER */}
             {partition === 'empire' && activeTab === 'MINT LEDGER' && (
@@ -1478,6 +1516,60 @@ export default function SLA113Page() {
                     >
                       Run Certification Scan
                     </button>
+
+                    <div className="relative">
+                      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent"></div>
+                      <button
+                        onClick={async () => {
+                          const sel = document.getElementById('compliance-project-select');
+                          const pid = sel?.value;
+                          if (!pid || projects.length === 0) return;
+                          setAutoCertifying(true);
+                          setCertifySteps([{ step: 'INIT', detail: 'Starting Auto-Certify pipeline...', status: 'running' }]);
+                          try {
+                            const res = await axios.post(`${API}/compliance/auto-certify`, { project_id: pid, jurisdiction: complianceJurisdiction });
+                            setCertifySteps(res.data.steps || []);
+                            fetchData();
+                          } catch (e) {
+                            setCertifySteps(prev => [...prev, { step: 'ERROR', detail: e.response?.data?.detail || e.message, status: 'error' }]);
+                          }
+                          setAutoCertifying(false);
+                        }}
+                        disabled={projects.length === 0 || autoCertifying}
+                        className="w-full py-4 mt-3 font-bold tracking-[3px] uppercase text-[10px] border border-emerald-500 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500 hover:text-black transition-all disabled:opacity-30 flex items-center justify-center gap-2"
+                        data-testid="auto-certify-btn"
+                      >
+                        {autoCertifying ? (
+                          <><RefreshCw size={12} className="animate-spin" /> Certifying...</>
+                        ) : (
+                          <><ShieldCheck size={12} /> Auto-Certify</>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Auto-Certify Step Log */}
+                    {certifySteps.length > 0 && (
+                      <div className="space-y-2 mt-4" data-testid="certify-steps">
+                        <span className="text-[8px] text-zinc-600 uppercase tracking-widest">Certification Pipeline</span>
+                        {certifySteps.map((s, i) => (
+                          <div key={i} className={`p-3 border text-[10px] font-mono ${
+                            s.status === 'done' ? 'border-emerald-500/20 bg-emerald-500/5' :
+                            s.status === 'running' ? 'border-cyan-500/20 bg-cyan-500/5' :
+                            'border-red-500/20 bg-red-500/5'
+                          }`}>
+                            <div className="flex items-center gap-2">
+                              {s.status === 'done' && <CheckCircle2 size={10} className="text-emerald-400" />}
+                              {s.status === 'running' && <RefreshCw size={10} className="text-cyan-400 animate-spin" />}
+                              {s.status === 'error' && <XCircle size={10} className="text-red-400" />}
+                              <span className={`font-bold uppercase tracking-wider ${
+                                s.status === 'done' ? 'text-emerald-400' : s.status === 'running' ? 'text-cyan-400' : 'text-red-400'
+                              }`}>{s.step}</span>
+                            </div>
+                            <p className="text-zinc-400 mt-1 text-[9px]">{s.detail}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="col-span-8 space-y-4">
@@ -1493,20 +1585,40 @@ export default function SLA113Page() {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className={`px-3 py-1 text-[9px] uppercase tracking-widest border font-bold ${
-                              r.status === 'CERTIFIED' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : 'border-amber-500/30 text-amber-500 bg-amber-500/10'
+                              r.status === 'CERTIFIED' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/10' : r.status === 'CONDITIONAL' ? 'border-amber-500/30 text-amber-500 bg-amber-500/10' : 'border-red-500/30 text-red-500 bg-red-500/10'
                             }`}>{r.status}</span>
                             <span className="text-zinc-500 text-[9px] font-mono">{r.pass_rate}</span>
                             <button onClick={async () => { await axios.delete(`${API}/compliance/${r.id}`); fetchData(); }} className="text-zinc-600 hover:text-red-500 transition-colors"><XCircle size={14}/></button>
                           </div>
                         </div>
+                        {/* RTP Info Bar */}
+                        {r.actual_rtp && (
+                          <div className="flex gap-3 text-[9px]">
+                            <div className="bg-black/50 border border-zinc-800 px-3 py-1.5 flex gap-2">
+                              <span className="text-zinc-600 uppercase">Actual RTP:</span>
+                              <span className={r.actual_rtp === 'Not generated' ? 'text-amber-400' : 'text-emerald-400 font-bold'}>{r.actual_rtp}</span>
+                            </div>
+                            <div className="bg-black/50 border border-zinc-800 px-3 py-1.5 flex gap-2">
+                              <span className="text-zinc-600 uppercase">Min Required:</span>
+                              <span className="text-zinc-400 font-bold">{r.min_rtp_required || 'N/A'}</span>
+                            </div>
+                            {r.has_logic_data !== undefined && (
+                              <div className="bg-black/50 border border-zinc-800 px-3 py-1.5 flex gap-2">
+                                <span className="text-zinc-600 uppercase">Logic Data:</span>
+                                <span className={r.has_logic_data ? 'text-emerald-400' : 'text-amber-400'}>{r.has_logic_data ? 'YES' : 'NO'}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         <div className="grid grid-cols-2 gap-2">
                           {r.results?.map((c, i) => (
-                            <div key={i} className={`p-3 border text-[10px] ${c.status === 'PASS' ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
+                            <div key={i} className={`p-3 border text-[10px] ${c.status === 'PASS' ? 'border-emerald-500/20 bg-emerald-500/5' : c.status === 'WARN' ? 'border-amber-500/20 bg-amber-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
                               <div className="flex justify-between items-center">
-                                <span className={c.status === 'PASS' ? 'text-emerald-400' : 'text-red-400'}>{c.check}</span>
-                                <span className={`font-bold ${c.status === 'PASS' ? 'text-emerald-500' : 'text-red-500'}`}>{c.status}</span>
+                                <span className={c.status === 'PASS' ? 'text-emerald-400' : c.status === 'WARN' ? 'text-amber-400' : 'text-red-400'}>{c.check}</span>
+                                <span className={`font-bold ${c.status === 'PASS' ? 'text-emerald-500' : c.status === 'WARN' ? 'text-amber-500' : 'text-red-500'}`}>{c.status}</span>
                               </div>
                               {c.value && <span className="text-zinc-500 text-[9px] font-mono">{c.value}</span>}
+                              {c.details && <p className="text-zinc-600 text-[8px] mt-1 leading-relaxed">{c.details}</p>}
                             </div>
                           ))}
                         </div>

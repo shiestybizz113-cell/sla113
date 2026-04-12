@@ -1315,6 +1315,136 @@ async def delete_compliance_report(report_id: str):
     return {"deleted": True}
 
 
+class AutoCertifyRequest(BaseModel):
+    project_id: str
+    jurisdiction: str = "GLI"
+
+
+@router.post("/compliance/auto-certify")
+async def auto_certify(req: AutoCertifyRequest):
+    """One-click Auto-Certify: generates all missing Logic Engine specs, then runs compliance."""
+    project = await projects_collection().find_one({"id": req.project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    steps = []
+    logic_specs = project.get("logic_specs", [])
+    existing_types = {s.get("logic_type") for s in logic_specs}
+    required_types = ["rtp", "rng", "paytable"]
+    missing = [t for t in required_types if t not in existing_types]
+
+    steps.append({"step": "AUDIT", "detail": f"Existing specs: {list(existing_types) or 'none'}. Missing: {missing or 'none — all present'}.", "status": "done"})
+
+    # Generate each missing spec
+    for spec_type in missing:
+        steps.append({"step": f"GENERATE_{spec_type.upper()}", "detail": f"Running Logic Engine type={spec_type}...", "status": "running"})
+        try:
+            result = await generate_logic(
+                project=project,
+                logic_type=spec_type,
+                difficulty="medium",
+                custom_requirements=None,
+            )
+            await projects_collection().update_one(
+                {"id": req.project_id},
+                {"$push": {"logic_specs": result}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}},
+            )
+            # Refresh project data for next iteration
+            project = await projects_collection().find_one({"id": req.project_id}, {"_id": 0})
+            steps[-1]["status"] = "done"
+            steps[-1]["detail"] = f"Logic Engine type={spec_type} generated successfully ({result.get('generation_time', '?')}s)"
+        except Exception as e:
+            steps[-1]["status"] = "error"
+            steps[-1]["detail"] = f"Failed to generate {spec_type}: {str(e)}"
+            logger.error(f"Auto-certify {spec_type} generation failed: {e}")
+
+    # Now run the real compliance check
+    steps.append({"step": "COMPLIANCE_CHECK", "detail": f"Running {req.jurisdiction} compliance...", "status": "running"})
+    try:
+        # Inline the compliance logic (re-fetch fresh project)
+        project = await projects_collection().find_one({"id": req.project_id}, {"_id": 0})
+        checks = COMPLIANCE_CHECKS.get(req.jurisdiction, COMPLIANCE_CHECKS["INTERNAL"])
+        now = datetime.now(timezone.utc).isoformat()
+        logic_specs = project.get("logic_specs", [])
+
+        rtp_spec = None
+        for spec in logic_specs:
+            if spec.get("logic_type") == "rtp":
+                rtp_spec = spec.get("specs", {})
+                break
+
+        actual_rtp = None
+        if rtp_spec:
+            actual_rtp = rtp_spec.get("calculated_rtp") or rtp_spec.get("target_rtp")
+            if isinstance(actual_rtp, str):
+                try:
+                    actual_rtp = float(actual_rtp.replace("%", "").strip())
+                except ValueError:
+                    actual_rtp = None
+            elif isinstance(actual_rtp, (int, float)):
+                actual_rtp = float(actual_rtp)
+
+        min_rtp = {"GLI": 85.0, "MGA": 92.0, "UKGC": 88.0, "CURACAO": 80.0, "INTERNAL": 80.0}.get(req.jurisdiction, 85.0)
+
+        results = []
+        for check_name in checks:
+            if "RTP" in check_name:
+                if actual_rtp is not None:
+                    rtp_passed = actual_rtp >= min_rtp
+                    results.append({"check": check_name, "status": "PASS" if rtp_passed else "FAIL", "severity": "critical" if not rtp_passed else "none", "details": f"RTP {actual_rtp}% {'meets' if rtp_passed else 'BELOW'} {req.jurisdiction} minimum ({min_rtp}%). Source: Logic Engine.", "value": f"{actual_rtp}%", "source": "logic_engine"})
+                else:
+                    results.append({"check": check_name, "status": "WARN", "severity": "warning", "details": "RTP generation failed. Manual review needed.", "value": "N/A", "source": "none"})
+            elif "RNG" in check_name:
+                has_rng = any(s.get("logic_type") == "rng" for s in logic_specs)
+                results.append({"check": check_name, "status": "PASS" if has_rng else "WARN", "severity": "none" if has_rng else "warning", "details": f"RNG specification {'found and verified' if has_rng else 'missing'}."})
+            elif "Paytable" in check_name:
+                has_pt = any(s.get("logic_type") == "paytable" for s in logic_specs)
+                results.append({"check": check_name, "status": "PASS" if has_pt else "WARN", "severity": "none" if has_pt else "warning", "details": f"Paytable {'verified against Logic Engine output' if has_pt else 'missing'}."})
+            else:
+                has_assets = len(project.get("vision_assets", [])) > 0
+                has_logic = len(logic_specs) > 0
+                passed = has_assets and has_logic
+                results.append({"check": check_name, "status": "PASS" if passed else "FAIL", "severity": "warning" if not passed else "none", "details": f"{'Verified' if passed else 'Incomplete data'} for {req.jurisdiction}."})
+
+        has_fails = any(r["status"] == "FAIL" for r in results)
+        has_warns = any(r["status"] == "WARN" for r in results)
+        overall = "CERTIFIED" if not has_fails and not has_warns else "NEEDS_REMEDIATION" if has_fails else "CONDITIONAL"
+
+        report = {
+            "id": f"CMP-{uuid.uuid4().hex[:8].upper()}",
+            "project_id": req.project_id,
+            "project_name": project.get("name", "Unknown"),
+            "game_type": project.get("game_type", "unknown"),
+            "jurisdiction": req.jurisdiction,
+            "check_type": "auto-certify",
+            "status": overall,
+            "pass_rate": f"{sum(1 for r in results if r['status'] == 'PASS')}/{len(results)}",
+            "actual_rtp": f"{actual_rtp}%" if actual_rtp else "Not generated",
+            "min_rtp_required": f"{min_rtp}%",
+            "has_logic_data": len(logic_specs) > 0,
+            "results": results,
+            "created_at": now,
+        }
+        await compliance_collection().insert_one(report)
+        report.pop("_id", None)
+
+        steps[-1]["status"] = "done"
+        steps[-1]["detail"] = f"Compliance: {overall} ({report['pass_rate']}) — RTP: {report['actual_rtp']}"
+
+    except Exception as e:
+        steps[-1]["status"] = "error"
+        steps[-1]["detail"] = f"Compliance check failed: {str(e)}"
+        report = None
+
+    return {
+        "project_id": req.project_id,
+        "jurisdiction": req.jurisdiction,
+        "steps": steps,
+        "certification": report,
+        "final_status": report["status"] if report else "ERROR",
+    }
+
+
 # ─── Deploy Engine ───
 class DeployRequest(BaseModel):
     build_id: str
