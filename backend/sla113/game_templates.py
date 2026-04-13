@@ -161,114 +161,259 @@ def _slot_machine_template(game_name, game_type, config_json, manifest_json, ass
   window.addEventListener('resize', () => app.renderer.resize(window.innerWidth, window.innerHeight));
 
   const W = app.screen.width, H = app.screen.height;
-  let credits = 10000, bet = 100, spinning = false;
-  const symbols = ['7', 'BAR', 'CHERRY', 'BELL', 'LEMON', 'STAR', 'DIAMOND'];
-  const symColors = [0xff0000, 0xd4af37, 0xff4444, 0xffcc00, 0x44ff44, 0x00c8ff, 0xff66ff];
-  const payouts = { '777': 50, 'BARBARBAR': 20, 'CHERRYCHERRYCHERRY': 10, 'BELLBELLBELL': 8, 'STARSTARSTAR': 15, 'DIAMONDDIAMONDDIAMON': 25 };
+  let credits = 10000, bet = 100, spinning = false, totalWins = 0, totalSpins = 0;
 
-  // Machine frame
-  const frame = new PIXI.Graphics();
-  frame.lineStyle(3, 0xd4af37);
-  const mx = W/2-200, my = H/2-120;
-  frame.drawRoundedRect(mx, my, 400, 240, 8);
-  frame.beginFill(0x0a0008).drawRoundedRect(mx+10, my+10, 380, 220, 4).endFill();
-  // Reel dividers
-  frame.lineStyle(1, 0x333333);
-  frame.moveTo(mx+137, my+10).lineTo(mx+137, my+230);
-  frame.moveTo(mx+263, my+10).lineTo(mx+263, my+230);
-  app.stage.addChild(frame);
+  // Symbol definitions with weighted probabilities (lower weight = rarer)
+  const SYMBOLS = [
+    { name: '7',       color: 0xff0000, weight: 2,  payout: 50 },
+    { name: 'DIAMOND', color: 0x00c8ff, weight: 3,  payout: 25 },
+    { name: 'STAR',    color: 0xd4af37, weight: 4,  payout: 15 },
+    { name: 'BAR',     color: 0xf5c542, weight: 6,  payout: 10 },
+    { name: 'BELL',    color: 0xffaa00, weight: 8,  payout: 8  },
+    { name: 'CHERRY',  color: 0xff4466, weight: 10, payout: 5  },
+    { name: 'LEMON',   color: 0x88ff44, weight: 12, payout: 3  },
+    { name: 'PLUM',    color: 0x9944ff, weight: 10, payout: 4  },
+    { name: 'ORANGE',  color: 0xff8800, weight: 10, payout: 4  },
+  ];
 
-  // Reels
-  const reels = [[], [], []];
-  const reelContainers = [];
+  // Build weighted pool for RNG
+  const weightedPool = [];
+  SYMBOLS.forEach((s, idx) => { for (let i = 0; i < s.weight; i++) weightedPool.push(idx); });
+  function randomSymbol() { return weightedPool[Math.floor(Math.random() * weightedPool.length)]; }
+
+  // Paytable: 3 matching = payout * bet, 2 matching from left = bet * 2, any cherry = bet back
+  function calcPayout(r0, r1, r2) {
+    if (r0 === r1 && r1 === r2) return SYMBOLS[r0].payout * bet;
+    if (r0 === r1) return Math.floor(bet * 1.5);
+    if (SYMBOLS[r0].name === '7' || SYMBOLS[r1].name === '7' || SYMBOLS[r2].name === '7') return Math.floor(bet * 0.5);
+    return 0;
+  }
+
+  // ─── Visual Setup ───
+  const REEL_W = 120, REEL_H = 240, SYM_H = 80, VISIBLE = 3;
+  const machineX = W / 2 - (REEL_W * 3 + 20) / 2;
+  const machineY = H / 2 - REEL_H / 2 - 30;
+
+  // Machine cabinet
+  const cabinet = new PIXI.Graphics();
+  cabinet.beginFill(0x120008).drawRoundedRect(machineX - 20, machineY - 60, REEL_W * 3 + 60, REEL_H + 180, 12).endFill();
+  cabinet.lineStyle(3, 0xd4af37).drawRoundedRect(machineX - 20, machineY - 60, REEL_W * 3 + 60, REEL_H + 180, 12);
+  app.stage.addChild(cabinet);
+
+  // Title
+  const title = new PIXI.Text(GAME_CONFIG.name || 'SLOTS', { fontSize: 22, fill: 0xd4af37, fontFamily: 'monospace', fontWeight: 'bold', letterSpacing: 4 });
+  title.anchor.set(0.5); title.x = W / 2; title.y = machineY - 30;
+  app.stage.addChild(title);
+
+  // Reel window background
+  const reelBg = new PIXI.Graphics();
+  reelBg.beginFill(0x050005).drawRect(machineX, machineY, REEL_W * 3 + 20, REEL_H).endFill();
+  app.stage.addChild(reelBg);
+
+  // Payline indicator
+  const payline = new PIXI.Graphics();
+  payline.lineStyle(2, 0xff0000, 0.6);
+  payline.moveTo(machineX - 10, machineY + REEL_H / 2).lineTo(machineX + REEL_W * 3 + 30, machineY + REEL_H / 2);
+  payline.zIndex = 50;
+  app.stage.addChild(payline);
+
+  // ─── Reel System ───
+  const reelData = []; // { container, symbols[], offset, speed, targetIdx, stopped }
+
   for (let r = 0; r < 3; r++) {
     const container = new PIXI.Container();
-    container.x = mx + 15 + r * 127; container.y = my + 15;
+    const rx = machineX + 10 + r * (REEL_W + 5);
+    container.x = rx;
+    container.y = machineY;
+
+    // Mask for this reel
     const mask = new PIXI.Graphics();
-    mask.beginFill(0xffffff).drawRect(0, 0, 120, 210).endFill();
-    mask.x = container.x; mask.y = container.y;
+    mask.beginFill(0xffffff).drawRect(rx, machineY, REEL_W, REEL_H).endFill();
     app.stage.addChild(mask);
     container.mask = mask;
-    // Create symbol tiles
-    for (let i = 0; i < 15; i++) {
-      const idx = i % symbols.length;
-      const txt = new PIXI.Text(symbols[idx], { fontSize: 28, fill: symColors[idx], fontFamily: 'monospace', fontWeight: 'bold' });
-      txt.anchor.set(0.5); txt.x = 60; txt.y = i * 70 + 35;
-      txt.symIdx = idx;
-      container.addChild(txt); reels[r].push(txt);
+
+    // Create a strip of symbols (enough to loop smoothly)
+    const STRIP_LEN = SYMBOLS.length * 3;
+    const syms = [];
+    for (let i = 0; i < STRIP_LEN; i++) {
+      const sIdx = i % SYMBOLS.length;
+      const sym = SYMBOLS[sIdx];
+      const txt = new PIXI.Text(sym.name, {
+        fontSize: sym.name.length > 4 ? 18 : 24,
+        fill: sym.color,
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+      });
+      txt.anchor.set(0.5);
+      txt.x = REEL_W / 2;
+      txt.y = i * SYM_H + SYM_H / 2;
+      txt.symIdx = sIdx;
+      container.addChild(txt);
+      syms.push(txt);
     }
-    app.stage.addChild(container); reelContainers.push(container);
+
+    app.stage.addChild(container);
+    reelData.push({
+      container, symbols: syms, offset: 0,
+      speed: 0, targetIdx: null, stopped: true,
+      finalResult: 0, stripLen: STRIP_LEN,
+    });
   }
 
-  const resultSymbols = [0, 0, 0];
-  let reelSpeeds = [0, 0, 0];
-  let reelTargets = [null, null, null];
+  // Reel separator lines
+  for (let r = 1; r < 3; r++) {
+    const sep = new PIXI.Graphics();
+    sep.lineStyle(1, 0x333333);
+    const sx = machineX + 10 + r * (REEL_W + 5) - 3;
+    sep.moveTo(sx, machineY).lineTo(sx, machineY + REEL_H);
+    sep.zIndex = 10;
+    app.stage.addChild(sep);
+  }
 
+  app.stage.sortableChildren = true;
+
+  // ─── Spin Logic ───
   function spin() {
     if (spinning || credits < bet) return;
-    spinning = true; credits -= bet;
-    document.getElementById('score').textContent = credits;
-    // Determine results
-    const lucky = Math.random();
-    if (lucky < 0.05) { resultSymbols[0] = resultSymbols[1] = resultSymbols[2] = 0; } // 777
-    else if (lucky < 0.15) { const s = Math.floor(Math.random()*symbols.length); resultSymbols[0]=resultSymbols[1]=resultSymbols[2]=s; }
-    else { for(let i=0;i<3;i++) resultSymbols[i] = Math.floor(Math.random()*symbols.length); }
+    spinning = true;
+    credits -= bet;
+    totalSpins++;
+    updateHUD();
 
-    reelSpeeds = [15 + Math.random()*5, 15 + Math.random()*5, 15 + Math.random()*5];
-    reelTargets = [null, null, null];
-    setTimeout(() => reelTargets[0] = resultSymbols[0], 800);
-    setTimeout(() => reelTargets[1] = resultSymbols[1], 1400);
-    setTimeout(() => reelTargets[2] = resultSymbols[2], 2000);
+    // Determine results via weighted RNG
+    const results = [randomSymbol(), randomSymbol(), randomSymbol()];
+
+    // Start all reels
+    reelData.forEach((rd, r) => {
+      rd.stopped = false;
+      rd.speed = 25 + Math.random() * 10;
+      rd.targetIdx = null;
+      rd.finalResult = results[r];
+
+      // Schedule stop: reel 0 first, then 1, then 2
+      setTimeout(() => {
+        rd.targetIdx = results[r];
+      }, 600 + r * 500 + Math.random() * 200);
+    });
   }
 
-  // Spin button
+  // ─── Spin Button ───
+  const btnY = machineY + REEL_H + 20;
   const spinBtn = new PIXI.Graphics();
-  spinBtn.beginFill(0xd4af37).drawRoundedRect(0,0,200,50,6).endFill();
-  const spinTxt = new PIXI.Text('SPIN', { fontSize: 20, fill: 0x000000, fontFamily: 'monospace', fontWeight: 'bold' });
-  spinTxt.anchor.set(0.5); spinTxt.x = 100; spinTxt.y = 25;
+  spinBtn.beginFill(0xd4af37).drawRoundedRect(0, 0, 180, 48, 6).endFill();
+  const spinTxt = new PIXI.Text('SPIN', { fontSize: 20, fill: 0x000000, fontFamily: 'monospace', fontWeight: 'bold', letterSpacing: 6 });
+  spinTxt.anchor.set(0.5); spinTxt.x = 90; spinTxt.y = 24;
   spinBtn.addChild(spinTxt);
-  spinBtn.x = W/2-100; spinBtn.y = my + 260;
+  spinBtn.x = W / 2 - 90; spinBtn.y = btnY;
   spinBtn.interactive = true; spinBtn.cursor = 'pointer';
   spinBtn.on('pointerdown', spin);
   app.stage.addChild(spinBtn);
 
   // Bet controls
-  const betTxt = new PIXI.Text('BET: 100', { fontSize: 12, fill: 0xd4af37, fontFamily: 'monospace' });
-  betTxt.x = W/2-100; betTxt.y = my + 320; app.stage.addChild(betTxt);
+  const betDownBtn = new PIXI.Graphics();
+  betDownBtn.beginFill(0x333333).drawRoundedRect(0,0,40,48,4).endFill();
+  const bdTxt = new PIXI.Text('-', {fontSize:24,fill:0xffffff,fontFamily:'monospace'});
+  bdTxt.anchor.set(0.5); bdTxt.x=20; bdTxt.y=24; betDownBtn.addChild(bdTxt);
+  betDownBtn.x = W/2 - 160; betDownBtn.y = btnY;
+  betDownBtn.interactive = true; betDownBtn.cursor = 'pointer';
+  betDownBtn.on('pointerdown', () => { if(!spinning) { bet = Math.max(10, bet - 10); updateHUD(); }});
+  app.stage.addChild(betDownBtn);
 
+  const betUpBtn = new PIXI.Graphics();
+  betUpBtn.beginFill(0x333333).drawRoundedRect(0,0,40,48,4).endFill();
+  const buTxt = new PIXI.Text('+', {fontSize:24,fill:0xffffff,fontFamily:'monospace'});
+  buTxt.anchor.set(0.5); buTxt.x=20; buTxt.y=24; betUpBtn.addChild(buTxt);
+  betUpBtn.x = W/2 + 120; betUpBtn.y = btnY;
+  betUpBtn.interactive = true; betUpBtn.cursor = 'pointer';
+  betUpBtn.on('pointerdown', () => { if(!spinning) { bet = Math.min(1000, bet + 10); updateHUD(); }});
+  app.stage.addChild(betUpBtn);
+
+  // Win display
+  const winText = new PIXI.Text('', { fontSize: 28, fill: 0xd4af37, fontFamily: 'monospace', fontWeight: 'bold' });
+  winText.anchor.set(0.5); winText.x = W/2; winText.y = machineY + REEL_H + 80;
+  app.stage.addChild(winText);
+
+  // HUD
+  const hudEl = document.createElement('div');
+  hudEl.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);color:#d4af37;font:12px monospace;text-transform:uppercase;letter-spacing:3px;z-index:100;text-align:center;background:rgba(0,0,0,0.8);padding:8px 24px;border:1px solid #d4af3740';
+  document.body.appendChild(hudEl);
+
+  function updateHUD() {
+    hudEl.textContent = `CREDITS: ${credits.toLocaleString()} | BET: ${bet} | SPINS: ${totalSpins} | WON: ${totalWins.toLocaleString()}`;
+    document.getElementById('score').textContent = credits.toLocaleString();
+  }
+  updateHUD();
+
+  // ─── Game Loop ───
   app.ticker.add(() => {
-    for (let r = 0; r < 3; r++) {
-      if (reelSpeeds[r] > 0) {
-        reelContainers[r].children.forEach(txt => {
-          txt.y += reelSpeeds[r];
-          if (txt.y > 15 * 70) txt.y -= 15 * 70;
-        });
-        if (reelTargets[r] !== null) {
-          reelSpeeds[r] *= 0.95;
-          if (reelSpeeds[r] < 0.5) {
-            reelSpeeds[r] = 0;
-            // Snap to result
-            reelContainers[r].children.forEach((txt, i) => { txt.y = i * 70 + 35; });
-            if (r === 2 && reelSpeeds.every(s => s === 0)) {
-              // Check win
-              const combo = resultSymbols.map(i => symbols[i]).join('');
-              const allSame = resultSymbols[0] === resultSymbols[1] && resultSymbols[1] === resultSymbols[2];
-              if (allSame) {
-                const mult = resultSymbols[0] === 0 ? 50 : resultSymbols[0] === 6 ? 25 : 10;
-                credits += bet * mult;
-                document.getElementById('score').textContent = credits;
-              }
-              spinning = false;
-            }
-          }
+    let allStopped = true;
+
+    reelData.forEach((rd, r) => {
+      if (rd.stopped) return;
+      allStopped = false;
+
+      // Move symbols down
+      rd.offset += rd.speed;
+      const totalH = rd.stripLen * SYM_H;
+
+      rd.symbols.forEach(txt => {
+        let newY = (txt.symIdx * SYM_H + SYM_H / 2 + rd.offset) % totalH;
+        if (newY < 0) newY += totalH;
+        txt.y = newY - SYM_H; // offset so center row aligns
+      });
+
+      // Decelerate once target is set
+      if (rd.targetIdx !== null) {
+        rd.speed *= 0.96;
+
+        if (rd.speed < 1.5) {
+          // Snap: position so that targetIdx symbol lands on center row
+          rd.stopped = true;
+          rd.speed = 0;
+
+          // Calculate the offset that puts targetIdx in the center visible slot
+          const centerY = REEL_H / 2;
+          const targetSymY = rd.targetIdx * SYM_H + SYM_H / 2;
+          const snapOffset = centerY - targetSymY;
+
+          rd.symbols.forEach(txt => {
+            let y = txt.symIdx * SYM_H + SYM_H / 2 + snapOffset;
+            // Wrap into visible range
+            const totalH = rd.stripLen * SYM_H;
+            while (y < -SYM_H) y += totalH;
+            while (y > totalH) y -= totalH;
+            txt.y = y;
+          });
         }
       }
+    });
+
+    // All reels stopped — check win
+    if (!allStopped && reelData.every(rd => rd.stopped) && spinning) {
+      spinning = false;
+      const r0 = reelData[0].finalResult;
+      const r1 = reelData[1].finalResult;
+      const r2 = reelData[2].finalResult;
+      const win = calcPayout(r0, r1, r2);
+
+      if (win > 0) {
+        credits += win;
+        totalWins += win;
+        winText.text = `WIN: ${win.toLocaleString()}`;
+        winText.style.fill = win >= bet * 10 ? 0xff0000 : 0xd4af37;
+        // Flash payline
+        payline.alpha = 1;
+        let flash = 0;
+        const flashInterval = setInterval(() => { payline.alpha = payline.alpha > 0.5 ? 0.2 : 1; flash++; if(flash>10){clearInterval(flashInterval);payline.alpha=0.6;}}, 150);
+      } else {
+        winText.text = '';
+      }
+      updateHUD();
     }
   });
 
-  // Keyboard spin
-  document.addEventListener('keydown', e => { if(e.code === 'Space') spin(); });
-  console.log('[SLA113] Slot Machine initialized');
+  document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); spin(); } });
+  console.log('[SLA113] Slot Machine initialized — Weighted RNG, real paytable');
 })();
 """
 

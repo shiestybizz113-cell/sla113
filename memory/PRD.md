@@ -31,6 +31,9 @@ SLA113 is the **sovereign root OS** for AI-powered game creation. All universes 
 - [x] Admin Control Vault — ArtTech Nexus Generator + Matrix Parameters + OS Module Map
 - [x] Component extraction refactor (AudioForgePanel, VaultAdminPanels)
 
+- [x] Game Template Library — genre-specific PixiJS starters (fish shooting, slot machine, FPS, platformer, RPG, racing)
+- [x] Slot Machine — Real weighted RNG, 9 symbols, paytable, bet controls, payline animation
+
 ## Architecture
 ```
 /app
