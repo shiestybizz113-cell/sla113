@@ -20,7 +20,7 @@ SLA113 is the **sovereign root OS** for AI-powered game creation. All universes 
 - [x] Night Queue (asyncio background worker + dependencies)
 - [x] Build Pipeline — Real HTML5/PixiJS compilation + downloadable ZIP bundles
 - [x] Real Compliance Engine + Auto-Certify
-- [x] Deploy Engine — Real static file hosting with playable live game preview URLs + inline iframe preview
+- [x] Deploy Engine — Real static file hosting with live playable game preview (iframe in dashboard)
 - [x] Sprite Cutter + Animation Preview
 - [x] Boss Bestiary
 - [x] Universe Registry (auto-discovery, interactive cards)
@@ -29,33 +29,38 @@ SLA113 is the **sovereign root OS** for AI-powered game creation. All universes 
 - [x] Standalone project export (sla113_standalone.zip)
 - [x] Audio Forge Engine — AI-enhanced DSP + Web Audio API synthesis (play/preview + WAV export)
 - [x] Admin Control Vault — ArtTech Nexus Generator + Matrix Parameters + OS Module Map
-- [x] Component extraction refactor (AudioForgePanel, VaultAdminPanels)
-
-- [x] Game Template Library — genre-specific PixiJS starters (fish shooting, slot machine, FPS, platformer, RPG, racing)
-- [x] Slot Machine — Real weighted RNG, 9 symbols, paytable, bet controls, payline animation
+- [x] Game Template Library — Genre-specific PixiJS starters (fish, slots, FPS, platformer, RPG, racing)
+- [x] **5-Reel Video Slots** — Wilds, Scatters, Free Spins with multiplier, 9 paylines, expanding wilds
+- [x] **Custom Slot Symbol Sets** — Create themed reel symbols (e.g., Southern Lifestyle: LOWRIDER/SKULL/ROSE/CROSS)
+- [x] **Multiplayer Fish Shooting Lobby** — WebSocket rooms, real-time shared fish, scoreboard, chat, ammo system
+- [x] Component extraction (AudioForgePanel, VaultAdminPanels, FishMultiplayerPanel, SlotSymbolsPanel)
 
 ## Architecture
 ```
 /app
 ├── backend/
-│   ├── routers/sla113.py         # SLA113 router (~2000 lines)
+│   ├── routers/sla113.py           # SLA113 router (~2200 lines)
 │   ├── sla113/
-│   │   ├── models.py             # Pydantic models + game taxonomy
-│   │   ├── vision_engine.py      # Gemini 3 Pro image gen
-│   │   ├── logic_engine.py       # Game math/RTP generation
-│   │   ├── composer_engine.py    # Bundle composition
-│   │   └── audio_forge.py        # Audio asset generation with AI DSP
-│   ├── static/deploys/           # Live deployed game files
-│   └── server.py                 # FastAPI + WebSocket mounts
+│   │   ├── models.py               # Pydantic models + game taxonomy
+│   │   ├── vision_engine.py        # Gemini 3 Pro image gen
+│   │   ├── logic_engine.py         # Game math/RTP generation
+│   │   ├── composer_engine.py      # Bundle composition
+│   │   ├── audio_forge.py          # Audio asset generation with AI DSP
+│   │   ├── game_templates.py       # Genre-specific PixiJS game code generators
+│   │   └── fish_multiplayer.py     # WebSocket multiplayer fish shooting server
+│   ├── static/deploys/             # Live deployed game files
+│   └── server.py                   # FastAPI + WebSocket mounts
 ├── frontend/src/sla113/
-│   ├── SLA113Page.jsx            # Main dashboard (~2100 lines, down from 2450)
+│   ├── SLA113Page.jsx              # Main dashboard (~2180 lines)
 │   ├── panels/
-│   │   ├── AudioForgePanel.jsx   # Extracted Audio Forge (219 lines)
-│   │   └── VaultAdminPanels.jsx  # ArtTech Nexus + Matrix Params (112 lines)
-│   ├── audioSynth.js             # Web Audio API synthesis engine
-│   ├── FrontlinePanel.jsx        # WebSocket real-time panel
-│   ├── SpriteCutter.jsx          # Sprite sheet cutter
-│   └── DependencyGraph.jsx       # Job dependency visualization
+│   │   ├── AudioForgePanel.jsx     # Audio Forge with Web Audio synthesis
+│   │   ├── VaultAdminPanels.jsx    # ArtTech Nexus + Matrix Params
+│   │   ├── FishMultiplayerPanel.jsx # Multiplayer Fish Arena UI
+│   │   └── SlotSymbolsPanel.jsx    # Custom Reel Symbol Creator
+│   ├── audioSynth.js               # Web Audio API synthesis engine
+│   ├── FrontlinePanel.jsx          # WebSocket real-time panel
+│   ├── SpriteCutter.jsx            # Sprite sheet cutter
+│   └── DependencyGraph.jsx         # Job dependency visualization
 ```
 
 ## Key Integrations
@@ -64,6 +69,7 @@ SLA113 is the **sovereign root OS** for AI-powered game creation. All universes 
 - **Vertex AI** — User VERTEX_AI_KEY stored (Audio Forge credential ready)
 
 ## Backlog
-- [ ] Continue refactoring SLA113Page.jsx — extract Foundry (OS Builder, Vision Smith) and Empire panels (P3)
+- [ ] Continue extracting Foundry (OS Builder, Vision Smith) + Empire (Mint Ledger, Revenue, Bestiary) panels (P3)
+- [ ] Wire custom symbols into 5-reel build pipeline (pass symbol set ID to compile) (P2)
+- [ ] Tournament system across tenants (P3)
 - [ ] APK compilation path in Build Pipeline (P3)
-- [ ] Vertex AI actual audio waveform generation when SDK supports it (P3)
