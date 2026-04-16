@@ -1,15 +1,23 @@
 # ============================================
-# HYBRID INTELLIGENCE CORE
+# EMPIRE1 ECOSYSTEM — SLA113 OPERATOR OS
 # Pre-Launch Checklist
 # ============================================
 
 ## Before You Start
 
-### Domain & DNS
-- [ ] Domain registered and accessible
-- [ ] A record pointing to VPS IP
-- [ ] www subdomain configured
+### Domain & DNS (Tee Architecture)
+- [ ] `sla113.southernlifestyle.org` A record pointing to VPS IP
 - [ ] DNS propagation complete (check: https://dnschecker.org)
+
+Full ecosystem domains (deploy separately as needed):
+| Domain | Universe | Role |
+|--------|----------|------|
+| `empire1.cloud` | E1 | Creator SaaS Dashboard |
+| `southernlifestyle.org` | SL | Brand Root / Identity |
+| `lyrica3.com` | L3 | Music Universe (Lyrica 3 Pro) |
+| `sluniversal.lyrica3.com` | UL | Universe Portal / Meta-Router |
+| `sla113.southernlifestyle.org` | SLA113 | Admin Console / Operator OS |
+| `arcade.southernlifestyle.org` | AR | Game Universe / Player Portal |
 
 ### Server Access
 - [ ] VPS provisioned (IONOS or other)
@@ -88,8 +96,9 @@
 ## Post-Deployment Verification
 
 ### API Health
-- [ ] `curl https://yourdomain.com/api/system/health` returns OK
-- [ ] `curl https://yourdomain.com/api/system/status` shows services
+- [ ] `curl https://sla113.southernlifestyle.org/api/system/health` returns OK
+- [ ] `curl https://sla113.southernlifestyle.org/api/system/status` shows services
+- [ ] `curl https://sla113.southernlifestyle.org/api/sla113/universes` shows 6 universes
 
 ### Authentication
 - [ ] Signup works

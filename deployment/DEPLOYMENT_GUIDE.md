@@ -1,5 +1,5 @@
 # ============================================
-# HYBRID INTELLIGENCE CORE
+# EMPIRE1 ECOSYSTEM — SLA113 OPERATOR OS
 # Production Deployment Guide
 # ============================================
 
@@ -26,9 +26,18 @@
 - **Storage**: 20GB SSD minimum
 - **Provider**: IONOS, DigitalOcean, AWS, etc.
 
-### Domain
-- A registered domain name (e.g., yourdomain.com)
-- Access to DNS management
+### Domain (Tee Architecture)
+This repo deploys the **SLA113 Operator OS** at `sla113.southernlifestyle.org`.
+
+Full ecosystem domain map:
+| Domain | Universe | Role |
+|--------|----------|------|
+| `empire1.cloud` | E1 | Creator SaaS Dashboard |
+| `southernlifestyle.org` | SL | Brand Root / Identity |
+| `lyrica3.com` | L3 | Music Universe (Lyrica 3 Pro) |
+| `sluniversal.lyrica3.com` | UL | Universe Portal / Meta-Router |
+| `sla113.southernlifestyle.org` | SLA113 | Admin Console / Operator OS |
+| `arcade.southernlifestyle.org` | AR | Game Universe / Player Portal |
 
 ### Accounts Needed
 - [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (free tier available)
@@ -110,7 +119,7 @@ mongodb+srv://hybrid_app:PASSWORD@cluster0.xxxxx.mongodb.net/hybrid_intelligence
    - `STRIPE_SECRET_KEY`: sk_live_...
    - `STRIPE_PUBLISHABLE_KEY`: pk_live_...
 4. Set up webhook:
-   - URL: `https://yourdomain.com/api/billing/webhook`
+   - URL: `https://sla113.southernlifestyle.org/api/billing/webhook`
    - Events: `checkout.session.completed`, `customer.subscription.*`
    - Copy `STRIPE_WEBHOOK_SECRET`
 5. Create Products/Prices:
@@ -129,7 +138,7 @@ mongodb+srv://hybrid_app:PASSWORD@cluster0.xxxxx.mongodb.net/hybrid_intelligence
 3. Go to **APIs & Services** → **Credentials**
 4. Create **OAuth 2.0 Client ID**
    - Type: Web application
-   - Authorized redirect URIs: `https://yourdomain.com/api/auth/oauth/google/callback`
+   - Authorized redirect URIs: `https://sla113.southernlifestyle.org/api/auth/oauth/google/callback`
 5. Copy:
    - `GOOGLE_CLIENT_ID`
    - `GOOGLE_CLIENT_SECRET`
@@ -137,8 +146,8 @@ mongodb+srv://hybrid_app:PASSWORD@cluster0.xxxxx.mongodb.net/hybrid_intelligence
 ### GitHub OAuth
 1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
 2. Create **New OAuth App**
-   - Homepage URL: `https://yourdomain.com`
-   - Callback URL: `https://yourdomain.com/api/auth/oauth/github/callback`
+   - Homepage URL: `https://sla113.southernlifestyle.org`
+   - Callback URL: `https://sla113.southernlifestyle.org/api/auth/oauth/github/callback`
 3. Copy:
    - `GITHUB_CLIENT_ID`
    - `GITHUB_CLIENT_SECRET`
@@ -169,13 +178,13 @@ sudo cp deployment/.env.frontend.template frontend/.env
 sudo nano frontend/.env
 ```
 
-Update `REACT_APP_BACKEND_URL` to your domain.
+Update `REACT_APP_BACKEND_URL` to `https://sla113.southernlifestyle.org`.
 
 ### 3. Update Domain in Deployment Scripts
 ```bash
 # Edit deploy.sh and change DOMAIN variable
 sudo nano deployment/deploy.sh
-# Change: DOMAIN="yourdomain.com" to your actual domain
+# Domain is already set to sla113.southernlifestyle.org
 ```
 
 ### 4. Run Deployment
@@ -189,13 +198,13 @@ sudo bash deployment/deploy.sh
 
 ### 1. Ensure DNS is pointing to your server
 ```bash
-dig +short yourdomain.com
+dig +short sla113.southernlifestyle.org
 # Should return your server IP
 ```
 
 ### 2. Run Certbot
 ```bash
-sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+sudo certbot --nginx -d sla113.southernlifestyle.org
 ```
 
 ### 3. Verify Auto-Renewal
@@ -228,12 +237,12 @@ sudo systemctl status nginx
 
 ### 2. Test API Health
 ```bash
-curl https://yourdomain.com/api/system/health
+curl https://sla113.southernlifestyle.org/api/system/health
 # Expected: {"status":"healthy","version":"2.1.0",...}
 ```
 
 ### 3. Test Frontend
-Open `https://yourdomain.com` in browser
+Open `https://sla113.southernlifestyle.org` in browser
 
 ### 4. Test Authentication
 1. Go to signup page

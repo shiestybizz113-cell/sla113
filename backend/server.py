@@ -187,15 +187,23 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# ─── Universe Status Stubs (for SLA113 Registry health checks) ───
+# ─── Universe Status Stubs (Tee Architecture health checks) ───
 @app.get("/api/empire1/status")
 async def empire1_status():
-    return {"universe": "empire1", "status": "online", "description": "Hybrid Intelligence Core — 19 AI Engines", "product": "Hybrid Intelligence SaaS"}
+    return {"universe": "empire1", "status": "online", "domain": "empire1.cloud", "description": "Creator SaaS Dashboard — Onboarding, Universe Selection, Account Management, Billing, Studio Tools", "product": "Hybrid Intelligence SaaS"}
 
 @app.get("/api/southern/status")
 async def southern_status():
-    return {"universe": "southern", "status": "online", "description": "SouthernLifestyle Game OS", "product": "Southern Game OS"}
+    return {"universe": "southern", "status": "online", "domain": "southernlifestyle.org", "description": "Brand Root & Identity — Corporate Identity, Compliance, Admin Identity, Brand Gateway", "product": "SouthernLifestyle Universe"}
 
-@app.get("/api/soulfire/status")
-async def soulfire_status():
-    return {"universe": "soulfire", "status": "online", "description": "Soulfire Ecosystem Blueprint (ASW, El Coro, Sentinel, SL Universal)", "product": "Lyrica 3 Pro — AI Music Creation", "engine": "Vertex AI"}
+@app.get("/api/lyrica3/status")
+async def lyrica3_status():
+    return {"universe": "lyrica3", "status": "online", "domain": "lyrica3.com", "description": "Music Universe — AI Music Creation, Duet Engine, Emotional Grammar, Vocal Logic", "product": "Lyrica 3 Pro — AI Music Creation", "engine": "Vertex AI"}
+
+@app.get("/api/universal/status")
+async def universal_status():
+    return {"universe": "universal", "status": "online", "domain": "sluniversal.lyrica3.com", "description": "Universe Portal — Cross-universe Identity, Multi-universe Routing", "product": "Universal Layer — Meta-Router"}
+
+@app.get("/api/arcade/status")
+async def arcade_status():
+    return {"universe": "arcade", "status": "online", "domain": "arcade.southernlifestyle.org", "description": "Player-facing Game Portal — Game Previews, Fish Shooter + Slots, Frontline UI", "product": "Arcade Universe — Interactive Game Layer"}

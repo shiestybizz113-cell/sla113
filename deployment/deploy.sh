@@ -23,7 +23,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 APP_DIR="/var/www/hybrid-intelligence"
-DOMAIN="yourdomain.com"  # CHANGE THIS
+DOMAIN="sla113.southernlifestyle.org"
 
 echo -e "${GREEN}============================================${NC}"
 echo -e "${GREEN}Hybrid Intelligence Core - Deployment${NC}"
