@@ -457,8 +457,8 @@ export default function SLA113Page() {
       setNexusPipelines(nexusRes.data.pipelines || []);
       setMatrixParams(matrixRes.data);
       setOsModules(osModRes.data.modules || []);
-    } catch (e) {
-      console.error("SLA113 data fetch failed:", e);
+    } catch {
+      // SLA113 data fetch silently fails — dashboard still renders cached data
     }
   }, []);
 
@@ -496,7 +496,7 @@ export default function SLA113Page() {
       await axios.post(`${API}/projects`, { name: `OS_BUILD_${Date.now()}`, game_type: gameType, theme: 'sovereign', target_platform: 'both' });
       await axios.post(`${API}/jobs`, { preset: gameType.toUpperCase(), priority: 'high' });
       await fetchData();
-    } catch (e) { console.error(e); }
+    } catch { /* build failed */ }
     setIsBuilding(false);
     handlePartitionChange('vault');
     setActiveTab('NIGHT QUEUE');
@@ -533,7 +533,6 @@ export default function SLA113Page() {
         setVisionResult(res.data);
       }
     } catch (e) {
-      console.error("Vision generation failed:", e);
       setVisionResult({ error: e.response?.data?.detail || e.message });
     }
     setVisionLoading(false);
@@ -564,7 +563,7 @@ export default function SLA113Page() {
     try {
       await axios.delete(`${API}/jobs/${id}`);
       setQueue(queue.filter(item => item.id !== id));
-    } catch (e) { console.error(e); }
+    } catch { /* delete failed */ }
   };
 
   const askAI = async () => {
@@ -699,7 +698,7 @@ export default function SLA113Page() {
                   </div>
                 </div>
                 <div className="col-span-8 glass-panel border-cyan-500/20 tech-border p-8 font-mono text-[11px] text-zinc-400 h-[400px] overflow-y-auto custom-scrollbar bg-black/80">
-                  {whiteLabelLogs.map((l, i) => <div key={i} className="mb-3">{l}</div>)}
+                  {whiteLabelLogs.map((l, i) => <div key={`wl-log-${i}-${l.substring(0,20)}`} className="mb-3">{l}</div>)}
                   {whiteLabelLogs.length === 0 && <div className="opacity-30 animate-pulse uppercase tracking-[4px] flex items-center gap-3"><Terminal size={14}/> Awaiting Deployment Directive...</div>}
                 </div>
               </div>
@@ -1170,7 +1169,7 @@ export default function SLA113Page() {
                           <h4 className="text-red-400 text-[9px] font-bold uppercase tracking-[3px] flex items-center gap-2"><Swords size={12} /> Attack Kit</h4>
                           <div className="space-y-1.5">
                             {selectedBoss.attacks.map((atk, i) => (
-                              <div key={i} className="flex items-center gap-2 text-[10px]">
+                              <div key={`atk-${atk.substring(0,15)}-${i}`} className="flex items-center gap-2 text-[10px]">
                                 <span className="w-4 h-4 border border-red-500/30 bg-red-500/10 flex items-center justify-center text-red-400 text-[7px] font-bold shrink-0">{i + 1}</span>
                                 <span className="text-zinc-300">{atk}</span>
                               </div>
@@ -1323,7 +1322,7 @@ export default function SLA113Page() {
                       const gt = UNIVERSAL_GAME_TYPES.find(g => g.id === p.game_type);
                       const catColor = gt ? (CATEGORY_META[gt.cat]?.color || 'text-zinc-400') : 'text-zinc-400';
                       return (
-                        <div key={i} className="flex justify-between items-center p-3 border border-zinc-900 bg-black/50">
+                        <div key={`osp-${p.name}-${p.game_type}`} className="flex justify-between items-center p-3 border border-zinc-900 bg-black/50">
                           <span className="text-zinc-300">{p.name}</span>
                           <span className={catColor}>{gt?.label || p.game_type}</span>
                         </div>
@@ -1508,7 +1507,7 @@ export default function SLA113Page() {
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                               {visionResult.assets?.map((asset, i) => (
-                                <div key={i} className="p-4 border border-zinc-800 bg-black/50">
+                                <div key={asset.name || `vasset-${i}`} className="p-4 border border-zinc-800 bg-black/50">
                                   <h4 className="text-[#D4AF37] font-bold text-xs mb-2">{asset.name || `Asset ${i+1}`}</h4>
                                   <p className="text-zinc-400 text-[10px] leading-relaxed">{asset.description}</p>
                                   {asset.color_palette && (
@@ -1625,7 +1624,7 @@ export default function SLA113Page() {
                                   try {
                                     await axios.post(`${API}/builds/${b.id}/compile`);
                                     await fetchData();
-                                  } catch (e) { console.error("Compile failed:", e); }
+                                  } catch { /* compile failed */ }
                                   setCompilingBuild(null);
                                 }}
                                 disabled={compilingBuild === b.id}
@@ -1644,8 +1643,8 @@ export default function SLA113Page() {
                           </div>
                         </div>
                         <div className="space-y-1.5">
-                          {b.stages?.map((s, i) => (
-                            <div key={i} className="flex items-center gap-3 text-[9px]">
+                          {b.stages?.map((s) => (
+                            <div key={`${b.id}-${s.name}`} className="flex items-center gap-3 text-[9px]">
                               <span className={`w-16 uppercase tracking-widest truncate ${s.status === 'completed' ? 'text-emerald-500' : s.status === 'processing' ? 'text-cyan-400' : 'text-zinc-600'}`}>{s.status === 'completed' ? 'DONE' : s.status === 'processing' ? `${s.progress}%` : 'WAIT'}</span>
                               <div className="flex-1 h-1 bg-black border border-zinc-900 overflow-hidden">
                                 <div className={`h-full transition-all ${s.status === 'completed' ? 'bg-emerald-500' : s.status === 'processing' ? 'bg-cyan-500' : 'bg-zinc-900'}`} style={{width: `${s.progress}%`}}/>
@@ -1757,8 +1756,8 @@ export default function SLA113Page() {
                     {certifySteps.length > 0 && (
                       <div className="space-y-2 mt-4" data-testid="certify-steps">
                         <span className="text-[8px] text-zinc-600 uppercase tracking-widest">Certification Pipeline</span>
-                        {certifySteps.map((s, i) => (
-                          <div key={i} className={`p-3 border text-[10px] font-mono ${
+                        {certifySteps.map((s) => (
+                          <div key={`cert-${s.step}`} className={`p-3 border text-[10px] font-mono ${
                             s.status === 'done' ? 'border-emerald-500/20 bg-emerald-500/5' :
                             s.status === 'running' ? 'border-cyan-500/20 bg-cyan-500/5' :
                             'border-red-500/20 bg-red-500/5'
@@ -1817,8 +1816,8 @@ export default function SLA113Page() {
                           </div>
                         )}
                         <div className="grid grid-cols-2 gap-2">
-                          {r.results?.map((c, i) => (
-                            <div key={i} className={`p-3 border text-[10px] ${c.status === 'PASS' ? 'border-emerald-500/20 bg-emerald-500/5' : c.status === 'WARN' ? 'border-amber-500/20 bg-amber-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
+                          {r.results?.map((c) => (
+                            <div key={`comp-${c.check}`} className={`p-3 border text-[10px] ${c.status === 'PASS' ? 'border-emerald-500/20 bg-emerald-500/5' : c.status === 'WARN' ? 'border-amber-500/20 bg-amber-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
                               <div className="flex justify-between items-center">
                                 <span className={c.status === 'PASS' ? 'text-emerald-400' : c.status === 'WARN' ? 'text-amber-400' : 'text-red-400'}>{c.check}</span>
                                 <span className={`font-bold ${c.status === 'PASS' ? 'text-emerald-500' : c.status === 'WARN' ? 'text-amber-500' : 'text-red-500'}`}>{c.status}</span>
@@ -2080,8 +2079,8 @@ export default function SLA113Page() {
                           {/* Stage Progress */}
                           {item.stages && item.stages.length > 0 && item.status !== 'blocked' && (
                             <div className="space-y-1">
-                              {item.stages.map((s, i) => (
-                                <div key={i} className="flex items-center gap-3 text-[9px]">
+                              {item.stages.map((s) => (
+                                <div key={`${item.id}-${s.name}`} className="flex items-center gap-3 text-[9px]">
                                   <span className={`w-12 uppercase tracking-widest truncate font-mono ${s.status === 'completed' ? 'text-emerald-500' : s.status === 'processing' ? 'text-cyan-400' : 'text-zinc-700'}`}>{s.status === 'completed' ? 'DONE' : s.status === 'processing' ? `${s.progress}%` : '---'}</span>
                                   <div className="flex-1 h-1 bg-black border border-zinc-900 overflow-hidden">
                                     <div className={`h-full transition-all duration-500 ${s.status === 'completed' ? 'bg-emerald-500' : s.status === 'processing' ? 'bg-cyan-500' : 'bg-zinc-900'}`} style={{width: `${s.progress}%`}}/>

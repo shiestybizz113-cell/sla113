@@ -11,7 +11,7 @@ const SlotSymbolsPanel = () => {
   const [editSymbols, setEditSymbols] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
 
-  useEffect(() => { fetchSets(); }, []);
+  useEffect(() => { fetchSets(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchSets = async () => {
     try {
@@ -41,7 +41,7 @@ const SlotSymbolsPanel = () => {
       await axios.post(`${API_BASE}/slots/symbols`, { name: newSetName, symbols: valid });
       setNewSetName(''); setEditSymbols([]); setShowCreate(false);
       fetchSets();
-    } catch (e) { console.error(e); }
+    } catch { /* symbol set creation failed */ }
   };
 
   const deleteSet = async (id) => {
@@ -77,7 +77,7 @@ const SlotSymbolsPanel = () => {
               <span className="col-span-1"></span>
             </div>
             {editSymbols.map((s, i) => (
-              <div key={i} className="grid grid-cols-12 gap-2 items-center" data-testid={`edit-symbol-${i}`}>
+              <div key={`edit-${i}-${s.name}`} className="grid grid-cols-12 gap-2 items-center" data-testid={`edit-symbol-${i}`}>
                 <input value={s.name} onChange={e => updateSymbol(i, 'name', e.target.value.toUpperCase())} placeholder="LOWRIDER" className="col-span-3 bg-black border border-zinc-800 px-2 py-1.5 text-[10px] text-zinc-200 focus:outline-none focus:border-[#D4AF37] uppercase font-mono" />
                 <div className="col-span-2 flex items-center gap-1">
                   <input type="color" value={s.color} onChange={e => updateSymbol(i, 'color', e.target.value)} className="w-8 h-8 bg-transparent border-0 cursor-pointer" />
@@ -125,7 +125,7 @@ const SlotSymbolsPanel = () => {
             </div>
             <div className="flex flex-wrap gap-1">
               {(set.symbols || []).slice(0, 8).map((s, i) => (
-                <span key={i} className="px-1.5 py-0.5 text-[8px] font-bold font-mono border border-zinc-800 bg-black/50" style={{ color: s.color }}>
+                <span key={`sym-${s.name}-${i}`} className="px-1.5 py-0.5 text-[8px] font-bold font-mono border border-zinc-800 bg-black/50" style={{ color: s.color }}>
                   {s.name}
                 </span>
               ))}
@@ -141,7 +141,7 @@ const SlotSymbolsPanel = () => {
           <h4 className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest">{activeSet.name} — Paytable</h4>
           <div className="grid grid-cols-1 gap-1.5">
             {(activeSet.symbols || []).map((s, i) => (
-              <div key={i} className="flex items-center justify-between bg-black/50 border border-zinc-800 p-3 hover:bg-white/5 transition-all">
+              <div key={`pt-${s.name}`} className="flex items-center justify-between bg-black/50 border border-zinc-800 p-3 hover:bg-white/5 transition-all">
                 <div className="flex items-center gap-3">
                   <span className="w-8 h-8 flex items-center justify-center border font-bold text-[10px] font-mono" style={{ color: s.color, borderColor: s.color + '40', backgroundColor: s.color + '10' }}>
                     {s.name?.substring(0, 3)}

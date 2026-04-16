@@ -111,8 +111,10 @@ class Lobby:
         return c
 
     async def add_player(self, ws: WebSocket, name: str) -> Player:
+        import html
+        safe_name = html.escape(name[:20].strip()) or f"Player_{self._color_idx}"
         color = self.next_color()
-        player = Player(ws, name, color)
+        player = Player(ws, safe_name, color)
         self.players[player.id] = player
         # Notify all
         await self.broadcast({
@@ -186,7 +188,12 @@ class Lobby:
         player = self.players.get(player_id)
         if not player:
             return
-        msg = {"player": player.name, "color": player.color, "text": message[:200], "time": datetime.now(timezone.utc).isoformat()}
+        # Sanitize message — strip HTML/script tags
+        import html
+        clean_msg = html.escape(message[:200].strip())
+        if not clean_msg:
+            return
+        msg = {"player": player.name, "color": player.color, "text": clean_msg, "time": datetime.now(timezone.utc).isoformat()}
         self.chat.append(msg)
         if len(self.chat) > 50:
             self.chat = self.chat[-50:]

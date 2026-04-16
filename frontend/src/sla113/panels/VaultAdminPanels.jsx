@@ -34,7 +34,7 @@ export const ArtTechNexusPanel = ({ nexusPipelines, osModules }) => (
           </thead>
           <tbody className="text-[10px] font-mono">
             {osModules.map((m, i) => (
-              <tr key={i} className="border-b border-zinc-900/50 hover:bg-white/5 transition-all">
+              <tr key={m.os_module} className="border-b border-zinc-900/50 hover:bg-white/5 transition-all">
                 <td className="p-4 text-red-400 font-bold uppercase tracking-wider">{m.os_module}</td>
                 <td className="p-4 text-zinc-400">{m.fmodel_utility}</td>
                 <td className="p-4 text-zinc-300 text-[9px]">{m.functional_output}</td>
