@@ -30,5 +30,17 @@ This is a multi-product AI platform ("Hybrid Intelligence Core") with:
 - **Frontend build**: `yarn build` (from `frontend/`)
 - **Frontend dev**: `yarn start` (from `frontend/`)
 
+### SLA113 Operator OS (Game Studio Admin)
+
+The SLA113 admin is a full operator dashboard accessible at `/sla113` in the frontend. It runs **outside** the Empire 1 auth wrapper (no login required to view the dashboard).
+
+- **Frontend entry**: `/sla113` → `SLA113App.jsx` → title screen (4s auto-advance) → `SLA113Page.jsx`
+- **Backend router**: All endpoints under `/api/sla113/` in `backend/routers/sla113.py` (single large router)
+- **Engines**: `backend/sla113/` — `vision_engine.py`, `logic_engine.py`, `composer_engine.py`, `audio_forge.py`, `fish_multiplayer.py`
+- **Dashboard partitions**: Factory, Empire 1, Foundry, Vault, Tech — each with multiple tabs (Frontline, White Label Mint, Deploy Center, OS Builder, Vision Smith, Audio Forge, Build Pipeline, Compliance, Night Queue, Terminal, etc.)
+- **Key endpoints**: `/api/sla113/tenants` (CRUD), `/api/sla113/projects` (CRUD), `/api/sla113/builds` (create/compile/download), `/api/sla113/deployments`, `/api/sla113/compliance`, `/api/sla113/fish/lobbies`, `/api/sla113/worker/status`
+- **WebSockets**: `/api/sla113/frontline/ws` (live metrics), `/api/sla113/fish/play/{lobby_id}` (multiplayer fish game)
+- **Standalone variant**: `sla113_standalone/` has its own Docker Compose and split routers — not used when running the main monorepo
+
 ### Optional External API Keys
 AI engine endpoints require `EMERGENT_LLM_KEY`; image generation requires `GEMINI_API_KEY`; billing requires `STRIPE_SECRET_KEY`. These are not needed for basic startup, auth, or structural testing.
