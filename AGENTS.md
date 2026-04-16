@@ -38,7 +38,8 @@ The SLA113 admin is a full operator dashboard accessible at `/sla113` in the fro
 - **Backend router**: All endpoints under `/api/sla113/` in `backend/routers/sla113.py` (single large router)
 - **Engines**: `backend/sla113/` — `vision_engine.py`, `logic_engine.py`, `composer_engine.py`, `audio_forge.py`, `fish_multiplayer.py`
 - **Dashboard partitions**: Factory, Empire 1, Foundry, Vault, Tech — each with multiple tabs (Frontline, White Label Mint, Deploy Center, OS Builder, Vision Smith, Audio Forge, Build Pipeline, Compliance, Night Queue, Terminal, etc.)
-- **Key endpoints**: `/api/sla113/tenants` (CRUD), `/api/sla113/projects` (CRUD), `/api/sla113/builds` (create/compile/download), `/api/sla113/deployments`, `/api/sla113/compliance`, `/api/sla113/fish/lobbies`, `/api/sla113/worker/status`
+- **29 game types** across 5 categories: arcade (10 types incl. fish shooting, battle royale, tactical FPS, COD warfare), casino (8 types incl. slots, video poker, pachinko, sportsbook), RPG (7 types incl. open world, dungeon crawler, cyberpunk, southern barrio), racing (1), hybrid/custom (3). Plus 8 audio middleware types and 4 audio engines.
+- **Key endpoints**: `/api/sla113/tenants` (CRUD), `/api/sla113/projects` (CRUD), `/api/sla113/builds` (create/compile/download), `/api/sla113/deployments`, `/api/sla113/compliance`, `/api/sla113/fish/lobbies`, `/api/sla113/worker/status`, `/api/sla113/game-types` (full catalog)
 - **WebSockets**: `/api/sla113/frontline/ws` (live metrics), `/api/sla113/fish/play/{lobby_id}` (multiplayer fish game)
 - **Standalone variant**: `sla113_standalone/` has its own Docker Compose and split routers — not used when running the main monorepo
 
