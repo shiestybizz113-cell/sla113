@@ -61,5 +61,11 @@ The SLA113 admin is a full operator dashboard accessible at `/sla113` in the fro
 ### Optional External API Keys
 AI engine endpoints require `EMERGENT_LLM_KEY`; image generation requires `GEMINI_API_KEY`; billing requires `STRIPE_SECRET_KEY`. These are not needed for basic startup, auth, or structural testing.
 
-### Production Deployment
-See `deployment/DEPLOYMENT_GUIDE.md` for full instructions. NGINX config and deploy script are pre-configured for `sla113.southernlifestyle.org`. See `deployment/LAUNCH_CHECKLIST.md` for pre-flight verification.
+### Production Deployment (Cloud Run)
+All services deploy to **Google Cloud Run**. See `deployment/DEPLOYMENT_GUIDE.md` for full instructions.
+- **Backend Dockerfile**: `Dockerfile` (repo root) → deploys as `sla113-api`
+- **Frontend Dockerfile**: `frontend/Dockerfile` → deploys as `sla113-frontend`
+- **Deploy script**: `bash deployment/deploy.sh` (builds, pushes, deploys both services)
+- **Domain mapping**: `gcloud run domain-mappings create --service sla113-api --domain sla113.southernlifestyle.org`
+- **DNS**: CNAME `sla113.southernlifestyle.org` → `ghs.googlehosted.com` (SSL auto-provisioned)
+- **Checklist**: `deployment/LAUNCH_CHECKLIST.md`
