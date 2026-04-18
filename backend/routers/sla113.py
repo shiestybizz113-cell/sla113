@@ -1428,6 +1428,35 @@ async def compile_build(build_id: str):
             f.write(html_content)
 
         # Write a genre-specific game.js engine using template library
+        # Auto-inject registered sprites into game config
+        sprite_cursor = sprite_registry_collection().find({}, {"_id": 0})
+        all_sprites = await sprite_cursor.to_list(200)
+        sprite_map = {}
+        for spr in all_sprites:
+            key = spr["name"].lower().replace(" ", "_").replace(",", "")
+            # Proxy external URLs through our backend to bypass CORS
+            sprite_url = spr["sprite_url"]
+            if "customer-assets" in sprite_url or "emergentagent" in sprite_url:
+                sprite_url = f"/api/sla113/sprites/proxy?url={sprite_url}"
+            sprite_map[key] = {
+                "sprite_url": sprite_url,
+                "frame_width": spr["frame_width"],
+                "frame_height": spr["frame_height"],
+                "columns": spr["columns"],
+                "rows": spr["rows"],
+                "total_frames": spr["total_frames"],
+                "animations": spr.get("animations", {}),
+            }
+        game_config["sprites"] = sprite_map
+
+        # Also inject background if available
+        bg_sprites = [s for s in all_sprites if s["entity_type"] == "background"]
+        if bg_sprites:
+            bg_url = bg_sprites[0]["sprite_url"]
+            if "customer-assets" in bg_url or "emergentagent" in bg_url:
+                bg_url = f"/api/sla113/sprites/proxy?url={bg_url}"
+            game_config["background_url"] = bg_url
+
         from sla113.game_templates import get_game_template
         js_content = get_game_template(game_type, game_name, game_config, asset_manifest)
         with open(os.path.join(build_dir, "game.js"), "w") as f:
@@ -2197,6 +2226,25 @@ async def delete_symbol_set(set_id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Symbol set not found")
     return {"deleted": True}
+
+
+# ─── Sprite Asset Proxy (CORS bypass) ───
+@router.get("/sprites/proxy")
+async def proxy_sprite(url: str):
+    """Proxy external sprite images to bypass CORS restrictions."""
+    import httpx
+    from fastapi.responses import Response
+    if not url.startswith("https://"):
+        raise HTTPException(status_code=400, detail="Only HTTPS URLs allowed")
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(url)
+            if resp.status_code != 200:
+                raise HTTPException(status_code=resp.status_code, detail="Upstream error")
+            ct = resp.headers.get("content-type", "image/jpeg")
+            return Response(content=resp.content, media_type=ct, headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=86400"})
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 # ─── Sprite Asset Registry ───

@@ -1,17 +1,276 @@
-"""SLA113 Fish Shooter Engine v2 — Production Visual Layer
-Sprite-based rendering, particle systems, layered ocean, weapon VFX, boss cinematics"""
-
-
-def generate_fish_shooter(game_name, game_config, asset_manifest):
-    import json
-    config_json = json.dumps(game_config, default=str, indent=2)
-    manifest_json = json.dumps(asset_manifest, default=str, indent=2)
-
-    return f"""// SLA113 Fish Shooter Engine v2 — {game_name}
+// SLA113 Fish Shooter Engine v2 — Aztec Depths
 // Production Visual Layer — Sprite-based + Canvas Fallback
-const GAME_CONFIG = {config_json};
-const ASSET_MANIFEST = {manifest_json};
-""" + r"""
+const GAME_CONFIG = {
+  "type": "fish_shooting",
+  "name": "Aztec Depths",
+  "version": "1.0.0",
+  "built_by": "SLA113",
+  "sprites": {
+    "quetzalflare_prismwing": {
+      "sprite_url": "https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/m9d2kcms_spritesheet1%20%282%29.jpg",
+      "frame_width": 200,
+      "frame_height": 200,
+      "columns": 5,
+      "rows": 5,
+      "total_frames": 25,
+      "animations": {
+        "idle": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "attack": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "fire_breath": [
+          8,
+          9,
+          10,
+          11
+        ],
+        "lightning": [
+          12,
+          13
+        ],
+        "wing_spread": [
+          14,
+          15,
+          16,
+          17
+        ],
+        "death": [
+          20,
+          21,
+          22,
+          23,
+          24
+        ]
+      }
+    },
+    "mictlantecuilti_bone_sovereign": {
+      "sprite_url": "https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/aufgqv07_spritesheet1%20%285%29.jpg",
+      "frame_width": 256,
+      "frame_height": 341,
+      "columns": 4,
+      "rows": 3,
+      "total_frames": 12,
+      "animations": {
+        "idle": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "shield": [
+          4
+        ],
+        "attack": [
+          5,
+          6,
+          7
+        ],
+        "fire": [
+          8,
+          9
+        ],
+        "explosion": [
+          10
+        ],
+        "defend": [
+          11
+        ]
+      }
+    },
+    "quetzalcoatl_fireborn": {
+      "sprite_url": "https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/vr76ezmx_spritesheet1%20%284%29.jpg",
+      "frame_width": 256,
+      "frame_height": 256,
+      "columns": 4,
+      "rows": 4,
+      "total_frames": 16,
+      "animations": {
+        "idle": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "fire_breath": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "attack": [
+          8,
+          9,
+          10,
+          11
+        ],
+        "death": [
+          12,
+          13,
+          14,
+          15
+        ]
+      }
+    },
+    "jaguar_warrior": {
+      "sprite_url": "https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/xooi0xfr_boss%20%283%29.jpg",
+      "frame_width": 512,
+      "frame_height": 512,
+      "columns": 1,
+      "rows": 1,
+      "total_frames": 1,
+      "animations": {
+        "idle": [
+          0
+        ]
+      }
+    },
+    "ocelotl_voidmane": {
+      "sprite_url": "https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/ncd8zsod_unnamed%20%284%29.jpg",
+      "frame_width": 270,
+      "frame_height": 340,
+      "columns": 4,
+      "rows": 3,
+      "total_frames": 12,
+      "animations": {
+        "idle": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "attack": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "wing_spread": [
+          8,
+          9,
+          10,
+          11
+        ]
+      }
+    },
+    "aztec_fish_species": {
+      "sprite_url": "https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/cvci6vxx_spritesheet2_fish.jpg",
+      "frame_width": 200,
+      "frame_height": 200,
+      "columns": 5,
+      "rows": 5,
+      "total_frames": 25,
+      "animations": {
+        "tiny_fish": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "small_fish": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "medium_fish": [
+          8,
+          9,
+          10,
+          11
+        ],
+        "jellyfish": [
+          12,
+          13
+        ],
+        "shark": [
+          14,
+          15,
+          16,
+          17
+        ],
+        "pufferfish": [
+          18
+        ],
+        "large_fish": [
+          19,
+          20,
+          21
+        ],
+        "serpent": [
+          22,
+          23
+        ],
+        "treasure": [
+          24
+        ]
+      }
+    },
+    "three_worlds_pyramid": {
+      "sprite_url": "https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/jdc5h7c3_threeworlds%20%281%29.jpg",
+      "frame_width": 341,
+      "frame_height": 1024,
+      "columns": 3,
+      "rows": 1,
+      "total_frames": 3,
+      "animations": {
+        "fire_world": [
+          0
+        ],
+        "teal_world": [
+          1
+        ],
+        "void_world": [
+          2
+        ]
+      }
+    },
+    "aztec_temple_guardians": {
+      "sprite_url": "https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/2u8qf3cj_unnamed%20%283%29.jpg",
+      "frame_width": 256,
+      "frame_height": 256,
+      "columns": 4,
+      "rows": 4,
+      "total_frames": 16,
+      "animations": {
+        "idle": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "power": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "attack": [
+          8,
+          9,
+          10,
+          11
+        ],
+        "summon": [
+          12,
+          13,
+          14,
+          15
+        ]
+      }
+    }
+  },
+  "background_url": "https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/jdc5h7c3_threeworlds%20%281%29.jpg"
+};
+const ASSET_MANIFEST = [];
+
 (async () => {
   const app = new PIXI.Application({ width: window.innerWidth, height: window.innerHeight, backgroundColor: 0x000a14, antialias: true, resolution: window.devicePixelRatio || 1, autoDensity: true });
   document.body.appendChild(app.view);
@@ -26,7 +285,7 @@ const ASSET_MANIFEST = {manifest_json};
   async function loadSprite(name, cfg) {
     try {
       const bt = PIXI.BaseTexture.from(cfg.sprite_url, { crossOrigin: 'anonymous' });
-      await new Promise((res, rej) => { bt.on('loaded', res); bt.on('error', rej); setTimeout(rej, 8000); });
+      await new Promise((res, rej) => { bt.on('loaded', res); bt.on('error', rej); setTimeout(rej, 5000); });
       const frames = [];
       for (let r = 0; r < cfg.rows; r++)
         for (let c = 0; c < cfg.columns; c++) {
@@ -39,24 +298,6 @@ const ASSET_MANIFEST = {manifest_json};
     } catch {}
   }
   await Promise.all(Object.entries(SPRITES).map(([n, c]) => loadSprite(n, c)));
-
-  // Fish tier → spritesheet animation mapping
-  const FISH_SPRITE_MAP = {
-    0: 'tiny_fish', 1: 'tiny_fish',
-    2: 'small_fish', 3: 'small_fish',
-    4: 'medium_fish',
-    5: 'shark', 6: 'shark',
-    7: 'large_fish',
-    8: 'large_fish', 9: 'shark',
-    10: 'serpent', 11: 'serpent',
-  };
-
-  function getFishFrames(tierIdx) {
-    const sheet = loadedTextures['aztec_fish_species'];
-    if (!sheet) return null;
-    const animName = FISH_SPRITE_MAP[tierIdx] || 'medium_fish';
-    return sheet.anims[animName] || null;
-  }
 
   // ═══ CANVAS SYMBOL RENDERER ═══
   function drawFishCanvas(color, size, tier) {
@@ -292,15 +533,9 @@ const ASSET_MANIFEST = {manifest_json};
     const typeIdx = FISH_TYPES.indexOf(type);
     const f = new PIXI.Container();
 
-    // Check for fish spritesheet frames first, then named sprite, then canvas fallback
-    const tierFrames = getFishFrames(typeIdx);
+    // Check for registered sprite first
     const sn = type.name.toLowerCase().replace(/\s+/g, '_');
-    if (tierFrames && tierFrames.length > 0) {
-      const anim = new PIXI.AnimatedSprite(tierFrames);
-      anim.anchor.set(0.5); anim.animationSpeed = 0.08 + type.tier * 0.01; anim.play();
-      anim.scale.set((type.size * 2.8) / 200);
-      f.addChild(anim); f._anim = anim;
-    } else if (loadedTextures[sn]) {
+    if (loadedTextures[sn]) {
       const td = loadedTextures[sn];
       const anim = new PIXI.AnimatedSprite(td.anims.idle || td.frames.slice(0, 4));
       anim.anchor.set(0.5); anim.animationSpeed = 0.1; anim.play();
@@ -571,4 +806,3 @@ const ASSET_MANIFEST = {manifest_json};
     bubbles.forEach(b => { b.x += b.vx + Math.sin(now / 1000 + b.wob) * 0.08; b.y += b.vy; if (b.y < -10) { b.y = H() + 10; b.x = Math.random() * W(); } });
   });
 })();
-"""
