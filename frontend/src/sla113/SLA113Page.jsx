@@ -17,6 +17,7 @@ import AudioForgePanel from './panels/AudioForgePanel';
 import { ArtTechNexusPanel, MatrixParamsPanel } from './panels/VaultAdminPanels';
 import FishMultiplayerPanel from './panels/FishMultiplayerPanel';
 import SlotSymbolsPanel from './panels/SlotSymbolsPanel';
+import SpriteRegistryPanel from './panels/SpriteRegistryPanel';
 import { synthesizeFromAsset, playBuffer, stopSource, bufferToWav, downloadWav } from './audioSynth';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api/sla113`;
@@ -123,6 +124,7 @@ const ALL_NAV_ITEMS = [
   { id: 'OS BUILDER', icon: Layout, partition: 'foundry' },
   { id: 'VISION SMITH', icon: ImageIcon, partition: 'foundry' },
   { id: 'AUDIO FORGE', icon: Music, partition: 'foundry' },
+  { id: 'SPRITE REGISTRY', icon: Layers, partition: 'foundry' },
   { id: 'BUILD PIPELINE', icon: Rocket, partition: 'vault' },
   { id: 'COMPLIANCE', icon: FileCheck, partition: 'vault' },
   { id: 'ARTTECH NEXUS', icon: Grid3X3, partition: 'vault' },
@@ -1546,6 +1548,10 @@ export default function SLA113Page() {
               <AudioForgePanel API={API} audioAssets={audioAssets} setAudioAssets={setAudioAssets} fetchData={fetchData} />
             )}
 
+            {/* FOUNDRY: SPRITE REGISTRY */}
+            {partition === 'foundry' && activeTab === 'SPRITE REGISTRY' && (
+              <SpriteRegistryPanel />
+            )}
 
             {/* VAULT: BUILD PIPELINE */}
             {partition === 'vault' && activeTab === 'BUILD PIPELINE' && (

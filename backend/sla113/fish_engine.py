@@ -24,9 +24,74 @@ const ASSET_MANIFEST = {manifest_json};
   const W = app.screen.width, H = app.screen.height;
 
   // ═══════════════════════════════════════════
+  // SPRITE ASSET LOADER
+  // ═══════════════════════════════════════════
+  const SPRITE_REGISTRY = GAME_CONFIG.sprites || {};
+  const spriteTextures = {}; // { entityName: { frames: [Texture], animations: { idle: [Texture], attack: [...] } } }
+  const spritesLoaded = {};
+
+  async function loadSpriteSheet(name, config) {
+    if (spritesLoaded[name]) return;
+    try {
+      const baseTexture = await PIXI.BaseTexture.from(config.sprite_url, { crossOrigin: 'anonymous' });
+      const frames = [];
+      for (let row = 0; row < config.rows; row++) {
+        for (let col = 0; col < config.columns; col++) {
+          if (frames.length >= config.total_frames) break;
+          const rect = new PIXI.Rectangle(col * config.frame_width, row * config.frame_height, config.frame_width, config.frame_height);
+          frames.push(new PIXI.Texture(baseTexture, rect));
+        }
+      }
+      const animations = {};
+      if (config.animations) {
+        Object.entries(config.animations).forEach(([anim, indices]) => {
+          animations[anim] = indices.map(i => frames[i]).filter(Boolean);
+        });
+      }
+      spriteTextures[name] = { frames, animations, config };
+      spritesLoaded[name] = true;
+    } catch (e) { /* Fallback to graphics if sprite fails to load */ }
+  }
+
+  // Pre-load all registered sprites
+  const spriteLoadPromises = Object.entries(SPRITE_REGISTRY).map(([name, config]) => loadSpriteSheet(name, config));
+  await Promise.all(spriteLoadPromises);
+
+  // Helper: create animated sprite or fallback to graphics
+  function createEntitySprite(entityName, fallbackColor, fallbackSize) {
+    const spriteData = spriteTextures[entityName];
+    if (spriteData && spriteData.frames.length > 0) {
+      const idleFrames = spriteData.animations.idle || spriteData.frames.slice(0, 4);
+      const animSprite = new PIXI.AnimatedSprite(idleFrames);
+      animSprite.anchor.set(0.5);
+      animSprite.animationSpeed = 0.12;
+      animSprite.play();
+      const scale = (fallbackSize * 2) / spriteData.config.frame_width;
+      animSprite.scale.set(scale);
+      animSprite._spriteData = spriteData;
+      animSprite._isSprite = true;
+      return animSprite;
+    }
+    // Fallback: geometric shape
+    const g = new PIXI.Graphics();
+    g._isSprite = false;
+    return g;
+  }
+
+  function playAnimation(entity, animName) {
+    if (entity._isSprite && entity._spriteData) {
+      const frames = entity._spriteData.animations[animName];
+      if (frames && frames.length > 0) {
+        entity.textures = frames;
+        entity.play();
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════
   // GAME STATE
   // ═══════════════════════════════════════════
-  let credits = 10000, betLevel = 1, totalWon = 0, totalShots = 0;
+  let credits = 10000, betLevel = 1, totalWon = 0, totalShots = 0;, betLevel = 1, totalWon = 0, totalShots = 0;
   const BET_LEVELS = [1, 2, 5, 10, 20, 50, 100];
   let currentWeapon = 0;
   let jackpotPool = 0;
@@ -148,26 +213,29 @@ const ASSET_MANIFEST = {manifest_json};
   function spawnFish(typeIdx) {
     const type = typeIdx !== undefined ? FISH_TYPES[typeIdx] : FISH_TYPES[weightedRandom()];
     const f = new PIXI.Container();
-    const body = new PIXI.Graphics();
     const sz = type.size;
 
-    // Fish body shape
-    body.beginFill(type.color, 0.9);
-    body.moveTo(sz, 0); body.lineTo(-sz * 0.3, -sz * 0.55); body.lineTo(-sz * 0.7, -sz * 0.3);
-    body.lineTo(-sz, 0); body.lineTo(-sz * 0.7, sz * 0.3); body.lineTo(-sz * 0.3, sz * 0.55);
-    body.closePath(); body.endFill();
-    // Tail
-    body.beginFill(type.color, 0.7);
-    body.moveTo(-sz, 0); body.lineTo(-sz * 1.4, -sz * 0.4); body.lineTo(-sz * 1.4, sz * 0.4); body.closePath(); body.endFill();
-    // Eye
-    body.beginFill(0xffffff).drawCircle(sz * 0.5, -sz * 0.12, sz * 0.12).endFill();
-    body.beginFill(0x000000).drawCircle(sz * 0.55, -sz * 0.12, sz * 0.06).endFill();
-    // Glow for rare+
-    if (type.tier >= 5) {
-      body.lineStyle(2, type.color, 0.5);
-      body.drawCircle(0, 0, sz * 1.2);
+    // Try sprite-based rendering first, fallback to graphics
+    const spriteName = type.spriteName || type.name.toLowerCase().replace(/\s+/g, '_');
+    const spriteEntity = createEntitySprite(spriteName, type.color, sz);
+
+    if (spriteEntity._isSprite) {
+      f.addChild(spriteEntity);
+      f._animatedSprite = spriteEntity;
+    } else {
+      // Fallback: geometric fish
+      const body = new PIXI.Graphics();
+      body.beginFill(type.color, 0.9);
+      body.moveTo(sz, 0); body.lineTo(-sz * 0.3, -sz * 0.55); body.lineTo(-sz * 0.7, -sz * 0.3);
+      body.lineTo(-sz, 0); body.lineTo(-sz * 0.7, sz * 0.3); body.lineTo(-sz * 0.3, sz * 0.55);
+      body.closePath(); body.endFill();
+      body.beginFill(type.color, 0.7);
+      body.moveTo(-sz, 0); body.lineTo(-sz * 1.4, -sz * 0.4); body.lineTo(-sz * 1.4, sz * 0.4); body.closePath(); body.endFill();
+      body.beginFill(0xffffff).drawCircle(sz * 0.5, -sz * 0.12, sz * 0.12).endFill();
+      body.beginFill(0x000000).drawCircle(sz * 0.55, -sz * 0.12, sz * 0.06).endFill();
+      if (type.tier >= 5) { body.lineStyle(2, type.color, 0.5).drawCircle(0, 0, sz * 1.2); }
+      f.addChild(body);
     }
-    f.addChild(body);
 
     // HP bar (only for tier 2+)
     if (type.tier >= 2) {
@@ -215,24 +283,31 @@ const ASSET_MANIFEST = {manifest_json};
     bossActive = true;
     const type = BOSS_TYPES[Math.floor(Math.random() * BOSS_TYPES.length)];
     const f = new PIXI.Container();
-    const body = new PIXI.Graphics();
     const sz = type.size;
 
-    // Boss body — larger, ornate
-    body.lineStyle(3, type.color);
-    body.beginFill(type.color, 0.15).drawCircle(0, 0, sz).endFill();
-    body.beginFill(type.color, 0.8);
-    body.moveTo(sz * 0.8, 0); body.lineTo(-sz * 0.2, -sz * 0.5); body.lineTo(-sz * 0.6, 0);
-    body.lineTo(-sz * 0.2, sz * 0.5); body.closePath(); body.endFill();
-    // Crown/horns
-    body.beginFill(0xd4af37);
-    body.moveTo(sz * 0.3, -sz * 0.5); body.lineTo(sz * 0.1, -sz * 0.85); body.lineTo(sz * 0.5, -sz * 0.5); body.closePath();
-    body.moveTo(sz * 0.0, -sz * 0.55); body.lineTo(-sz * 0.1, -sz * 0.9); body.lineTo(sz * 0.2, -sz * 0.55); body.closePath();
-    body.endFill();
-    // Eyes (glowing)
-    body.beginFill(0xff0000).drawCircle(sz * 0.4, -sz * 0.1, sz * 0.08).endFill();
-    body.beginFill(0xff0000).drawCircle(sz * 0.4, sz * 0.1, sz * 0.08).endFill();
-    f.addChild(body);
+    // Try sprite-based boss rendering
+    const spriteName = type.spriteName || type.name.toLowerCase().replace(/[\s,]+/g, '_');
+    const bossSprite = createEntitySprite(spriteName, type.color, sz);
+
+    if (bossSprite._isSprite) {
+      f.addChild(bossSprite);
+      f._animatedSprite = bossSprite;
+    } else {
+      // Fallback: geometric boss
+      const body = new PIXI.Graphics();
+      body.lineStyle(3, type.color);
+      body.beginFill(type.color, 0.15).drawCircle(0, 0, sz).endFill();
+      body.beginFill(type.color, 0.8);
+      body.moveTo(sz * 0.8, 0); body.lineTo(-sz * 0.2, -sz * 0.5); body.lineTo(-sz * 0.6, 0);
+      body.lineTo(-sz * 0.2, sz * 0.5); body.closePath(); body.endFill();
+      body.beginFill(0xd4af37);
+      body.moveTo(sz * 0.3, -sz * 0.5); body.lineTo(sz * 0.1, -sz * 0.85); body.lineTo(sz * 0.5, -sz * 0.5); body.closePath();
+      body.moveTo(sz * 0.0, -sz * 0.55); body.lineTo(-sz * 0.1, -sz * 0.9); body.lineTo(sz * 0.2, -sz * 0.55); body.closePath();
+      body.endFill();
+      body.beginFill(0xff0000).drawCircle(sz * 0.4, -sz * 0.1, sz * 0.08).endFill();
+      body.beginFill(0xff0000).drawCircle(sz * 0.4, sz * 0.1, sz * 0.08).endFill();
+      f.addChild(body);
+    }
 
     // Boss name
     const nameText = new PIXI.Text(type.name, { fontSize: 12, fill: type.color, fontFamily: 'monospace', fontWeight: 'bold', letterSpacing: 2 });
@@ -359,9 +434,10 @@ const ASSET_MANIFEST = {manifest_json};
     // Damage number
     spawnDamageNumber(fish.x, fish.y - fish.sz, dmg, fish.tier >= 5 ? 0xd4af37 : 0xffffff);
 
-    // Flash effect
+    // Flash effect + attack animation
     fish.alpha = 0.4;
-    setTimeout(() => { if (fish.alive) fish.alpha = 1; }, 80);
+    setTimeout(() => { if (fish.alive) { fish.alpha = 1; if (fish._animatedSprite) playAnimation(fish._animatedSprite, 'idle'); } }, 80);
+    if (fish._animatedSprite && fish.hp > 0) playAnimation(fish._animatedSprite, 'attack');
 
     if (fish.hp <= 0) {
       killFish(fish);
@@ -409,6 +485,13 @@ const ASSET_MANIFEST = {manifest_json};
     const win = fish.value * betLevel;
     credits += win;
     totalWon += win;
+
+    // Play death animation if sprite available
+    if (fish._animatedSprite && fish._animatedSprite._spriteData?.animations?.death) {
+      playAnimation(fish._animatedSprite, 'death');
+      fish._animatedSprite.loop = false;
+      fish._animatedSprite.onComplete = () => { fish.visible = false; };
+    }
 
     // Special effects
     if (fish.specialEffect === 'credits_burst') {

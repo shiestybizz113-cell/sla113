@@ -2199,6 +2199,74 @@ async def delete_symbol_set(set_id: str):
     return {"deleted": True}
 
 
+# ─── Sprite Asset Registry ───
+def sprite_registry_collection():
+    return get_database()["sla113_sprite_registry"]
+
+
+class SpriteAssetRequest(BaseModel):
+    name: str
+    entity_type: str  # fish, boss, special, weapon, background, ui
+    sprite_url: str   # URL to spritesheet image
+    frame_width: int = 256
+    frame_height: int = 256
+    columns: int = 4
+    rows: int = 4
+    total_frames: int = 16
+    animations: dict = {}  # { "idle": [0,1,2,3], "attack": [4,5,6,7], "death": [12,13,14,15] }
+    tier: int = 0
+    metadata: dict = {}
+
+
+@router.post("/sprites/register")
+async def register_sprite(req: SpriteAssetRequest):
+    """Register a sprite sheet asset for use in game engines."""
+    now = datetime.now(timezone.utc).isoformat()
+    sprite = {
+        "id": f"SPR-{uuid.uuid4().hex[:6].upper()}",
+        "name": req.name,
+        "entity_type": req.entity_type,
+        "sprite_url": req.sprite_url,
+        "frame_width": req.frame_width,
+        "frame_height": req.frame_height,
+        "columns": req.columns,
+        "rows": req.rows,
+        "total_frames": req.total_frames,
+        "animations": req.animations,
+        "tier": req.tier,
+        "metadata": req.metadata,
+        "created_at": now,
+    }
+    await sprite_registry_collection().insert_one(sprite)
+    sprite.pop("_id", None)
+    return sprite
+
+
+@router.get("/sprites")
+async def list_sprites(entity_type: str = None):
+    """List registered sprite assets, optionally filtered by entity_type."""
+    query = {} if not entity_type else {"entity_type": entity_type}
+    cursor = sprite_registry_collection().find(query, {"_id": 0}).sort("created_at", -1)
+    sprites = await cursor.to_list(200)
+    return {"sprites": sprites, "total": len(sprites)}
+
+
+@router.get("/sprites/{sprite_id}")
+async def get_sprite(sprite_id: str):
+    sprite = await sprite_registry_collection().find_one({"id": sprite_id}, {"_id": 0})
+    if not sprite:
+        raise HTTPException(status_code=404, detail="Sprite not found")
+    return sprite
+
+
+@router.delete("/sprites/{sprite_id}")
+async def delete_sprite(sprite_id: str):
+    result = await sprite_registry_collection().delete_one({"id": sprite_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Sprite not found")
+    return {"deleted": True}
+
+
 # ─── Seed default pipelines if empty ───
 async def seed_default_pipelines():
     count = await pipelines_collection().count_documents({})
