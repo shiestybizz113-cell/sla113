@@ -1428,8 +1428,8 @@ async def compile_build(build_id: str):
             f.write(html_content)
 
         # Write a genre-specific game.js engine using template library
-        # Auto-inject registered sprites into game config
-        sprite_cursor = sprite_registry_collection().find({}, {"_id": 0})
+        # Auto-inject registered sprites into game config (newest first)
+        sprite_cursor = sprite_registry_collection().find({}, {"_id": 0}).sort("created_at", -1)
         all_sprites = await sprite_cursor.to_list(200)
         sprite_map = {}
         for spr in all_sprites:

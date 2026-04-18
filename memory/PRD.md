@@ -45,7 +45,8 @@ SLA113 is the **sovereign root OS** for AI-powered game creation. Cultural backb
 - `POST /api/sla113/deploy` → extracts zip to `/app/backend/static/deploys/{deploy_id}/`, served at `/api/sla113/live/{deploy_id}/index.html`
 
 ## Changelog
-- **2026-02-18** — Fish Engine v6 verified: 4-player 2-top+2-bottom layout live. Wolf Sovereign (male) + Wolf Huntress (female) registered & wired as bosses. Female spritesheet frame 19 excluded (Gemini watermark). Template map bug fixed (`fish_shooter` alias).
+- **2026-02-18** — Wolf Xolotls Arena background registered + auto-applied (newest background priority). 3 new bosses: Wolf Xolotl Pack, Jaguar Warrior Elite, Jaguar Warrior Champion. Cinematic **boss intro** added (dim overlay, hero punch-in, expanding ring shockwave, title + "BOSS INBOUND" + reward badge). Aztec Fish Species V2 registered (4×4 fish schools).
+- **2026-02-18** — Fish Engine v6 verified: 4-player 2-top+2-bottom layout live. Wolf Sovereign (male) + Wolf Huntress (female) registered & wired as bosses. Female spritesheet frame 19 excluded (Gemini watermark). Template map bug fixed (`fish_shooter` alias). Sprite loader sorted newest-first.
 - 2026-02-18 — Sprite Asset Registry + CORS proxy; Aztec Fish, Three Worlds background, 5 boss sprites uploaded
 - Earlier — Vision Smith (Gemini 3 Pro), Audio Forge (Vertex AI / Web Audio), Deploy Engine inline iframe preview, panel extraction
 
