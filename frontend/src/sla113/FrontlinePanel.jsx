@@ -7,6 +7,12 @@ const FrontlinePanel = ({ API, projects, stats }) => {
   const [connected, setConnected] = useState(false);
   const wsRef = useRef(null);
   const feedRef = useRef(null);
+  const metricsRef = useRef(null);
+
+  const addFeedEntry = (type, message) => {
+    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+    setFeed(prev => [...prev.slice(-50), { time, type, message }]);
+  };
 
   useEffect(() => {
     // Construct WS URL from API
@@ -26,7 +32,7 @@ const FrontlinePanel = ({ API, projects, stats }) => {
         try {
           const data = JSON.parse(event.data);
           if (data.type === 'frontline_update') {
-            const prev = metrics;
+            const prev = metricsRef.current;
             setMetrics(data.metrics);
 
             // Generate contextual feed entries from metric changes
@@ -38,7 +44,7 @@ const FrontlinePanel = ({ API, projects, stats }) => {
               if (data.metrics.total_revenue > prev.total_revenue) addFeedEntry('REVENUE', `Revenue pulse: +$${data.metrics.total_revenue - prev.total_revenue}`);
             }
           }
-        } catch (e) { /* ignore parse errors */ }
+        } catch { /* ignore parse errors */ }
       };
 
       ws.onclose = () => {
@@ -59,13 +65,6 @@ const FrontlinePanel = ({ API, projects, stats }) => {
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
   }, [feed]);
 
-  const addFeedEntry = (type, message) => {
-    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-    setFeed(prev => [...prev.slice(-50), { time, type, message }]);
-  };
-
-  // Keep a reference for the metrics closure in the ws callback
-  const metricsRef = useRef(metrics);
   useEffect(() => { metricsRef.current = metrics; }, [metrics]);
 
   const m = metrics || {};
@@ -106,7 +105,7 @@ const FrontlinePanel = ({ API, projects, stats }) => {
               <p className="text-zinc-700 italic">Awaiting real-time data stream...</p>
             )}
             {feed.map((entry, i) => (
-              <p key={i} className={feedColors[entry.type] || 'text-zinc-400'}>
+              <p key={`feed-${entry.time}-${entry.type}-${i}`} className={feedColors[entry.type] || 'text-zinc-400'}>
                 <span className="text-zinc-600">[{entry.time}]</span>{' '}
                 <span className="text-zinc-500 font-bold">{entry.type}</span>{' '}
                 {entry.message}

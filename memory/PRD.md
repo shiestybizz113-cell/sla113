@@ -1,75 +1,70 @@
 # SLA113 — Universal AI Game Studio Operator OS
 
 ## Product Overview
-SLA113 is the **sovereign root OS** for AI-powered game creation. All universes are routers under SLA113.
+SLA113 is the **sovereign root OS** for AI-powered game creation. Cultural backbone: Aztec myth + Chicano SGV + IELA roots. Target: surpass FireKirin/Juwa.
 
-## Game Type Taxonomy (29 types, 5 categories + Audio Middleware)
-- **Arcade & Action** (10): Arcade Classic, Fish Shooting, Battle Royale, Tactical FPS, COD Warfare, Platformer, Fighting, Puzzle, Adventure, Open World
-- **Casino & Gambling** (8): Slot Machine, Video Poker, Casino Suite, Pachinko, Lottery, Bingo, Sportsbook, Card Games
-- **RPG & Narrative** (7): Open World RPG, Dungeon Crawler, Fantasy RPG, Cyberpunk, Horror, Southern Barrio, Sandbox
-- **Racing & Simulation** (1): Racing Sim
-- **Hybrid & Custom** (3): Hybrid Mix, Generic Game Asset, Custom Partner Games
-- **Audio Middleware** (8): SFX, Ambience, Foley, Music Cues, Stems, Loops, TTS, Voice Routing
-- **Audio Engines**: FMOD, SonicForge, AudioKing, VoiceKing
+## Game Engines (FireKirin/Juwa Tier)
 
-## Completed Features
-- [x] Vision Smith v2 (Gemini 3 Pro, no watermarks)
-- [x] Logic Engine (RTP, RNG, paytable, mechanics)
-- [x] Composer Engine (game bundle assembly)
-- [x] AI Terminal (Sovereign Overseer)
-- [x] Night Queue (asyncio background worker + dependencies)
-- [x] Build Pipeline — Real HTML5/PixiJS compilation + downloadable ZIP bundles
-- [x] Real Compliance Engine + Auto-Certify
-- [x] Deploy Engine — Real static file hosting with live playable game preview (iframe in dashboard)
-- [x] Sprite Cutter + Animation Preview
-- [x] Boss Bestiary
-- [x] Universe Registry (auto-discovery, interactive cards)
-- [x] WebSocket Frontline (real-time metrics)
-- [x] Full 29-type game taxonomy with categorized dropdowns
-- [x] Standalone project export (sla113_standalone.zip)
-- [x] Audio Forge Engine — AI-enhanced DSP + Web Audio API synthesis (play/preview + WAV export)
-- [x] Admin Control Vault — ArtTech Nexus Generator + Matrix Parameters + OS Module Map
-- [x] Game Template Library — Genre-specific PixiJS starters (fish, slots, FPS, platformer, RPG, racing)
-- [x] **5-Reel Video Slots** — Wilds, Scatters, Free Spins with multiplier, 9 paylines, expanding wilds
-- [x] **Custom Slot Symbol Sets** — Create themed reel symbols (e.g., Southern Lifestyle: LOWRIDER/SKULL/ROSE/CROSS)
-- [x] **Multiplayer Fish Shooting Lobby** — WebSocket rooms, real-time shared fish, scoreboard, chat, ammo system
-- [x] Component extraction (AudioForgePanel, VaultAdminPanels, FishMultiplayerPanel, SlotSymbolsPanel)
+### Fish Shooter Engine (fish_engine.py) — v6 FireKirin Surpass
+- **4-Player Table Layout**: 2 top + 2 bottom turrets (P1 YOU bottom-left, P2 BOT bottom-right, P3 BOT top-left, P4 BOT top-right)
+- Per-player balance chips in matching corners, ornate rotating turrets with gear-tooth bases
+- 6 weapons: Cannon, Laser, Chain Lightning, Bomb, Auto, Railgun (continuous rapid-fire, hold-to-shoot)
+- 12 fish species (8 tiers), 5 Bosses (Jaguar Warrior, Quetzalcoatl, Tezcatlipoca, **Wolf Sovereign**, **Wolf Huntress**)
+- Boss spawn: 8s initial, 30s recurring interval
+- Progressive jackpot bar (MINI/MINOR/MAJOR/GRAND cycling), net mechanics, bullet trails + muzzle flash, multi-kill combo text, coin scatter on kill
+- Sprite loader: loads registered spritesheets from Sprite Registry, animates idle/walk/run; proxies external URLs to bypass CORS
+
+### Video Slots Engine (slots_engine.py)
+- 5x3, 20 paylines, 4 progressive jackpots, cascading wins, hold & spin, bonus wheel
+- Custom symbol support (Southern Lifestyle theme)
+- **BACKLOG**: Juwa-tier upgrade (metallic 3D frame, side bonus wheels, game lobby thumbnails)
+
+### Sprite Asset Registry
+- CRUD API for spritesheet registration with frame dimensions, grid layout, animation maps
+- Supports: fish, boss, special, weapon, background, ui entity types
+- Registered bosses: Jaguar Warrior, Quetzalcoatl Fireborn, Ocelotl Voidmane, Mictlantecuilti Bone Sovereign, Quetzalflare Prismwing, **Aztec Wolf Male**, **Aztec Wolf Female**
+- Registered env/fish: Aztec Fish Species, Three Worlds Pyramid (background), Aztec Temple Guardians
 
 ## Architecture
 ```
-/app
-├── backend/
-│   ├── routers/sla113.py           # SLA113 router (~2200 lines)
-│   ├── sla113/
-│   │   ├── models.py               # Pydantic models + game taxonomy
-│   │   ├── vision_engine.py        # Gemini 3 Pro image gen
-│   │   ├── logic_engine.py         # Game math/RTP generation
-│   │   ├── composer_engine.py      # Bundle composition
-│   │   ├── audio_forge.py          # Audio asset generation with AI DSP
-│   │   ├── game_templates.py       # Genre-specific PixiJS game code generators
-│   │   └── fish_multiplayer.py     # WebSocket multiplayer fish shooting server
-│   ├── static/deploys/             # Live deployed game files
-│   └── server.py                   # FastAPI + WebSocket mounts
-├── frontend/src/sla113/
-│   ├── SLA113Page.jsx              # Main dashboard (~2180 lines)
-│   ├── panels/
-│   │   ├── AudioForgePanel.jsx     # Audio Forge with Web Audio synthesis
-│   │   ├── VaultAdminPanels.jsx    # ArtTech Nexus + Matrix Params
-│   │   ├── FishMultiplayerPanel.jsx # Multiplayer Fish Arena UI
-│   │   └── SlotSymbolsPanel.jsx    # Custom Reel Symbol Creator
-│   ├── audioSynth.js               # Web Audio API synthesis engine
-│   ├── FrontlinePanel.jsx          # WebSocket real-time panel
-│   ├── SpriteCutter.jsx            # Sprite sheet cutter
-│   └── DependencyGraph.jsx         # Job dependency visualization
+/app/backend/sla113/
+  ├── fish_engine.py        # FireKirin-tier fish shooter (4-player, sprite bosses)
+  ├── slots_engine.py       # Juwa-tier video slots
+  ├── fish_multiplayer.py   # WebSocket multiplayer
+  ├── game_templates.py     # Template router (aliases: fish_shooter, fish_shooting, slot_machine, slots, video_slots)
+  ├── audio_forge.py, vision_engine.py, logic_engine.py, composer_engine.py, models.py
+/app/frontend/src/sla113/panels/
+  ├── AudioForgePanel.jsx, FishMultiplayerPanel.jsx, SlotSymbolsPanel.jsx
+  ├── SpriteRegistryPanel.jsx  # Sprite asset management UI
+  ├── VaultAdminPanels.jsx
 ```
 
-## Key Integrations
-- **OpenAI GPT-4o-mini** — Emergent LLM Key (AI Terminal + Audio DSP enhancement)
-- **Gemini 3 Pro** — User GEMINI_API_KEY (Vision Smith, no watermarks)
-- **Vertex AI** — User VERTEX_AI_KEY stored (Audio Forge credential ready)
+## Build → Deploy Pipeline
+- `POST /api/sla113/builds` → creates build record
+- `POST /api/sla113/builds/{id}/compile` → injects all registered sprites into `GAME_CONFIG.sprites`, generates HTML5/PixiJS bundle, zips
+- `POST /api/sla113/deploy` → extracts zip to `/app/backend/static/deploys/{deploy_id}/`, served at `/api/sla113/live/{deploy_id}/index.html`
 
-## Backlog
-- [ ] Continue extracting Foundry (OS Builder, Vision Smith) + Empire (Mint Ledger, Revenue, Bestiary) panels (P3)
-- [ ] Wire custom symbols into 5-reel build pipeline (pass symbol set ID to compile) (P2)
-- [ ] Tournament system across tenants (P3)
-- [ ] APK compilation path in Build Pipeline (P3)
+## Changelog
+- **2026-02-18** — **Go-Live Pack** shipped: (1) Public Arcade Portal at `/arcade` with localStorage balance, analytics, fullscreen, 7 lobby cards, ADMIN shortcut link; (2) Mobile touch/pointer events + tap-to-fire + drag-to-aim + swipe-to-spin + safe-area padding + iOS bounce disabled; (3) Volume slider + fullscreen buttons in every deployed game HTML shell; (4) Juwa-tier slots upgrade (metallic brushed-gold cabinet with rivets, pulsing glow spin button, 8-slice animated bonus wheel, 4 live jackpot tiers, cascade SFX, swipe-down-to-spin, animated win text); (5) Audio expansion (Web Audio master gain, underwater ambient drone loop, per-boss pentatonic theme stingers tied to theme color, roar SFX, screen shake); (6) Theme-color tinting propagated to jackpot bar, crosshair, HUD chips, meta tags; (7) Deep-link support: `/sla113?p=foundry&tab=GAME%20COMPOSER` auto-lands on composer.
+- **2026-02-18** — Game OS Composer shipped — full pick/mix/deploy lobby system with 7 seeded lobbies. Wolf Xolotls Arena bg + G-Wolf + Xolotl Pack + Jaguar Elite + Jaguar Champion + Aztec Fish V2 registered. Cinematic boss intro.
+- 2026-02-18 — Fish Engine v6 verified: 4-player 2-top+2-bottom layout. Template map bug fixed. Sprite loader sorted newest-first.
+- 2026-02-18 — Sprite Asset Registry + CORS proxy; first boss sprite batch uploaded
+- Earlier — Vision Smith, Audio Forge, Deploy Engine, panel extraction
+
+## Public URLs
+- **Admin / SLA113 Operator OS**: `{BACKEND_URL}/sla113` (deep-link: `/sla113?p=foundry&tab=GAME%20COMPOSER`)
+- **Public Arcade Portal**: `{BACKEND_URL}/arcade`
+
+## Backlog (priority)
+- [ ] (P1) **Juwa-tier Slots upgrade** — metallic 3D reel frame, side bonus wheels, 4 live jackpot tiers, game lobby with thumbnails
+- [ ] (P1) **Mobile touch controls** — pointer/touch events for fish + slots (tablet/arcade use)
+- [ ] (P1) **Game lobby with card thumbnails** (Wolf Warriors, Aztec Serpent, etc.)
+- [ ] (P1) **Sound system** — Web Audio / Howler integration into compiled HTML5 engines
+- [ ] (P2) **Agent/distributor cashier system**
+- [ ] (P2) **Three Worlds triptych background** — crop/map each panel to a quadrant instead of tiling
+- [ ] (P2) **Exportable standalone Arcade player portal** for arcade.southernlifestyle.org Cloud Run
+- [ ] (P3) **Refactor** massive string-injected JS templates into separate `.js.tpl` files
+
+## Known Issues
+- Triptych background tiles awkwardly (3 panels side-by-side); needs per-quadrant mapping
+- Gemini generated assets contain watermark in bottom-right — must exclude final frames or crop in post

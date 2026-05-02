@@ -190,7 +190,7 @@ export default function DependencyGraph({ nodes, edges, onLink, onUnlink }) {
             const isHovered = hoveredNode === e.from || hoveredNode === e.to;
             return (
               <line
-                key={i}
+                key={`edge-${e.from}-${e.to}`}
                 x1={from.x + 80} y1={from.y}
                 x2={to.x - 80} y2={to.y}
                 stroke={isHovered ? '#06b6d4' : '#D4AF37'}

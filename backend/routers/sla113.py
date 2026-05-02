@@ -1,7 +1,7 @@
 """SLA113 API Router - Universal AI Game Studio"""
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field, field_validator
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 import uuid
 import logging
@@ -1157,36 +1157,96 @@ def deployments_collection():
 
 # ─── HTML5/PixiJS Game Shell Generators ───
 def _generate_html5_shell(game_name, game_type, game_desc, game_config, asset_manifest, is_casino):
-    """Generate a playable HTML5 game shell."""
+    """Generate a playable HTML5 game shell with mobile support + safe-area + fullscreen."""
+    lobby = game_config.get("lobby") or {}
+    theme_color = lobby.get("theme_color", "#d4af37")
+    tier = lobby.get("jackpot_tier", "")
+    tagline = lobby.get("name") or game_name
+    subtitle = game_type.replace('_', ' ').upper() + (f" · {tier} TIER" if tier else "")
+    loader_url = game_config.get("loader_url", "")
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{game_name} — SLA113 Build</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="{theme_color}">
+<title>{game_name} — SLA113</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-body {{ background:#0a0a0a; overflow:hidden; font-family:'Courier New',monospace; }}
-canvas {{ display:block; }}
-#hud {{ position:fixed; top:16px; left:16px; color:#00c8ff; font-size:11px; z-index:100; text-transform:uppercase; letter-spacing:2px; }}
-#hud .label {{ color:#666; font-size:9px; }}
-#hud .value {{ color:#fff; font-size:14px; font-weight:bold; }}
-#hud .row {{ margin-bottom:8px; }}
-#loading {{ position:fixed; inset:0; background:#0a0a0a; display:flex; align-items:center; justify-content:center; flex-direction:column; z-index:1000; }}
-#loading h1 {{ color:#00c8ff; font-size:24px; letter-spacing:6px; text-transform:uppercase; }}
-#loading p {{ color:#444; font-size:10px; letter-spacing:3px; margin-top:8px; text-transform:uppercase; }}
+*{{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}}
+html,body{{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;touch-action:none;background:#050505;font-family:'Rajdhani','Courier New',monospace;color:#fff}}
+body{{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}}
+canvas{{display:block;touch-action:none}}
+#loading{{position:fixed;inset:0;background:radial-gradient(ellipse at center,#1a0a1a 0%,#050505 70%);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;z-index:2000}}
+#loading h1{{font-family:'Orbitron',sans-serif;color:{theme_color};font-size:clamp(22px,6vw,42px);letter-spacing:10px;text-transform:uppercase;text-shadow:0 0 20px {theme_color}55}}
+#loading p{{color:#555;font-size:10px;letter-spacing:5px;text-transform:uppercase}}
+#loading .spinner{{width:36px;height:36px;border:2px solid {theme_color}33;border-top-color:{theme_color};border-radius:50%;animation:spin 1s linear infinite}}
+#title{{position:fixed;inset:0;z-index:1900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;cursor:pointer;overflow:hidden;padding:env(safe-area-inset-top) 20px env(safe-area-inset-bottom)}}
+#title .bg{{position:absolute;inset:0;background-size:cover;background-position:center;filter:saturate(1.05)}}
+#title .bg::before{{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,0.15) 0%,rgba(0,0,0,0.55) 60%,rgba(0,0,0,0.92) 100%)}}
+#title .content{{position:relative;z-index:2;text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px;max-width:92%}}
+#title .brand{{font-family:'Dancing Script',cursive;font-size:clamp(18px,3.5vw,28px);color:{theme_color};font-style:italic;text-shadow:0 0 24px {theme_color}aa,0 2px 4px rgba(0,0,0,0.9);letter-spacing:1px;margin-bottom:-6px}}
+#title .brand-sub{{font-family:'Rajdhani',sans-serif;font-size:clamp(9px,1.5vw,11px);color:#ffd966cc;letter-spacing:8px;text-transform:uppercase;text-shadow:0 1px 6px rgba(0,0,0,0.9)}}
+#title h1{{font-family:'Cinzel',serif;color:#ffd966;font-size:clamp(38px,10vw,96px);letter-spacing:clamp(3px,1vw,10px);text-transform:uppercase;font-weight:900;text-shadow:0 0 40px {theme_color}cc,0 0 80px {theme_color}55,0 4px 8px rgba(0,0,0,0.95);line-height:1;margin:6px 0}}
+#title .sub{{font-family:'Rajdhani',sans-serif;color:#e8d8a8;font-size:clamp(11px,2vw,14px);letter-spacing:5px;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,0.9)}}
+#title .tier{{font-family:'Cinzel',serif;font-size:11px;letter-spacing:6px;padding:6px 14px;border:1px solid {theme_color};color:{theme_color};background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);text-transform:uppercase;box-shadow:0 0 20px {theme_color}55}}
+#title .cta{{margin-top:28px;padding:16px 54px;border:2px solid {theme_color};color:#ffd966;font-family:'Cinzel',serif;font-size:13px;letter-spacing:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(6px);cursor:pointer;animation:pulseBtn 1.8s ease-in-out infinite;text-transform:uppercase;font-weight:700;box-shadow:0 0 30px {theme_color}55,inset 0 0 20px {theme_color}15}}
+#title .cta:active{{transform:scale(0.97)}}
+#title .loader{{width:min(320px,70vw);height:3px;background:rgba(0,0,0,0.6);overflow:hidden;margin-top:18px;border:1px solid {theme_color}33}}
+#title .loader-fill{{height:100%;width:40%;background:linear-gradient(90deg,transparent,{theme_color},transparent);animation:slideIn 1.6s ease-in-out infinite}}
+@keyframes pulseBtn{{0%,100%{{box-shadow:0 0 20px {theme_color}55,inset 0 0 20px {theme_color}15;transform:scale(1)}}50%{{box-shadow:0 0 50px {theme_color}aa,inset 0 0 30px {theme_color}33;transform:scale(1.04)}}}}
+@keyframes slideIn{{0%{{transform:translateX(-120%)}}100%{{transform:translateX(220%)}}}}
+#title.fade{{opacity:0;pointer-events:none;transition:opacity 0.7s ease-out;transform:scale(1.05);transition-property:opacity,transform}}
+@keyframes spin{{to{{transform:rotate(360deg)}}}}
+#topbar{{position:fixed;top:env(safe-area-inset-top);left:0;right:0;z-index:150;display:flex;justify-content:flex-end;gap:6px;padding:8px 12px;pointer-events:none}}
+#topbar button{{pointer-events:auto;background:rgba(0,0,0,0.6);border:1px solid {theme_color}55;color:{theme_color};width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:4px;backdrop-filter:blur(8px)}}
+#topbar button:active{{background:{theme_color}22}}
+#volbar{{position:fixed;top:calc(env(safe-area-inset-top) + 52px);right:12px;z-index:149;background:rgba(0,0,0,0.85);border:1px solid {theme_color}55;padding:10px;border-radius:4px;display:none}}
+#volbar input{{writing-mode:bt-lr;-webkit-appearance:slider-vertical;width:18px;height:100px;accent-color:{theme_color}}}
+.mobile-hint{{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);color:{theme_color};font-size:12px;letter-spacing:3px;text-transform:uppercase;pointer-events:none;z-index:160;opacity:0;animation:fadepulse 2s ease-out forwards}}
+@keyframes fadepulse{{0%{{opacity:0}}30%{{opacity:1}}100%{{opacity:0}}}}
 </style>
 </head>
 <body>
-<div id="loading"><h1>{game_name}</h1><p>SLA113 Engine — {game_type.replace('_',' ').title()}</p></div>
-<div id="hud">
-  <div class="row"><span class="label">Game</span><br><span class="value">{game_name}</span></div>
-  <div class="row"><span class="label">Type</span><br><span class="value">{game_type.replace('_',' ').upper()}</span></div>
-  <div class="row"><span class="label">Assets</span><br><span class="value" id="asset-count">{len(asset_manifest)}</span></div>
-  <div class="row"><span class="label">{'RTP' if is_casino else 'Score'}</span><br><span class="value" id="score">{'96.5%' if is_casino else '0'}</span></div>
-  <div class="row"><span class="label">Engine</span><br><span class="value">SLA113 v1.0</span></div>
+<div id="loading"><h1>{game_name}</h1><div class="spinner"></div><p>SLA113 {game_type.replace('_',' ').upper()}</p></div>
+<div id="title">
+  <div class="bg" style="background-image:url('{loader_url or ''}'); background-color:#0b0509"></div>
+  <div class="content">
+    {'<div class="tier">' + tier + ' JACKPOT</div>' if tier else ''}
+    <div class="brand">Southern Lyfestyle Arcade</div>
+    <div class="brand-sub">— IELA · Members Only —</div>
+    <h1>{tagline}</h1>
+    <div class="sub">{subtitle}</div>
+    <div class="loader"><div class="loader-fill"></div></div>
+    <button class="cta" id="title-cta">Tap to Enter</button>
+  </div>
 </div>
+<div id="topbar">
+  <button id="btn-vol" title="Volume">♪</button>
+  <button id="btn-fs" title="Fullscreen">⛶</button>
+</div>
+<div id="volbar"><input id="vol-slider" type="range" min="0" max="100" value="70"></div>
+<script>
+// iOS scroll bounce + zoom prevention
+document.addEventListener('touchmove',e=>{{if(e.scale!==1)e.preventDefault();}},{{passive:false}});
+document.addEventListener('gesturestart',e=>e.preventDefault());
+// Title screen: tap/click/key to dismiss (unlocks audio too)
+const _title=document.getElementById('title');
+const dismissTitle=()=>{{if(_title&&!_title.classList.contains('fade')){{_title.classList.add('fade');setTimeout(()=>_title.remove(),650);try{{if(window.__sla_ac&&window.__sla_ac.state==='suspended')window.__sla_ac.resume();}}catch(_){{}}}}}};
+if(_title){{_title.addEventListener('click',dismissTitle);document.addEventListener('keydown',dismissTitle,{{once:true}});document.addEventListener('touchstart',dismissTitle,{{once:true}});}}
+// Fullscreen toggle
+const fsBtn=document.getElementById('btn-fs');
+fsBtn.onclick=async()=>{{try{{if(!document.fullscreenElement){{await(document.documentElement.requestFullscreen?.()||document.documentElement.webkitRequestFullscreen?.());}}else{{await(document.exitFullscreen?.()||document.webkitExitFullscreen?.());}}}}catch(_){{}} }};
+// Volume panel
+const volBtn=document.getElementById('btn-vol'),volBar=document.getElementById('volbar'),volSl=document.getElementById('vol-slider');
+volBtn.onclick=()=>{{volBar.style.display=volBar.style.display==='block'?'none':'block';}};
+window.__sla_volume=0.7;
+volSl.oninput=()=>{{window.__sla_volume=parseInt(volSl.value)/100;if(window.__sla_master_gain)window.__sla_master_gain.gain.value=window.__sla_volume;}};
+</script>
 <script src="game.js"></script>
 </body>
 </html>"""
@@ -1425,12 +1485,72 @@ async def compile_build(build_id: str):
         is_casino = category == "casino"
         game_desc = GAME_TYPES.get(game_type, {}).get("description", "Game")
 
+        # Write a genre-specific game.js engine using template library
+        # Auto-inject registered sprites into game config (newest first)
+        sprite_cursor = sprite_registry_collection().find({}, {"_id": 0}).sort("created_at", -1)
+        all_sprites = await sprite_cursor.to_list(200)
+        sprite_map = {}
+        for spr in all_sprites:
+            key = spr["name"].lower().replace(" ", "_").replace(",", "")
+            # Proxy external URLs through our backend to bypass CORS
+            sprite_url = spr["sprite_url"]
+            if "customer-assets" in sprite_url or "emergentagent" in sprite_url:
+                sprite_url = f"/api/sla113/sprites/proxy?url={sprite_url}"
+            sprite_map[key] = {
+                "sprite_url": sprite_url,
+                "frame_width": spr["frame_width"],
+                "frame_height": spr["frame_height"],
+                "columns": spr["columns"],
+                "rows": spr["rows"],
+                "total_frames": spr["total_frames"],
+                "animations": spr.get("animations", {}),
+            }
+        game_config["sprites"] = sprite_map
+
+        # Surface loader image (ui sprite whose name includes "loader")
+        loader_sprite = next((s for s in all_sprites if s["entity_type"] == "ui" and "loader" in s["name"].lower()), None)
+        if loader_sprite:
+            lu = loader_sprite["sprite_url"]
+            if "customer-assets" in lu or "emergentagent" in lu:
+                lu = f"/api/sla113/sprites/proxy?url={lu}"
+            game_config["loader_url"] = lu
+
+        # ─── Lobby overrides ───
+        # If this project was created from a lobby, use its specified assets
+        lobby_cfg = project.get("lobby_config") or {}
+        chosen_bg_key = lobby_cfg.get("background_sprite")
+        chosen_bg_url = None
+        if chosen_bg_key and chosen_bg_key in sprite_map:
+            chosen_bg_url = sprite_map[chosen_bg_key]["sprite_url"]
+        else:
+            # Fall back to newest registered background
+            bg_sprites = [s for s in all_sprites if s["entity_type"] == "background"]
+            if bg_sprites:
+                bg_url = bg_sprites[0]["sprite_url"]
+                if "customer-assets" in bg_url or "emergentagent" in bg_url:
+                    bg_url = f"/api/sla113/sprites/proxy?url={bg_url}"
+                chosen_bg_url = bg_url
+        if chosen_bg_url:
+            game_config["background_url"] = chosen_bg_url
+
+        # Inject lobby config for engine to filter bosses / theme
+        if lobby_cfg:
+            game_config["lobby"] = {
+                "name": lobby_cfg.get("name"),
+                "main_boss": lobby_cfg.get("main_boss_sprite"),
+                "partner_boss": lobby_cfg.get("partner_boss_sprite"),
+                "extra_bosses": lobby_cfg.get("extra_bosses") or [],
+                "theme_color": lobby_cfg.get("theme_color", "#d4af37"),
+                "jackpot_tier": lobby_cfg.get("jackpot_tier", "MAJOR"),
+                "base_bet": lobby_cfg.get("base_bet", 0.10),
+            }
+
+        # Generate the HTML5/PixiJS game shell (after config enrichment so lobby/loader are available)
         html_content = _generate_html5_shell(game_name, game_type, game_desc, game_config, asset_manifest, is_casino)
 
         with open(os.path.join(build_dir, "index.html"), "w") as f:
             f.write(html_content)
 
-        # Write a genre-specific game.js engine using template library
         from sla113.game_templates import get_game_template
         js_content = get_game_template(game_type, game_name, game_config, asset_manifest)
         with open(os.path.join(build_dir, "game.js"), "w") as f:
@@ -2200,6 +2320,278 @@ async def delete_symbol_set(set_id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Symbol set not found")
     return {"deleted": True}
+
+
+# ─── Sprite Asset Proxy (CORS bypass) ───
+@router.get("/sprites/proxy")
+async def proxy_sprite(url: str):
+    """Proxy external sprite images to bypass CORS restrictions."""
+    import httpx
+    from fastapi.responses import Response
+    if not url.startswith("https://"):
+        raise HTTPException(status_code=400, detail="Only HTTPS URLs allowed")
+    if "customer-assets" not in url and "emergentagent" not in url:
+        raise HTTPException(status_code=403, detail="Domain not allowed")
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(url)
+            if resp.status_code != 200:
+                raise HTTPException(status_code=resp.status_code, detail="Upstream error")
+            ct = resp.headers.get("content-type", "image/jpeg")
+            return Response(content=resp.content, media_type=ct, headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=86400"})
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+# ─── Sprite Asset Registry ───
+def sprite_registry_collection():
+    return get_database()["sla113_sprite_registry"]
+
+
+class SpriteAssetRequest(BaseModel):
+    name: str
+    entity_type: str  # fish, boss, special, weapon, background, ui
+    sprite_url: str   # URL to spritesheet image
+    frame_width: int = 256
+    frame_height: int = 256
+    columns: int = 4
+    rows: int = 4
+    total_frames: int = 16
+    animations: dict = {}  # { "idle": [0,1,2,3], "attack": [4,5,6,7], "death": [12,13,14,15] }
+    tier: int = 0
+    metadata: dict = {}
+
+
+@router.post("/sprites/register")
+async def register_sprite(req: SpriteAssetRequest):
+    """Register a sprite sheet asset for use in game engines."""
+    now = datetime.now(timezone.utc).isoformat()
+    sprite = {
+        "id": f"SPR-{uuid.uuid4().hex[:6].upper()}",
+        "name": req.name,
+        "entity_type": req.entity_type,
+        "sprite_url": req.sprite_url,
+        "frame_width": req.frame_width,
+        "frame_height": req.frame_height,
+        "columns": req.columns,
+        "rows": req.rows,
+        "total_frames": req.total_frames,
+        "animations": req.animations,
+        "tier": req.tier,
+        "metadata": req.metadata,
+        "created_at": now,
+    }
+    await sprite_registry_collection().insert_one(sprite)
+    sprite.pop("_id", None)
+    return sprite
+
+
+@router.get("/sprites")
+async def list_sprites(entity_type: str = None):
+    """List registered sprite assets, optionally filtered by entity_type."""
+    query = {} if not entity_type else {"entity_type": entity_type}
+    cursor = sprite_registry_collection().find(query, {"_id": 0}).sort("created_at", -1)
+    sprites = await cursor.to_list(200)
+    return {"sprites": sprites, "total": len(sprites)}
+
+
+@router.get("/sprites/{sprite_id}")
+async def get_sprite(sprite_id: str):
+    sprite = await sprite_registry_collection().find_one({"id": sprite_id}, {"_id": 0})
+    if not sprite:
+        raise HTTPException(status_code=404, detail="Sprite not found")
+    return sprite
+
+
+@router.delete("/sprites/{sprite_id}")
+async def delete_sprite(sprite_id: str):
+    result = await sprite_registry_collection().delete_one({"id": sprite_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Sprite not found")
+    return {"deleted": True}
+
+# ═══════════════════════════════════════════════════════════════════════
+# ─── LOBBY / GAME OS COMPOSER ───
+# A "Lobby" is a fish-shooter game variant defined by which assets to mix:
+# main boss sprite(s), background, theme color, audio track, jackpot tier.
+# One lobby = one deployed game URL.
+# ═══════════════════════════════════════════════════════════════════════
+def lobbies_collection():
+    return get_database()["sla113_lobbies"]
+
+
+class LobbyRequest(BaseModel):
+    name: str
+    slug: str
+    game_type: str = "fish_shooting"
+    main_boss_sprite: str               # e.g. "wolf_xolotl_pack"
+    partner_boss_sprite: Optional[str] = None  # e.g. "g_wolf" (shared lobbies)
+    background_sprite: Optional[str] = None    # sprite name_key (lower_snake) or "" for default
+    theme_color: str = "#d4af37"
+    description: str = ""
+    jackpot_tier: str = "MAJOR"          # MINI/MINOR/MAJOR/GRAND
+    base_bet: float = 0.10
+    audio_track: Optional[str] = None
+    fish_sprite: Optional[str] = None    # override fish spritesheet
+    extra_bosses: List[str] = []         # optional additional boss sprite keys
+
+
+@router.post("/lobbies")
+async def create_composer_lobby(req: LobbyRequest):
+    now = datetime.now(timezone.utc).isoformat()
+    lobby = {
+        "id": f"LBY-{uuid.uuid4().hex[:8].upper()}",
+        **req.model_dump(),
+        "created_at": now,
+        "updated_at": now,
+    }
+    await lobbies_collection().insert_one(lobby)
+    lobby.pop("_id", None)
+    return lobby
+
+
+@router.get("/lobbies")
+async def list_composer_lobbies():
+    cursor = lobbies_collection().find({}, {"_id": 0}).sort("created_at", 1)
+    lobbies = await cursor.to_list(200)
+    return {"lobbies": lobbies, "total": len(lobbies)}
+
+
+@router.get("/lobbies/{lobby_id}")
+async def get_composer_lobby(lobby_id: str):
+    lobby = await lobbies_collection().find_one({"id": lobby_id}, {"_id": 0})
+    if not lobby:
+        raise HTTPException(status_code=404, detail="Lobby not found")
+    return lobby
+
+
+@router.patch("/lobbies/{lobby_id}")
+async def update_lobby(lobby_id: str, body: Dict[str, Any]):
+    body.pop("id", None); body.pop("_id", None)
+    body["updated_at"] = datetime.now(timezone.utc).isoformat()
+    result = await lobbies_collection().update_one({"id": lobby_id}, {"$set": body})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Lobby not found")
+    return await lobbies_collection().find_one({"id": lobby_id}, {"_id": 0})
+
+
+@router.delete("/lobbies/{lobby_id}")
+async def delete_lobby_row(lobby_id: str):
+    result = await lobbies_collection().delete_one({"id": lobby_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Lobby not found")
+    return {"deleted": True}
+
+
+@router.post("/lobbies/{lobby_id}/deploy")
+async def deploy_lobby(lobby_id: str):
+    """One-shot: create project from lobby config, compile, deploy, return preview URL."""
+    lobby = await lobbies_collection().find_one({"id": lobby_id}, {"_id": 0})
+    if not lobby:
+        raise HTTPException(status_code=404, detail="Lobby not found")
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Step 1: create project
+    project_id = str(uuid.uuid4())
+    project = {
+        "id": project_id,
+        "name": lobby["name"],
+        "game_type": lobby["game_type"],
+        "theme": lobby.get("description", "")[:60],
+        "status": "in_dev",
+        "lobby_id": lobby_id,
+        "lobby_config": lobby,   # snapshot
+        "created_at": now, "updated_at": now,
+    }
+    await projects_collection().insert_one(project)
+
+    # Step 2: create build
+    build_id = f"BLD-{uuid.uuid4().hex[:8].upper()}"
+    build = {
+        "id": build_id, "project_id": project_id,
+        "project_name": lobby["name"], "game_type": lobby["game_type"],
+        "target": "web", "optimization": "balanced",
+        "include_assets": True, "include_logic": True,
+        "status": "queued", "progress": 0,
+        "stages": [
+            {"name": "Asset Compilation", "status": "pending", "progress": 0},
+            {"name": "Logic Binding", "status": "pending", "progress": 0},
+            {"name": "Shader Compilation", "status": "pending", "progress": 0},
+            {"name": "Bundle Packaging", "status": "pending", "progress": 0},
+            {"name": "Optimization Pass", "status": "pending", "progress": 0},
+        ],
+        "output": None, "download_url": None, "size_mb": None,
+        "logs": [f"[{now}] Lobby deploy initiated: {lobby['name']}"],
+        "created_at": now, "updated_at": now,
+    }
+    await builds_collection().insert_one(build)
+
+    # Step 3: compile (reuses existing pipeline)
+    await compile_build(build_id)
+
+    # Step 4: deploy
+    from pydantic import BaseModel as _BM
+    dep_req = DeployRequest(build_id=build_id, target_cdn="emergent-mock", region="us-east-1", auto_ssl=True)
+    deployment = await deploy_build(dep_req)
+    return {
+        "lobby_id": lobby_id,
+        "lobby_name": lobby["name"],
+        "project_id": project_id,
+        "build_id": build_id,
+        "deployment": deployment,
+        "preview_url": deployment.get("preview_url"),
+    }
+
+
+async def seed_default_lobbies():
+    count = await lobbies_collection().count_documents({})
+    if count > 0:
+        return
+    now = datetime.now(timezone.utc).isoformat()
+    defaults = [
+        {"name": "Shadow Pack", "slug": "shadow_pack",
+         "main_boss_sprite": "wolf_xolotl_pack", "partner_boss_sprite": "g_wolf",
+         "background_sprite": "wolf_xolotls_arena", "theme_color": "#d4af37",
+         "description": "Xolotl Pack + G-Wolf hunt as one. Aztec gold shields. Dual-boss lobby.",
+         "jackpot_tier": "GRAND", "base_bet": 0.25},
+        {"name": "Jaguar Warrior", "slug": "jaguar_warrior",
+         "main_boss_sprite": "jaguar_warrior", "background_sprite": "three_worlds_pyramid",
+         "theme_color": "#d4af37",
+         "description": "Classic jaguar spirit. Mid-tier lobby.", "jackpot_tier": "MINOR", "base_bet": 0.10},
+        {"name": "Quetzalcoatl Fireborn", "slug": "quetzalcoatl",
+         "main_boss_sprite": "quetzalcoatl_fireborn", "background_sprite": "three_worlds_pyramid",
+         "theme_color": "#00ffcc",
+         "description": "The Feathered Serpent. Major jackpot tier.", "jackpot_tier": "MAJOR", "base_bet": 0.15},
+        {"name": "Ocelotl Voidmane", "slug": "ocelotl_voidmane",
+         "main_boss_sprite": "ocelotl_voidmane", "background_sprite": "three_worlds_pyramid",
+         "theme_color": "#9900ff",
+         "description": "Shadow jaguar of the night realm.", "jackpot_tier": "MAJOR", "base_bet": 0.20},
+        {"name": "Wolf Sovereign", "slug": "wolf_sovereign",
+         "main_boss_sprite": "aztec_wolf_male", "background_sprite": "wolf_xolotls_arena",
+         "theme_color": "#d4af37",
+         "description": "Alpha male. Solo boss hunt.", "jackpot_tier": "MAJOR", "base_bet": 0.20},
+        {"name": "Jaguar Elite", "slug": "jaguar_elite",
+         "main_boss_sprite": "jaguar_warrior_elite", "background_sprite": "wolf_xolotls_arena",
+         "theme_color": "#ff6600",
+         "description": "Armored temple guardian. High stakes.", "jackpot_tier": "GRAND", "base_bet": 0.30},
+        {"name": "Jaguar Champion", "slug": "jaguar_champion",
+         "main_boss_sprite": "jaguar_warrior_champion", "background_sprite": "wolf_xolotls_arena",
+         "theme_color": "#ff2244",
+         "description": "The Champion. Ultimate solo boss.", "jackpot_tier": "GRAND", "base_bet": 0.50},
+    ]
+    for d in defaults:
+        await lobbies_collection().insert_one({
+            "id": f"LBY-{uuid.uuid4().hex[:8].upper()}",
+            "game_type": "fish_shooting",
+            "partner_boss_sprite": d.get("partner_boss_sprite"),
+            "audio_track": None, "fish_sprite": None, "extra_bosses": [],
+            "created_at": now, "updated_at": now,
+            **d,
+        })
+    logger.info("Seeded %d default lobbies", len(defaults))
+
+
 
 
 # ─── Seed default pipelines if empty ───

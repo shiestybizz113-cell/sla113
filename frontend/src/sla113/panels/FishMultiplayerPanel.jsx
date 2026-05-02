@@ -22,7 +22,7 @@ const FishMultiplayerPanel = () => {
   useEffect(() => {
     fetchLobbies();
     return () => { if (wsRef.current) wsRef.current.close(); };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchLobbies = async () => {
     try {
@@ -198,7 +198,7 @@ const FishMultiplayerPanel = () => {
               <h4 className="text-zinc-500 text-[8px] font-bold uppercase tracking-widest">Chat</h4>
               <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar">
                 {chat.map((m, i) => (
-                  <div key={i} className="text-[9px]">
+                  <div key={`chat-${m.player}-${i}`} className="text-[9px]">
                     <span style={{ color: m.color }} className="font-bold">{m.player}: </span>
                     <span className={m.system ? 'text-zinc-600 italic' : 'text-zinc-400'}>{m.text}</span>
                   </div>
