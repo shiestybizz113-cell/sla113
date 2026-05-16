@@ -6,7 +6,7 @@
  */
 import "@/App.css";
 import { BrowserRouter } from "react-router-dom";
-import SLA113App from "./sla113/SLA113App.standalone";
+import SLA113App from "./sla113/SLA113App.standalone.jsx";
 
 function App() {
   return (
